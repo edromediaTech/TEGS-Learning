@@ -47,7 +47,7 @@
     </div>
 
     <div class="flex gap-3">
-      <div>
+      <div v-if="!localData.autoGrade">
         <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de mots max</label>
         <input
           v-model.number="localData.maxWords"
@@ -57,6 +57,7 @@
           class="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500"
           placeholder="Illimite"
         />
+        <p class="text-xs text-gray-400 mt-1">0 = illimite</p>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Lignes (hauteur)</label>
