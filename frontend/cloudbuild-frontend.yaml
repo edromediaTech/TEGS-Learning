@@ -1,0 +1,11 @@
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      - "build"
+      - "--build-arg"
+      - "NUXT_PUBLIC_API_BASE=https://tegs-backend-746425674533.us-central1.run.app/api"
+      - "-t"
+      - "gcr.io/$PROJECT_ID/tegs-frontend:v2"
+      - "."
+images:
+  - "gcr.io/$PROJECT_ID/tegs-frontend:v2"

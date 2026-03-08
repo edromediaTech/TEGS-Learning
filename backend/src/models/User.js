@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 /**
  * Schema User.
  * Chaque utilisateur est lie a un Tenant (ecole) via tenant_id.
- * Roles possibles : admin_ddene (super-admin), teacher, student.
+ * Roles possibles : superadmin (global), admin_ddene (admin ecole), teacher, student.
  * Le champ tenant_id est OBLIGATOIRE et indexe pour garantir l'isolation multi-tenant.
  */
 const userSchema = new mongoose.Schema(
@@ -33,13 +33,13 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['admin_ddene', 'teacher', 'student'],
+      enum: ['superadmin', 'admin_ddene', 'teacher', 'student'],
       default: 'student',
     },
     tenant_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Tenant',
-      required: [true, 'Le tenant_id (ecole) est obligatoire'],
+      required: false,
       index: true,
     },
     isActive: {
@@ -52,6 +52,16 @@ const userSchema = new mongoose.Schema(
 
 // Index compose : un email doit etre unique PAR tenant (une meme personne peut exister dans 2 ecoles)
 userSchema.index({ email: 1, tenant_id: 1 }, { unique: true });
+
+/**
+ * Validation : tenant_id obligatoire sauf pour superadmin.
+ */
+userSchema.pre('validate', function (next) {
+  if (this.role !== 'superadmin' && !this.tenant_id) {
+    this.invalidate('tenant_id', 'Le tenant_id (ecole) est obligatoire pour ce role');
+  }
+  next();
+});
 
 /**
  * Hash du mot de passe avant sauvegarde.

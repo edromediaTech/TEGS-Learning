@@ -30,9 +30,10 @@ async function authenticate(req, res, next) {
     req.user = {
       id: user._id,
       role: user.role,
-      tenant_id: user.tenant_id,
+      tenant_id: user.tenant_id || null,
     };
-    req.tenantId = user.tenant_id;
+    req.tenantId = user.tenant_id || null;
+    req.isSuperAdmin = user.role === 'superadmin';
 
     next();
   } catch (err) {
@@ -49,6 +50,8 @@ async function authenticate(req, res, next) {
  */
 function authorize(...roles) {
   return (req, res, next) => {
+    // superadmin has access to everything
+    if (req.user.role === 'superadmin') return next();
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ error: 'Acces refuse : role insuffisant' });
     }

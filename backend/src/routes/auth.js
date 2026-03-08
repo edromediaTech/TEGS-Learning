@@ -22,9 +22,8 @@ router.post(
     body('firstName').notEmpty().withMessage('Prenom requis'),
     body('lastName').notEmpty().withMessage('Nom requis'),
     body('role')
-      .isIn(['admin_ddene', 'teacher', 'student'])
+      .isIn(['superadmin', 'admin_ddene', 'teacher', 'student'])
       .withMessage('Role invalide'),
-    body('tenant_id').notEmpty().withMessage('tenant_id requis'),
   ],
   async (req, res, next) => {
     try {
@@ -34,6 +33,32 @@ router.post(
       }
 
       const { email, password, firstName, lastName, role, tenant_id } = req.body;
+
+      // superadmin n'a pas besoin de tenant_id
+      if (role === 'superadmin') {
+        // Only allow creating superadmin if no superadmin exists yet (bootstrap)
+        // or if the requester is already a superadmin
+        const existingSuperAdmin = await User.findOne({ role: 'superadmin' });
+        if (existingSuperAdmin) {
+          return res.status(403).json({ error: 'Un superadmin existe deja. Contactez le superadmin existant.' });
+        }
+        const existingUser = await User.findOne({ email, role: 'superadmin' });
+        if (existingUser) {
+          return res.status(409).json({ error: 'Ce superadmin existe deja' });
+        }
+        const user = await User.create({ email, password, firstName, lastName, role });
+        const token = generateToken(user);
+        return res.status(201).json({
+          message: 'Superadmin cree avec succes',
+          user: { id: user._id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role },
+          token,
+        });
+      }
+
+      // Pour les autres roles, tenant_id est obligatoire
+      if (!tenant_id) {
+        return res.status(400).json({ error: 'tenant_id requis pour ce role' });
+      }
 
       // Verifier que le tenant existe et est actif
       const tenant = await Tenant.findById(tenant_id);
@@ -87,7 +112,7 @@ router.post(
   [
     body('email').isEmail().withMessage('Email invalide'),
     body('password').notEmpty().withMessage('Mot de passe requis'),
-    body('tenant_id').notEmpty().withMessage('tenant_id requis'),
+    // tenant_id is optional for superadmin
   ],
   async (req, res, next) => {
     try {
@@ -98,8 +123,15 @@ router.post(
 
       const { email, password, tenant_id } = req.body;
 
-      // IMPORTANT : le login filtre AUSSI par tenant_id pour l'isolation
-      const user = await User.findOne({ email, tenant_id }).select('+password');
+      let user;
+      if (tenant_id) {
+        // Login avec tenant_id (normal flow)
+        user = await User.findOne({ email, tenant_id }).select('+password');
+      } else {
+        // Login sans tenant_id : uniquement superadmin
+        user = await User.findOne({ email, role: 'superadmin' }).select('+password');
+      }
+
       if (!user) {
         return res.status(401).json({ error: 'Identifiants invalides' });
       }
@@ -123,7 +155,7 @@ router.post(
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role,
-          tenant_id: user.tenant_id,
+          tenant_id: user.tenant_id || null,
         },
         token,
       });
@@ -139,10 +171,12 @@ router.post(
 // ---------------------------------------------------------------------------
 router.get('/me', authenticate, async (req, res, next) => {
   try {
-    const user = await User.findOne({
-      _id: req.user.id,
-      tenant_id: req.tenantId, // ISOLATION : filtre obligatoire
-    });
+    const filter = { _id: req.user.id };
+    // superadmin n'a pas de tenant_id
+    if (req.tenantId) {
+      filter.tenant_id = req.tenantId;
+    }
+    const user = await User.findOne(filter);
 
     if (!user) {
       return res.status(404).json({ error: 'Utilisateur introuvable' });

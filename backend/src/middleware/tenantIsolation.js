@@ -8,6 +8,14 @@
  * a inclure dans CHAQUE requete pour garantir l'isolation des donnees.
  */
 function tenantIsolation(req, res, next) {
+  // superadmin can operate cross-tenant; optionally filter by ?tenant_id= query param
+  if (req.isSuperAdmin) {
+    const queryTenant = req.query.tenant_id || req.body?.tenant_id_filter;
+    req.tenantFilter = () => (queryTenant ? { tenant_id: queryTenant } : {});
+    req.tenantId = queryTenant || req.tenantId;
+    return next();
+  }
+
   if (!req.tenantId) {
     return res.status(403).json({
       error: 'Contexte tenant manquant. Authentification requise.',

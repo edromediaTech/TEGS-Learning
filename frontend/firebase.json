@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "tegs-learning",
     "public": ".output/public",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
