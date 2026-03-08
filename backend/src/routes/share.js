@@ -202,10 +202,50 @@ function renderBlock(block, theme) {
         <button onclick="fbReset('${fbid}')" class="quiz-retry" style="display:none;margin-top:8px;font-size:13px;color:#0d9488;background:none;border:none;cursor:pointer">Recommencer</button>
       </div>`;
     }
-    case 'matching':
-      return `<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:20px;margin:16px 0"><span style="background:#7c3aed;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">APPARIEMENT</span>${d.instruction ? `<p style="margin:12px 0;font-size:14px">${escapeHtml(d.instruction)}</p>` : ''}${(d.pairs || []).map((p, i) => `<div style="display:flex;align-items:center;gap:12px;margin:6px 0"><div style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px">${i + 1}. ${escapeHtml(p.left)}</div><span>&harr;</span><div style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px">${escapeHtml(p.right)}</div></div>`).join('')}</div>`;
-    case 'sequence':
-      return `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:20px;margin:16px 0"><span style="background:#ea580c;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">SEQUENCE</span>${d.instruction ? `<p style="margin:12px 0;font-size:14px">${escapeHtml(d.instruction)}</p>` : ''}${(d.items || []).map((it, i) => `<div style="padding:8px 16px;margin:4px 0;border:1px solid #e5e7eb;border-radius:6px;font-size:14px"><strong>${i + 1}.</strong> ${escapeHtml(it)}</div>`).join('')}</div>`;
+    case 'matching': {
+      const mid = `match_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const pairs = d.pairs || [];
+      // Shuffle the right side options for the dropdowns
+      const rightOptions = pairs.map((p, i) => ({ text: p.right, idx: i }));
+      return `<div id="${mid}" style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:20px;margin:16px 0">
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="background:#7c3aed;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">APPARIEMENT</span><div style="display:flex;gap:8px;font-size:11px;color:#6b7280">${d.points ? `<span style="background:#ede9fe;color:#6d28d9;padding:2px 6px;border-radius:4px">${d.points} pt${d.points > 1 ? 's' : ''}</span>` : ''}${d.duration ? `<span style="background:#f3f4f6;padding:2px 6px;border-radius:4px">${d.duration} min</span>` : ''}</div></div>
+        ${d.instruction ? `<p style="margin:12px 0;font-size:14px">${escapeHtml(d.instruction)}</p>` : ''}
+        ${pairs.map((p, i) => `<div style="display:flex;align-items:center;gap:12px;margin:6px 0" class="match-row">
+          <div style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px">${i + 1}. ${escapeHtml(p.left)}</div>
+          <span>&harr;</span>
+          <select class="match-select" data-correct="${i}" style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;cursor:pointer">
+            <option value="">-- Choisir --</option>
+            ${rightOptions.map(r => `<option value="${r.idx}">${escapeHtml(r.text)}</option>`).join('')}
+          </select>
+        </div>`).join('')}
+        <button onclick="matchCheck('${mid}',${pairs.length})" style="margin-top:12px;padding:8px 16px;background:#7c3aed;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">Valider</button>
+        <div class="quiz-result" style="display:none;margin-top:12px;padding:12px;border-radius:8px;font-size:14px"></div>
+        ${d.explanation ? `<p class="quiz-explanation" style="display:none;margin-top:8px;font-size:13px;color:#6b7280;font-style:italic">${escapeHtml(d.explanation)}</p>` : ''}
+        <button onclick="matchReset('${mid}')" class="quiz-retry" style="display:none;margin-top:8px;font-size:13px;color:#7c3aed;background:none;border:none;cursor:pointer">Recommencer</button>
+      </div>`;
+    }
+    case 'sequence': {
+      const seqid = `seq_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const items = d.items || [];
+      // Shuffle items for display (store correct order as data attributes)
+      const shuffled = items.map((it, i) => ({ text: it, correctIdx: i })).sort(() => Math.random() - 0.5);
+      return `<div id="${seqid}" style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:20px;margin:16px 0">
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="background:#ea580c;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">SEQUENCE</span><div style="display:flex;gap:8px;font-size:11px;color:#6b7280">${d.points ? `<span style="background:#ffedd5;color:#c2410c;padding:2px 6px;border-radius:4px">${d.points} pt${d.points > 1 ? 's' : ''}</span>` : ''}${d.duration ? `<span style="background:#f3f4f6;padding:2px 6px;border-radius:4px">${d.duration} min</span>` : ''}</div></div>
+        ${d.instruction ? `<p style="margin:12px 0;font-size:14px">${escapeHtml(d.instruction)}</p>` : ''}
+        <div class="seq-items">
+          ${shuffled.map((it) => `<div class="seq-item" data-correct="${it.correctIdx}" style="display:flex;align-items:center;gap:8px;padding:8px 16px;margin:4px 0;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;background:white;cursor:grab">
+            <span class="seq-num" style="font-weight:bold;color:#9ca3af;min-width:20px"></span>
+            <span style="flex:1">${escapeHtml(it.text)}</span>
+            <button onclick="seqMove('${seqid}',this.parentNode,-1)" style="background:none;border:none;cursor:pointer;font-size:16px;color:#9ca3af;padding:2px 4px" title="Monter">&uarr;</button>
+            <button onclick="seqMove('${seqid}',this.parentNode,1)" style="background:none;border:none;cursor:pointer;font-size:16px;color:#9ca3af;padding:2px 4px" title="Descendre">&darr;</button>
+          </div>`).join('')}
+        </div>
+        <button onclick="seqCheck('${seqid}')" style="margin-top:12px;padding:8px 16px;background:#ea580c;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">Valider</button>
+        <div class="quiz-result" style="display:none;margin-top:12px;padding:12px;border-radius:8px;font-size:14px"></div>
+        ${d.explanation ? `<p class="quiz-explanation" style="display:none;margin-top:8px;font-size:13px;color:#6b7280;font-style:italic">${escapeHtml(d.explanation)}</p>` : ''}
+        <button onclick="seqReset('${seqid}')" class="quiz-retry" style="display:none;margin-top:8px;font-size:13px;color:#ea580c;background:none;border:none;cursor:pointer">Recommencer</button>
+      </div>`;
+    }
     case 'likert': {
       const lid = `lik_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
       const labels = { agreement: ['Pas du tout', '', 'Neutre', '', 'Tout a fait'], satisfaction: ['Tres insatisfait', '', 'Neutre', '', 'Tres satisfait'], frequency: ['Jamais', 'Rarement', 'Parfois', 'Souvent', 'Toujours'] };
@@ -424,6 +464,88 @@ router.get('/public/:shareToken', async (req, res, next) => {
       delete el.dataset.answered;
       var input = el.querySelector('.num-input');
       input.value = ''; input.disabled = false; input.style.borderColor = '#d1d5db';
+      el.querySelector('.quiz-result').style.display = 'none';
+      var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'none';
+      el.querySelector('.quiz-retry').style.display = 'none';
+    }
+
+    // Sequence interactivity
+    function seqUpdateNums(id) {
+      var el = document.getElementById(id);
+      var items = el.querySelectorAll('.seq-item');
+      items.forEach(function(item, i) { item.querySelector('.seq-num').textContent = (i + 1) + '.'; });
+    }
+    // Auto-number on load
+    document.addEventListener('DOMContentLoaded', function() {
+      document.querySelectorAll('[id^="seq_"]').forEach(function(el) { seqUpdateNums(el.id); });
+    });
+    function seqMove(id, item, dir) {
+      var el = document.getElementById(id);
+      if (el.dataset.answered) return;
+      var container = el.querySelector('.seq-items');
+      var items = Array.from(container.querySelectorAll('.seq-item'));
+      var idx = items.indexOf(item);
+      if (dir === -1 && idx > 0) { container.insertBefore(item, items[idx - 1]); }
+      else if (dir === 1 && idx < items.length - 1) { container.insertBefore(items[idx + 1], item); }
+      seqUpdateNums(id);
+    }
+    function seqCheck(id) {
+      var el = document.getElementById(id);
+      if (el.dataset.answered) return;
+      el.dataset.answered = '1';
+      var items = el.querySelectorAll('.seq-item');
+      var allCorrect = true;
+      items.forEach(function(item, i) {
+        var correct = parseInt(item.dataset.correct) === i;
+        item.style.borderColor = correct ? '#4ade80' : '#f87171';
+        item.style.background = correct ? '#dcfce7' : '#fee2e2';
+        item.querySelectorAll('button').forEach(function(b) { b.disabled = true; b.style.opacity = '0.3'; });
+        if (!correct) allCorrect = false;
+      });
+      var result = el.querySelector('.quiz-result');
+      result.style.display = 'block';
+      if (allCorrect) { result.style.background = '#dcfce7'; result.style.color = '#166534'; result.textContent = 'Ordre correct !'; }
+      else { result.style.background = '#fee2e2'; result.style.color = '#991b1b'; result.textContent = 'L\'ordre n\'est pas correct.'; }
+      var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'block';
+      var retry = el.querySelector('.quiz-retry'); if (retry) retry.style.display = 'inline-block';
+    }
+    function seqReset(id) {
+      var el = document.getElementById(id);
+      delete el.dataset.answered;
+      el.querySelectorAll('.seq-item').forEach(function(item) { item.style.borderColor = '#e5e7eb'; item.style.background = 'white'; item.querySelectorAll('button').forEach(function(b) { b.disabled = false; b.style.opacity = '1'; }); });
+      el.querySelector('.quiz-result').style.display = 'none';
+      var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'none';
+      el.querySelector('.quiz-retry').style.display = 'none';
+    }
+
+    // Matching interactivity
+    function matchCheck(id, count) {
+      var el = document.getElementById(id);
+      if (el.dataset.answered) return;
+      var selects = el.querySelectorAll('.match-select');
+      var allFilled = true;
+      selects.forEach(function(s) { if (!s.value) allFilled = false; });
+      if (!allFilled) return;
+      el.dataset.answered = '1';
+      var allCorrect = true;
+      selects.forEach(function(s) {
+        s.disabled = true;
+        var correct = s.value === s.dataset.correct;
+        s.style.borderColor = correct ? '#4ade80' : '#f87171';
+        s.style.background = correct ? '#dcfce7' : '#fee2e2';
+        if (!correct) allCorrect = false;
+      });
+      var result = el.querySelector('.quiz-result');
+      result.style.display = 'block';
+      if (allCorrect) { result.style.background = '#dcfce7'; result.style.color = '#166534'; result.textContent = 'Tout est correct !'; }
+      else { result.style.background = '#fee2e2'; result.style.color = '#991b1b'; result.textContent = 'Certaines associations sont incorrectes.'; }
+      var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'block';
+      var retry = el.querySelector('.quiz-retry'); if (retry) retry.style.display = 'inline-block';
+    }
+    function matchReset(id) {
+      var el = document.getElementById(id);
+      delete el.dataset.answered;
+      el.querySelectorAll('.match-select').forEach(function(s) { s.value = ''; s.disabled = false; s.style.borderColor = '#e5e7eb'; s.style.background = ''; });
       el.querySelector('.quiz-result').style.display = 'none';
       var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'none';
       el.querySelector('.quiz-retry').style.display = 'none';
