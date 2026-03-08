@@ -505,7 +505,7 @@ router.get('/public/:shareToken', async (req, res, next) => {
       var result = el.querySelector('.quiz-result');
       result.style.display = 'block';
       if (allCorrect) { result.style.background = '#dcfce7'; result.style.color = '#166534'; result.textContent = 'Ordre correct !'; }
-      else { result.style.background = '#fee2e2'; result.style.color = '#991b1b'; result.textContent = 'L\'ordre n\'est pas correct.'; }
+      else { result.style.background = '#fee2e2'; result.style.color = '#991b1b'; result.textContent = "L'ordre n'est pas correct."; }
       var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'block';
       var retry = el.querySelector('.quiz-retry'); if (retry) retry.style.display = 'inline-block';
     }
