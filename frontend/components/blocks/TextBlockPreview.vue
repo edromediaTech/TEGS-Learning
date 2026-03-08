@@ -12,15 +12,20 @@ const rendered = computed(() => {
   // en nettoyant les balises dangereuses et le balisage Word/MSO
   if (/<[a-z][\s\S]*>/i.test(text)) {
     return text
-      // Remove Word/MSO conditional comments and XML
-      .replace(/<!--\[if[\s\S]*?<!\[endif\]-->/gi, '')
+      // Remove all HTML comments (Word conditionals, StartFragment, etc.)
+      .replace(/<!--[\s\S]*?-->/g, '')
+      // Remove XML declarations and namespace tags
       .replace(/<\?xml[\s\S]*?\?>/gi, '')
       .replace(/<\/?\w+:[^>]*>/gi, '')
       // Remove dangerous tags
       .replace(/<script[\s>][\s\S]*?<\/script>/gi, '')
       .replace(/<\/?(?:script|iframe|object|embed|form|input|button|link|style|meta|base)[^>]*>/gi, '')
       .replace(/\bon\w+\s*=/gi, '')
-      // Clean up empty spans and excessive whitespace
+      // Remove <mark> tags (Google highlights) but keep content
+      .replace(/<\/?mark[^>]*>/gi, '')
+      // Remove data-*, js* attributes (Google), class, style
+      .replace(/\s*(?:data-\w[\w-]*|jscontroller|jsuid|jsname|jsaction|class|style|lang|dir)="[^"]*"/gi, '')
+      // Clean up empty spans
       .replace(/<span\s*>\s*([\s\S]*?)\s*<\/span>/gi, '$1');
   }
 

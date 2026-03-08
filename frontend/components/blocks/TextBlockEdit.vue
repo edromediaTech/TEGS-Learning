@@ -226,23 +226,34 @@ function onInput() {
   emitContent();
 }
 
-function cleanWordHtml(html: string): string {
+function cleanPastedHtml(html: string): string {
   let cleaned = html;
+  // Remove StartFragment/EndFragment comments
+  cleaned = cleaned.replace(/<!--Start(Fragment|.*?)-->/gi, '');
+  cleaned = cleaned.replace(/<!--End(Fragment|.*?)-->/gi, '');
   // Remove conditional comments <!--[if ...]>...<![endif]-->
   cleaned = cleaned.replace(/<!--\[if[\s\S]*?<!\[endif\]-->/gi, '');
+  // Remove all HTML comments
+  cleaned = cleaned.replace(/<!--[\s\S]*?-->/g, '');
   // Remove XML declarations and processing instructions
   cleaned = cleaned.replace(/<\?xml[\s\S]*?\?>/gi, '');
   // Remove all namespace-prefixed tags (o:, w:, m:, v:, st1:, etc.)
   cleaned = cleaned.replace(/<\/?\w+:[^>]*>/gi, '');
   // Remove style blocks (Word embeds huge style blocks)
   cleaned = cleaned.replace(/<style[\s>][\s\S]*?<\/style>/gi, '');
-  // Remove class and Word-specific style attributes
+  // Remove <mark> tags but keep content (Google Search highlights)
+  cleaned = cleaned.replace(/<\/?mark[^>]*>/gi, '');
+  // Remove all data-* attributes, js* attributes (Google)
+  cleaned = cleaned.replace(/\s*(?:data-\w[\w-]*|jscontroller|jsuid|jsname|jsaction|jsshadow)="[^"]*"/gi, '');
+  // Remove class and style attributes
   cleaned = cleaned.replace(/\s*class="[^"]*"/gi, '');
   cleaned = cleaned.replace(/\s*style="[^"]*"/gi, '');
-  // Remove lang attributes
-  cleaned = cleaned.replace(/\s*lang="[^"]*"/gi, '');
+  // Remove lang, dir, id attributes
+  cleaned = cleaned.replace(/\s*(?:lang|dir|id)="[^"]*"/gi, '');
   // Remove empty spans
   cleaned = cleaned.replace(/<span\s*>\s*([\s\S]*?)\s*<\/span>/gi, '$1');
+  // Remove empty divs
+  cleaned = cleaned.replace(/<div\s*>\s*([\s\S]*?)\s*<\/div>/gi, '<p>$1</p>');
   // Remove empty paragraphs
   cleaned = cleaned.replace(/<p\s*>\s*(&nbsp;|\s)*\s*<\/p>/gi, '');
   // Collapse multiple line breaks
@@ -255,7 +266,7 @@ function onPaste(e: ClipboardEvent) {
   const html = e.clipboardData?.getData('text/html');
   if (html) {
     e.preventDefault();
-    const cleaned = cleanWordHtml(html);
+    const cleaned = cleanPastedHtml(html);
     document.execCommand('insertHTML', false, cleaned);
     emitContent();
   }
