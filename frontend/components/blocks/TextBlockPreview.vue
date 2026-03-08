@@ -9,12 +9,19 @@ const rendered = computed(() => {
   const text = props.data.content || '';
 
   // Si c'est du HTML (genere par l'editeur WYSIWYG), l'afficher directement
-  // en nettoyant uniquement les balises dangereuses
+  // en nettoyant les balises dangereuses et le balisage Word/MSO
   if (/<[a-z][\s\S]*>/i.test(text)) {
     return text
+      // Remove Word/MSO conditional comments and XML
+      .replace(/<!--\[if[\s\S]*?<!\[endif\]-->/gi, '')
+      .replace(/<\?xml[\s\S]*?\?>/gi, '')
+      .replace(/<\/?\w+:[^>]*>/gi, '')
+      // Remove dangerous tags
       .replace(/<script[\s>][\s\S]*?<\/script>/gi, '')
       .replace(/<\/?(?:script|iframe|object|embed|form|input|button|link|style|meta|base)[^>]*>/gi, '')
-      .replace(/\bon\w+\s*=/gi, '');
+      .replace(/\bon\w+\s*=/gi, '')
+      // Clean up empty spans and excessive whitespace
+      .replace(/<span\s*>\s*([\s\S]*?)\s*<\/span>/gi, '$1');
   }
 
   // Fallback : ancien contenu markdown

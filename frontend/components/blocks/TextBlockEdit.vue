@@ -226,16 +226,36 @@ function onInput() {
   emitContent();
 }
 
+function cleanWordHtml(html: string): string {
+  let cleaned = html;
+  // Remove conditional comments <!--[if ...]>...<![endif]-->
+  cleaned = cleaned.replace(/<!--\[if[\s\S]*?<!\[endif\]-->/gi, '');
+  // Remove XML declarations and processing instructions
+  cleaned = cleaned.replace(/<\?xml[\s\S]*?\?>/gi, '');
+  // Remove all namespace-prefixed tags (o:, w:, m:, v:, st1:, etc.)
+  cleaned = cleaned.replace(/<\/?\w+:[^>]*>/gi, '');
+  // Remove style blocks (Word embeds huge style blocks)
+  cleaned = cleaned.replace(/<style[\s>][\s\S]*?<\/style>/gi, '');
+  // Remove class and Word-specific style attributes
+  cleaned = cleaned.replace(/\s*class="[^"]*"/gi, '');
+  cleaned = cleaned.replace(/\s*style="[^"]*"/gi, '');
+  // Remove lang attributes
+  cleaned = cleaned.replace(/\s*lang="[^"]*"/gi, '');
+  // Remove empty spans
+  cleaned = cleaned.replace(/<span\s*>\s*([\s\S]*?)\s*<\/span>/gi, '$1');
+  // Remove empty paragraphs
+  cleaned = cleaned.replace(/<p\s*>\s*(&nbsp;|\s)*\s*<\/p>/gi, '');
+  // Collapse multiple line breaks
+  cleaned = cleaned.replace(/(<br\s*\/?\s*>){3,}/gi, '<br><br>');
+  return cleaned.trim();
+}
+
 function onPaste(e: ClipboardEvent) {
   // Coller en texte enrichi mais nettoyer les attributs Word/Google Docs
   const html = e.clipboardData?.getData('text/html');
   if (html) {
     e.preventDefault();
-    // Nettoyer les styles inline excessifs de Word
-    const cleaned = html
-      .replace(/class="[^"]*"/gi, '')
-      .replace(/style="[^"]*mso[^"]*"/gi, '')
-      .replace(/<o:p>[\s\S]*?<\/o:p>/gi, '');
+    const cleaned = cleanWordHtml(html);
     document.execCommand('insertHTML', false, cleaned);
     emitContent();
   }
