@@ -2,60 +2,69 @@
   <div class="min-h-screen flex bg-gray-50">
     <!-- Sidebar Navigation -->
     <aside
-      class="fixed inset-y-0 left-0 z-30 flex flex-col bg-primary-900 text-white transition-all duration-200"
+      class="fixed inset-y-0 left-0 z-30 flex flex-col text-white transition-all duration-300 shadow-xl"
       :class="sidebarOpen ? 'w-56' : 'w-16'"
+      style="background: linear-gradient(180deg, #0f172a 0%, #1e3a5f 50%, #1e40af 100%)"
     >
       <!-- Logo -->
-      <div class="flex items-center h-14 px-3 border-b border-primary-700/50">
-        <img src="/logo.png" alt="TEGS" class="h-8 w-8 rounded flex-shrink-0" />
+      <div class="flex items-center h-14 px-3 border-b border-white/10">
+        <div class="w-9 h-9 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+          <img src="/logo.png" alt="TEGS" class="h-6 w-6 rounded" />
+        </div>
         <transition name="fade">
-          <span v-if="sidebarOpen" class="ml-2 text-sm font-bold truncate">TEGS-Learning</span>
+          <div v-if="sidebarOpen" class="ml-2.5 min-w-0">
+            <span class="text-sm font-extrabold tracking-tight">TEGS</span>
+            <span class="text-[10px] text-blue-300 block -mt-0.5">Learning LCMS</span>
+          </div>
         </transition>
       </div>
 
       <!-- Toggle -->
       <button
         @click="sidebarOpen = !sidebarOpen"
-        class="absolute -right-3 top-16 w-6 h-6 bg-primary-700 hover:bg-primary-600 rounded-full flex items-center justify-center text-xs shadow-md border-2 border-primary-900"
+        class="absolute -right-3 top-16 w-6 h-6 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-400 hover:to-indigo-400 rounded-full flex items-center justify-center text-xs shadow-lg border-2 border-gray-50 text-white"
       >
         {{ sidebarOpen ? '\u2039' : '\u203A' }}
       </button>
 
       <!-- Navigation -->
-      <nav class="flex-1 py-4 space-y-1 overflow-y-auto">
+      <nav class="flex-1 py-4 space-y-1 overflow-y-auto px-2">
         <NuxtLink
           v-for="item in navItems"
           :key="item.to"
           :to="item.to"
-          class="flex items-center px-4 py-2.5 text-sm transition group"
+          class="flex items-center px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group"
           :class="isActive(item.to)
-            ? 'bg-primary-700/60 text-white border-r-2 border-white'
-            : 'text-primary-200 hover:bg-primary-800 hover:text-white'"
+            ? 'bg-white/20 text-white shadow-md backdrop-blur-sm font-bold'
+            : 'text-blue-200 hover:bg-white/10 hover:text-white'"
         >
-          <span class="text-lg flex-shrink-0 w-6 text-center">{{ item.icon }}</span>
+          <span class="text-lg flex-shrink-0 w-7 text-center">{{ item.icon }}</span>
           <transition name="fade">
-            <span v-if="sidebarOpen" class="ml-3 truncate">{{ item.label }}</span>
+            <span v-if="sidebarOpen" class="ml-2 truncate">{{ item.label }}</span>
+          </transition>
+          <transition name="fade">
+            <span v-if="sidebarOpen && isActive(item.to)" class="ml-auto w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
           </transition>
         </NuxtLink>
       </nav>
 
       <!-- User info -->
-      <div class="border-t border-primary-700/50 p-3">
+      <div class="border-t border-white/10 p-3">
         <div class="flex items-center">
-          <div class="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+          <div class="w-9 h-9 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center text-xs font-extrabold flex-shrink-0 shadow-md">
             {{ initials }}
           </div>
           <transition name="fade">
-            <div v-if="sidebarOpen" class="ml-2 min-w-0 flex-1">
-              <p class="text-xs font-medium truncate">{{ auth.fullName }}</p>
-              <p class="text-[10px] text-primary-300">{{ roleLabel }}</p>
+            <div v-if="sidebarOpen" class="ml-2.5 min-w-0 flex-1">
+              <p class="text-xs font-bold truncate">{{ auth.fullName }}</p>
+              <span class="inline-block px-1.5 py-0.5 text-[9px] font-bold rounded bg-white/15 text-blue-200 mt-0.5">{{ roleLabel }}</span>
             </div>
           </transition>
         </div>
         <button
           @click="auth.logout()"
-          class="mt-2 flex items-center text-xs text-primary-300 hover:text-white transition w-full"
-          :class="sidebarOpen ? 'px-1' : 'justify-center'"
+          class="mt-2.5 flex items-center text-xs text-blue-300 hover:text-white transition w-full rounded-lg hover:bg-white/10 px-2 py-1.5"
+          :class="!sidebarOpen ? 'justify-center' : ''"
         >
           <span class="text-sm">&#x2190;</span>
           <transition name="fade">
@@ -66,7 +75,7 @@
     </aside>
 
     <!-- Main content -->
-    <div class="flex-1 transition-all duration-200" :class="sidebarOpen ? 'ml-56' : 'ml-16'">
+    <div class="flex-1 transition-all duration-300" :class="sidebarOpen ? 'ml-56' : 'ml-16'">
       <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <slot />
       </main>

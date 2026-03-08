@@ -1,17 +1,17 @@
 <template>
   <div>
     <NuxtLayout name="admin">
-      <!-- Header avec CREER / VOIR style OpenCrea -->
+      <!-- Header -->
       <div class="flex items-center justify-between mb-8">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Mes Modules</h1>
-          <p class="text-gray-500 mt-1">Gerez les cours de votre ecole</p>
+          <h1 class="text-3xl font-extrabold bg-gradient-to-r from-primary-700 to-primary-500 bg-clip-text text-transparent">Mes Modules</h1>
+          <p class="text-gray-500 mt-1">Creez et gerez vos formations pedagogiques</p>
         </div>
         <button
           @click="wizardStep = 1; resetWizard()"
-          class="bg-primary-600 text-white px-5 py-2.5 rounded-lg hover:bg-primary-700 transition flex items-center space-x-2 font-medium"
+          class="bg-gradient-to-r from-primary-600 to-blue-500 text-white px-6 py-3 rounded-xl hover:from-primary-700 hover:to-blue-600 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2 font-bold"
         >
-          <span class="text-lg">+</span>
+          <span class="text-xl">+</span>
           <span>Creer un module</span>
         </button>
       </div>
@@ -45,55 +45,69 @@
         <div
           v-for="mod in store.modules"
           :key="mod._id"
-          class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition group"
+          class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group"
         >
-          <!-- Barre theme -->
-          <div class="h-2" :style="{ background: themeColors[mod.theme || 'ddene'] }"></div>
-          <div class="p-5">
-            <div class="flex items-start justify-between mb-3">
-              <h3 class="text-lg font-semibold text-gray-900">{{ mod.title }}</h3>
-              <div class="flex items-center space-x-1">
-                <span
-                  class="px-2 py-0.5 text-xs rounded-full"
-                  :class="mod.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'"
-                >
-                  {{ mod.status === 'published' ? 'Publie' : 'Brouillon' }}
-                </span>
-                <span v-if="mod.shareEnabled" class="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">
-                  Partage
-                </span>
-              </div>
+          <!-- Barre theme gradient -->
+          <div class="h-24 relative overflow-hidden" :style="{ background: `linear-gradient(135deg, ${themeColors[mod.theme || 'ddene']}, ${themeColors[mod.theme || 'ddene']}88)` }">
+            <div class="absolute inset-0 bg-black/10"></div>
+            <div class="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white"></div>
+            <div class="absolute top-3 right-3 flex items-center space-x-1">
+              <span
+                class="px-2.5 py-1 text-[10px] font-bold rounded-full backdrop-blur-sm"
+                :class="mod.status === 'published' ? 'bg-green-500/90 text-white' : 'bg-white/90 text-gray-700'"
+              >
+                {{ mod.status === 'published' ? 'PUBLIE' : 'BROUILLON' }}
+              </span>
+              <span v-if="mod.shareEnabled" class="px-2.5 py-1 text-[10px] font-bold rounded-full bg-blue-500/90 text-white backdrop-blur-sm">
+                PARTAGE
+              </span>
             </div>
+            <div class="absolute top-3 left-3">
+              <span class="text-3xl opacity-30 text-white">&#128218;</span>
+            </div>
+          </div>
+
+          <div class="p-5 -mt-6 relative">
+            <h3 class="text-lg font-bold text-gray-900 mb-1">{{ mod.title }}</h3>
             <p class="text-sm text-gray-500 mb-4 line-clamp-2">
               {{ mod.description || 'Aucune description' }}
             </p>
-            <div class="flex items-center text-xs text-gray-400 mb-4 space-x-4">
-              <span>{{ mod.sections?.length || 0 }} chapitre(s)</span>
-              <span>{{ countScreens(mod) }} ecran(s)</span>
-              <span>{{ mod.language?.toUpperCase() }}</span>
-              <span class="px-1.5 py-0.5 rounded text-xs" :style="{ background: themeColors[mod.theme || 'ddene'] + '22', color: themeColors[mod.theme || 'ddene'] }">
-                {{ themeNames[mod.theme || 'ddene'] }}
+
+            <!-- Stats -->
+            <div class="flex items-center text-xs mb-4 space-x-3">
+              <span class="flex items-center space-x-1 px-2 py-1 bg-amber-50 text-amber-700 rounded-full">
+                <span>&#128196;</span>
+                <span class="font-medium">{{ mod.sections?.length || 0 }} chap.</span>
+              </span>
+              <span class="flex items-center space-x-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full">
+                <span>&#128187;</span>
+                <span class="font-medium">{{ countScreens(mod) }} ecrans</span>
+              </span>
+              <span class="px-2 py-1 rounded-full font-bold text-[10px]" :style="{ background: themeColors[mod.theme || 'ddene'] + '15', color: themeColors[mod.theme || 'ddene'] }">
+                {{ mod.language?.toUpperCase() }}
               </span>
             </div>
+
+            <!-- Actions -->
             <div class="flex items-center space-x-2">
               <NuxtLink
                 :to="`/admin/modules/${mod._id}/structure`"
-                class="flex-1 text-center bg-primary-50 text-primary-700 px-3 py-2 rounded-lg hover:bg-primary-100 transition text-sm font-medium"
+                class="flex-1 text-center bg-gradient-to-r from-primary-500 to-primary-600 text-white px-3 py-2.5 rounded-xl hover:from-primary-600 hover:to-primary-700 transition-all text-sm font-bold shadow-sm"
               >
-                Editer
+                Ouvrir le Studio
               </NuxtLink>
               <NuxtLink
                 :to="`/admin/modules/${mod._id}/settings`"
-                class="px-3 py-2 text-gray-500 hover:bg-gray-50 rounded-lg transition text-sm"
+                class="px-3 py-2.5 text-gray-500 hover:bg-gray-100 rounded-xl transition text-sm"
                 title="Configuration"
               >
-                Config
+                &#9881;
               </NuxtLink>
               <button
                 @click="confirmDelete(mod)"
-                class="px-3 py-2 text-red-500 hover:bg-red-50 rounded-lg transition text-sm"
+                class="px-3 py-2.5 text-red-400 hover:bg-red-50 hover:text-red-600 rounded-xl transition text-sm"
               >
-                Supprimer
+                &#128465;
               </button>
             </div>
           </div>
@@ -218,7 +232,7 @@
 
           <!-- Etape 3 : Confirmation & Lancement -->
           <div v-if="wizardStep === 3" class="p-6 space-y-4">
-            <h3 class="text-lg font-bold text-gray-900">Etape 3 : Lanse espas travay la</h3>
+            <h3 class="text-lg font-bold text-gray-900">Etape 3 : Confirmation et creation</h3>
             <div class="bg-gray-50 rounded-xl p-4 space-y-3">
               <div class="flex items-center justify-between">
                 <span class="text-sm text-gray-500">Titre</span>

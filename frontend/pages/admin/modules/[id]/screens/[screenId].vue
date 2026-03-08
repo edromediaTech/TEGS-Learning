@@ -158,92 +158,113 @@
 
         <!-- ===== MODE EDITEUR : Layout 3 colonnes ===== -->
         <div v-if="mode === 'edit'" class="flex flex-1 overflow-hidden mt-2">
-          <!-- COLONNE GAUCHE : Liste des slides -->
-          <div class="w-56 bg-gray-50 border-r border-gray-200 flex flex-col flex-shrink-0">
-            <div class="px-3 py-2 border-b border-gray-200 flex items-center justify-between">
-              <p class="text-xs font-bold text-gray-500 uppercase truncate">{{ store.currentScreen.sectionTitle }}</p>
-              <button
-                @click="addScreenToSection"
-                class="text-primary-600 hover:text-primary-800 text-lg leading-none"
-                title="Ajouter un ecran"
-              >+</button>
+          <!-- COLONNE GAUCHE : Arborescence Module > Chapitres > Ecrans -->
+          <div class="w-60 bg-gradient-to-b from-slate-50 to-white border-r border-gray-200 flex flex-col flex-shrink-0">
+            <!-- Module title -->
+            <div class="px-3 py-2.5 border-b border-gray-200 bg-gradient-to-r from-primary-600 to-primary-700">
+              <p class="text-[10px] font-bold text-primary-200 uppercase tracking-wider">Module</p>
+              <p class="text-sm font-bold text-white truncate">{{ store.currentScreen.moduleTitle }}</p>
             </div>
-            <div class="flex-1 overflow-y-auto p-2 space-y-1">
-              <div
-                v-for="(screen, sIdx) in sectionScreens"
-                :key="screen._id"
-                class="group relative"
-              >
-                <!-- Renommage en cours -->
-                <div v-if="renamingScreenId === screen._id" class="flex items-center space-x-1">
-                  <input
-                    v-model="renameValue"
-                    @keyup.enter="confirmRename(screen._id!)"
-                    @blur="confirmRename(screen._id!)"
-                    @keyup.escape="renamingScreenId = null"
-                    class="flex-1 px-2 py-1.5 border border-primary-300 rounded text-xs focus:ring-1 focus:ring-primary-500"
-                    ref="renameInput"
-                  />
-                </div>
 
-                <!-- Lien normal -->
-                <NuxtLink
-                  v-else
-                  :to="`/admin/modules/${moduleId}/screens/${screen._id}`"
-                  class="block px-3 py-2 rounded-lg text-sm transition truncate pr-8"
-                  :class="screen._id === screenId
-                    ? 'bg-primary-100 text-primary-800 font-medium border border-primary-300'
-                    : 'text-gray-600 hover:bg-gray-100'"
+            <!-- Tree: Chapitres > Ecrans -->
+            <div class="flex-1 overflow-y-auto py-2">
+              <div v-for="(section, secIdx) in allSections" :key="section._id || secIdx" class="mb-1">
+                <!-- Chapitre header -->
+                <div class="group flex items-center px-2 py-1.5 mx-1 rounded-lg hover:bg-gray-100 transition cursor-pointer"
+                  @click="toggleSection(secIdx)"
                 >
-                  <span class="text-[10px] text-gray-400 mr-1">{{ sIdx + 1 }}.</span>
-                  {{ screen.title }}
-                </NuxtLink>
-
-                <!-- Menu contextuel (hover) -->
-                <div
-                  v-if="renamingScreenId !== screen._id"
-                  class="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition"
-                >
+                  <span class="text-[10px] mr-1 text-gray-400 transition" :class="expandedSections.has(secIdx) ? 'rotate-90' : ''">&#9654;</span>
+                  <span class="w-5 h-5 rounded bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-[9px] font-bold mr-1.5 flex-shrink-0">
+                    {{ secIdx + 1 }}
+                  </span>
+                  <span class="flex-1 text-xs font-semibold text-gray-700 truncate">{{ section.title }}</span>
                   <button
-                    @click.prevent="openScreenMenu(screen._id!)"
-                    class="text-gray-400 hover:text-gray-600 px-1 text-xs"
+                    @click.stop="openChapterMenu(secIdx)"
+                    class="text-gray-400 hover:text-gray-600 text-xs opacity-0 group-hover:opacity-100 px-1"
                   >&#8942;</button>
                 </div>
 
-                <!-- Dropdown menu -->
-                <div
-                  v-if="screenMenuId === screen._id"
-                  class="absolute right-0 top-full z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-36"
-                >
-                  <button @click="startRename(screen)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">
-                    Renommer
-                  </button>
-                  <button @click="duplicateScreen(screen)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">
-                    Dupliquer
-                  </button>
-                  <template v-if="sectionScreens.length > 1">
-                    <button v-if="sIdx > 0" @click="moveScreenInSection(sIdx, -1)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">
-                      Monter
-                    </button>
-                    <button v-if="sIdx < sectionScreens.length - 1" @click="moveScreenInSection(sIdx, 1)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">
-                      Descendre
-                    </button>
-                  </template>
+                <!-- Chapter menu -->
+                <div v-if="chapterMenuIdx === secIdx" class="mx-3 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-20 relative">
+                  <button @click="addScreenToSectionIdx(secIdx)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">+ Ajouter un ecran</button>
+                  <button @click="renameChapter(secIdx)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">Renommer</button>
+                  <button v-if="secIdx > 0" @click="moveChapter(secIdx, -1)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">Monter</button>
+                  <button v-if="secIdx < allSections.length - 1" @click="moveChapter(secIdx, 1)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">Descendre</button>
                   <hr class="my-1 border-gray-100" />
-                  <button @click="deleteScreen(screen._id!)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-red-50 text-red-600">
-                    Supprimer
+                  <button @click="deleteChapter(secIdx)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-red-50 text-red-600">Supprimer</button>
+                </div>
+
+                <!-- Ecrans du chapitre -->
+                <div v-if="expandedSections.has(secIdx)" class="ml-4 mt-0.5 space-y-0.5">
+                  <div
+                    v-for="(screen, sIdx) in section.screens"
+                    :key="screen._id"
+                    class="group/s relative"
+                  >
+                    <!-- Rename input -->
+                    <div v-if="renamingScreenId === screen._id" class="flex items-center space-x-1 px-1">
+                      <input
+                        v-model="renameValue"
+                        @keyup.enter="confirmRename(screen._id!)"
+                        @blur="confirmRename(screen._id!)"
+                        @keyup.escape="renamingScreenId = null"
+                        class="flex-1 px-2 py-1 border border-primary-300 rounded text-[11px] focus:ring-1 focus:ring-primary-500"
+                      />
+                    </div>
+
+                    <!-- Screen link -->
+                    <NuxtLink
+                      v-else
+                      :to="`/admin/modules/${moduleId}/screens/${screen._id}`"
+                      class="flex items-center px-2 py-1.5 mx-1 rounded-md text-xs transition truncate"
+                      :class="screen._id === screenId
+                        ? 'bg-primary-100 text-primary-800 font-semibold border border-primary-300 shadow-sm'
+                        : 'text-gray-600 hover:bg-blue-50 hover:text-primary-700'"
+                    >
+                      <span class="w-1.5 h-1.5 rounded-full mr-2 flex-shrink-0"
+                        :class="screen._id === screenId ? 'bg-primary-500' : 'bg-gray-300'"
+                      ></span>
+                      {{ screen.title }}
+                    </NuxtLink>
+
+                    <!-- Screen actions -->
+                    <div
+                      v-if="renamingScreenId !== screen._id"
+                      class="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/s:opacity-100 transition"
+                    >
+                      <button @click.prevent="openScreenMenu(screen._id!)" class="text-gray-400 hover:text-gray-600 px-1 text-[10px]">&#8942;</button>
+                    </div>
+
+                    <div v-if="screenMenuId === screen._id" class="absolute right-0 top-full z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-36">
+                      <button @click="startRename(screen)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">Renommer</button>
+                      <button @click="duplicateScreen(screen)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">Dupliquer</button>
+                      <template v-if="section.screens.length > 1">
+                        <button v-if="sIdx > 0" @click="moveScreenInSection(sIdx, -1)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">Monter</button>
+                        <button v-if="sIdx < section.screens.length - 1" @click="moveScreenInSection(sIdx, 1)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">Descendre</button>
+                      </template>
+                      <hr class="my-1 border-gray-100" />
+                      <button @click="deleteScreen(screen._id!)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-red-50 text-red-600">Supprimer</button>
+                    </div>
+                  </div>
+
+                  <!-- Add screen button -->
+                  <button
+                    @click="addScreenToSectionIdx(secIdx)"
+                    class="flex items-center w-full px-3 py-1 mx-1 text-[10px] text-gray-400 hover:text-primary-600 transition"
+                  >
+                    <span class="mr-1">+</span> Ecran
                   </button>
                 </div>
               </div>
             </div>
 
-            <!-- Bouton ajouter en bas -->
-            <div class="p-2 border-t border-gray-200">
+            <!-- Footer: Add chapter -->
+            <div class="p-2 border-t border-gray-200 space-y-1">
               <button
-                @click="addScreenToSection"
-                class="w-full text-xs border border-dashed border-gray-300 text-gray-400 py-2 rounded-lg hover:border-primary-400 hover:text-primary-600 transition"
+                @click="addChapter"
+                class="w-full text-xs border border-dashed border-amber-300 text-amber-600 py-1.5 rounded-lg hover:bg-amber-50 hover:border-amber-400 transition font-medium"
               >
-                + Nouvel ecran
+                + Nouveau chapitre
               </button>
             </div>
           </div>
@@ -549,13 +570,118 @@ const questionBlocks = [
   { type: 'likert' as BlockType, icon: '\u2605', label: 'Likert' },
 ];
 
-// Liste des ecrans de la section courante (sidebar gauche)
+// Toutes les sections du module (arborescence complete)
+const allSections = computed(() => store.current?.sections || []);
+
+// Liste des ecrans de la section courante
 const sectionScreens = computed(() => {
   if (!store.current?.sections) return [];
   const sectionTitle = store.currentScreen?.sectionTitle;
   const section = store.current.sections.find(s => s.title === sectionTitle);
   return section?.screens || [];
 });
+
+// Sections depliees dans le tree
+const expandedSections = ref(new Set<number>());
+const chapterMenuIdx = ref<number | null>(null);
+
+// Ouvrir automatiquement le chapitre actuel
+watch(() => store.currentScreen?.sectionTitle, () => {
+  if (!store.current?.sections) return;
+  const idx = store.current.sections.findIndex(s => s.title === store.currentScreen?.sectionTitle);
+  if (idx >= 0) expandedSections.value.add(idx);
+}, { immediate: true });
+
+function toggleSection(idx: number) {
+  if (expandedSections.value.has(idx)) {
+    expandedSections.value.delete(idx);
+  } else {
+    expandedSections.value.add(idx);
+  }
+}
+
+function openChapterMenu(idx: number) {
+  chapterMenuIdx.value = chapterMenuIdx.value === idx ? null : idx;
+}
+
+async function addChapter() {
+  if (!store.current) return;
+  const sections = store.current.sections.map(s => ({
+    _id: s._id, title: s.title, order: s.order,
+    screens: s.screens.map(sc => ({ _id: sc._id, title: sc.title, order: sc.order })),
+  }));
+  sections.push({ title: `Chapitre ${sections.length + 1}`, order: sections.length, screens: [] } as any);
+  await store.updateStructure(store.current._id, sections);
+  await store.fetchModule(moduleId);
+  expandedSections.value.add(sections.length - 1);
+}
+
+async function renameChapter(idx: number) {
+  chapterMenuIdx.value = null;
+  const section = store.current?.sections[idx];
+  if (!section) return;
+  const newName = prompt('Nouveau nom du chapitre :', section.title);
+  if (!newName || !newName.trim() || !store.current) return;
+  const sections = store.current.sections.map((s, i) => ({
+    _id: s._id, title: i === idx ? newName.trim() : s.title, order: s.order,
+    screens: s.screens.map(sc => ({ _id: sc._id, title: sc.title, order: sc.order })),
+  }));
+  await store.updateStructure(store.current._id, sections);
+  await store.fetchModule(moduleId);
+  if (store.currentScreen?.sectionTitle === section.title) {
+    await store.fetchScreen(moduleId, screenId);
+  }
+}
+
+async function moveChapter(idx: number, dir: number) {
+  chapterMenuIdx.value = null;
+  if (!store.current) return;
+  const sections = store.current.sections.map(s => ({
+    _id: s._id, title: s.title, order: s.order,
+    screens: s.screens.map(sc => ({ _id: sc._id, title: sc.title, order: sc.order })),
+  }));
+  const target = idx + dir;
+  const temp = sections[idx];
+  sections[idx] = sections[target];
+  sections[target] = temp;
+  sections.forEach((s, i) => { s.order = i; });
+  await store.updateStructure(store.current._id, sections);
+  await store.fetchModule(moduleId);
+}
+
+async function deleteChapter(idx: number) {
+  chapterMenuIdx.value = null;
+  if (!store.current) return;
+  const section = store.current.sections[idx];
+  if (!confirm(`Supprimer le chapitre "${section.title}" et tous ses ecrans ?`)) return;
+  const sections = store.current.sections
+    .filter((_, i) => i !== idx)
+    .map((s, i) => ({
+      _id: s._id, title: s.title, order: i,
+      screens: s.screens.map(sc => ({ _id: sc._id, title: sc.title, order: sc.order })),
+    }));
+  await store.updateStructure(store.current._id, sections);
+  await store.fetchModule(moduleId);
+  // Si on etait dans ce chapitre, naviguer ailleurs
+  if (store.currentScreen?.sectionTitle === section.title) {
+    const first = store.current?.sections?.[0]?.screens?.[0];
+    if (first?._id) navigateTo(`/admin/modules/${moduleId}/screens/${first._id}`);
+    else navigateTo(`/admin/modules/${moduleId}/structure`);
+  }
+}
+
+async function addScreenToSectionIdx(secIdx: number) {
+  chapterMenuIdx.value = null;
+  if (!store.current) return;
+  const sections = store.current.sections.map(s => ({
+    _id: s._id, title: s.title, order: s.order,
+    screens: s.screens.map(sc => ({ _id: sc._id, title: sc.title, order: sc.order })),
+  }));
+  sections[secIdx].screens.push({ title: `Ecran ${sections[secIdx].screens.length + 1}`, order: sections[secIdx].screens.length } as any);
+  await store.updateStructure(store.current._id, sections);
+  await store.fetchModule(moduleId);
+  expandedSections.value.add(secIdx);
+}
 
 // --- Gestion des ecrans dans la sidebar ---
 const screenMenuId = ref<string | null>(null);
