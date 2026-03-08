@@ -290,7 +290,7 @@ router.put('/:id/screens/:screenId/content', async (req, res, next) => {
     const validTypes = [
       'text', 'media', 'quiz',
       'heading', 'separator', 'image', 'text_image', 'video', 'audio', 'pdf', 'embed',
-      'true_false', 'numeric', 'fill_blank', 'matching', 'sequence', 'likert',
+      'true_false', 'numeric', 'fill_blank', 'matching', 'sequence', 'likert', 'open_answer',
     ];
     for (let i = 0; i < contentBlocks.length; i++) {
       const block = contentBlocks[i];
