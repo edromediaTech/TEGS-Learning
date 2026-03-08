@@ -14,6 +14,7 @@ const cmi5Routes = require('./routes/cmi5');
 const shareRoutes = require('./routes/share');
 const uploadRoutes = require('./routes/upload');
 const syncRoutes = require('./routes/sync');
+const analyticsRoutes = require('./routes/analytics');
 
 const path = require('path');
 
@@ -53,6 +54,7 @@ app.use('/api/cmi5', cmi5Routes);
 app.use('/api/share', shareRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/sync', syncRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // --- Gestion d'erreurs globale ---
 app.use((err, _req, res, _next) => {
