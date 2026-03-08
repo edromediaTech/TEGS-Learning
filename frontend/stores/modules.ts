@@ -3,7 +3,8 @@ import { defineStore } from 'pinia';
 export type BlockType =
   | 'text' | 'media' | 'quiz'
   | 'heading' | 'separator' | 'image' | 'text_image' | 'video' | 'audio' | 'pdf' | 'embed'
-  | 'true_false' | 'numeric' | 'fill_blank' | 'matching' | 'sequence' | 'likert';
+  | 'true_false' | 'numeric' | 'fill_blank' | 'matching' | 'sequence' | 'likert'
+  | 'open_answer';
 
 export interface ContentBlock {
   _id?: string;

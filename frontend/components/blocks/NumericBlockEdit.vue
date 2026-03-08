@@ -45,6 +45,17 @@
         />
       </div>
     </div>
+    <!-- Points & Duree -->
+    <div class="flex gap-3 border-t border-gray-200 pt-3">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Points</label>
+        <input :value="modelValue.points || 1" @input="update('points', Math.max(0, parseInt(($event.target as HTMLInputElement).value) || 1))" type="number" min="0" class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Duree (min)</label>
+        <input :value="modelValue.duration || ''" @input="update('duration', parseInt(($event.target as HTMLInputElement).value) || 0)" type="number" min="0" placeholder="--" class="w-20 px-2 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500" />
+      </div>
+    </div>
     <div>
       <label class="block text-sm font-medium text-gray-700 mb-1">Explication (optionnel)</label>
       <textarea

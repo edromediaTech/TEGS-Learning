@@ -9,7 +9,7 @@ RUN npm ci
 COPY . .
 
 # Build args for API URL (injected at build time)
-ARG NUXT_PUBLIC_API_BASE=http://localhost:3000/api
+ARG NUXT_PUBLIC_API_BASE=https://tegs-backend-746425674533.us-central1.run.app/api
 ENV NUXT_PUBLIC_API_BASE=${NUXT_PUBLIC_API_BASE}
 
 RUN npm run build

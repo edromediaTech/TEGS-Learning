@@ -59,30 +59,41 @@ export const useAuthStore = defineStore('auth', {
       const token = useCookie('auth_token').value;
       if (!token) return;
 
-      // Cote SSR: faire confiance au token cookie, ne pas appeler le backend
-      // Le backend sera verifie cote client apres hydration
+      // Decoder le JWT pour obtenir les infos de base (fonctionne SSR + client)
+      const decodeToken = (t: string) => {
+        try {
+          const payload = JSON.parse(atob(t.split('.')[1]));
+          return {
+            id: payload.id || payload.sub || '',
+            role: payload.role || '',
+            tenant_id: payload.tenant_id || '',
+            email: payload.email || '',
+            firstName: payload.firstName || '',
+            lastName: payload.lastName || '',
+          };
+        } catch {
+          return null;
+        }
+      };
+
+      // SSR: decoder le token, pas d'appel backend
       if (import.meta.server) {
         this.token = token;
         this.tenant_id = useCookie('tenant_id').value || null;
-        // Decoder le JWT pour obtenir les infos minimales (role, id)
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          this.user = {
-            id: payload.id,
-            role: payload.role,
-            tenant_id: payload.tenant_id,
-            email: '',
-            firstName: '',
-            lastName: '',
-          };
-        } catch {
-          // Token invalide, on ignore cote SSR
-          this.token = token; // garder le token, le client verifiera
-        }
+        const decoded = decodeToken(token);
+        if (decoded) this.user = decoded;
         return;
       }
 
-      // Cote client: verifier le token avec le backend
+      // Client: d'abord restaurer depuis le JWT pour eviter le flash de login
+      if (!this.token) {
+        this.token = token;
+        this.tenant_id = useCookie('tenant_id').value || null;
+        const decoded = decodeToken(token);
+        if (decoded) this.user = decoded;
+      }
+
+      // Puis verifier avec le backend en arriere-plan (non-bloquant)
       const config = useRuntimeConfig();
       try {
         const res = await $fetch<any>(`${config.public.apiBase}/auth/me`, {
@@ -91,8 +102,12 @@ export const useAuthStore = defineStore('auth', {
         this.user = res.user;
         this.token = token;
         this.tenant_id = res.user.tenant_id;
-      } catch {
-        this.logout();
+      } catch (err: any) {
+        // Seulement logout si le token est explicitement rejete (401)
+        if (err?.response?.status === 401 || err?.status === 401) {
+          this.logout();
+        }
+        // Sinon (erreur reseau, 500, etc.) : garder la session JWT
       }
     },
 

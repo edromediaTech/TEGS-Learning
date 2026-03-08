@@ -142,7 +142,7 @@ function renderBlock(block, theme) {
       const qid = `quiz_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
       const correctIdx = (d.options || []).findIndex(o => o.isCorrect);
       return `<div id="${qid}" style="background:${theme.cardBg};border:1px solid #dbeafe;border-radius:8px;padding:20px;margin:16px 0">
-        <span style="background:#2563eb;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">QCM</span>
+        <div style="display:flex;align-items:center;justify-content:space-between"><span style="background:#2563eb;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">QCM</span><div style="display:flex;gap:8px;font-size:11px;color:#6b7280">${d.points ? `<span style="background:#dbeafe;color:#1d4ed8;padding:2px 6px;border-radius:4px">${d.points} pt${d.points > 1 ? 's' : ''}</span>` : ''}${d.duration ? `<span style="background:#f3f4f6;padding:2px 6px;border-radius:4px">${d.duration} min</span>` : ''}</div></div>
         <p style="font-weight:600;margin:12px 0">${escapeHtml(d.question)}</p>
         ${(d.options || []).map((o, i) => `<div onclick="quizSelect('${qid}',${i},${correctIdx})" style="padding:10px 16px;margin:4px 0;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;cursor:pointer;transition:all 0.2s" class="quiz-opt" onmouseover="if(!this.parentNode.dataset.answered)this.style.background='#eff6ff';this.style.borderColor='#93c5fd'" onmouseout="if(!this.parentNode.dataset.answered){this.style.background='';this.style.borderColor='#e5e7eb'}"><strong>${String.fromCharCode(65 + i)}.</strong> ${escapeHtml(o.text)}</div>`).join('')}
         <div class="quiz-result" style="display:none;margin-top:12px;padding:12px;border-radius:8px;font-size:14px"></div>
@@ -216,6 +216,28 @@ function renderBlock(block, theme) {
         <div style="display:flex;justify-content:space-between;gap:4px;text-align:center">
           ${[1,2,3,4,5].map((n, i) => `<div onclick="likertSelect('${lid}',this)" style="flex:1;padding:12px 4px;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;transition:all 0.2s" onmouseover="if(!this.dataset.selected)this.style.background='#fce7f3'" onmouseout="if(!this.dataset.selected)this.style.background=''"><div style="font-size:16px;font-weight:bold">${n}</div><div style="font-size:10px;color:#6b7280;margin-top:4px">${scaleLabels[i]}</div></div>`).join('')}
         </div>
+      </div>`;
+    }
+    case 'open_answer': {
+      const oaid = `oa_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const autoGrade = d.autoGrade === true;
+      const answer = d.answer || '';
+      const maxWords = d.maxWords || 0;
+      return `<div id="${oaid}" style="background:#ecfeff;border:1px solid #a5f3fc;border-radius:8px;padding:20px;margin:16px 0">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span style="background:#0891b2;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">REPONSE COURTE</span>
+          <div style="display:flex;gap:8px;font-size:11px;color:#6b7280">
+            ${d.points ? `<span style="background:#cffafe;color:#0e7490;padding:2px 6px;border-radius:4px">${d.points} pt${d.points > 1 ? 's' : ''}</span>` : ''}
+            ${d.duration ? `<span style="background:#f3f4f6;padding:2px 6px;border-radius:4px">${d.duration} min</span>` : ''}
+          </div>
+        </div>
+        <p style="font-weight:600;margin:0 0 12px">${escapeHtml(d.question)}</p>
+        <textarea class="oa-input" rows="${d.rows || 3}" placeholder="${maxWords ? 'Reponse (max ' + maxWords + ' mots)...' : 'Votre reponse...'}" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;resize:none;font-family:inherit"></textarea>
+        ${maxWords ? `<div class="oa-wordcount" style="text-align:right;font-size:11px;color:#9ca3af;margin-top:4px">0 / ${maxWords} mots</div>` : ''}
+        <button onclick="oaCheck('${oaid}',${autoGrade ? 'true' : 'false'},${JSON.stringify(escapeHtml(answer))},${maxWords})" style="margin-top:8px;padding:8px 16px;background:#0891b2;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">Valider</button>
+        <div class="quiz-result" style="display:none;margin-top:12px;padding:12px;border-radius:8px;font-size:14px"></div>
+        ${d.explanation ? `<p class="quiz-explanation" style="display:none;margin-top:8px;font-size:13px;color:#6b7280;font-style:italic">${escapeHtml(d.explanation)}</p>` : ''}
+        <button onclick="oaReset('${oaid}')" class="quiz-retry" style="display:none;margin-top:8px;font-size:13px;color:#0891b2;background:none;border:none;cursor:pointer">Recommencer</button>
       </div>`;
     }
     default:
@@ -436,6 +458,57 @@ router.get('/public/:shareToken', async (req, res, next) => {
       var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'none';
       el.querySelector('.quiz-retry').style.display = 'none';
     }
+
+    // Open Answer interactivity
+    function oaCheck(id, autoGrade, answer, maxWords) {
+      var el = document.getElementById(id);
+      if (el.dataset.answered) return;
+      var ta = el.querySelector('.oa-input');
+      var val = (ta.value || '').trim();
+      if (!val) return;
+      if (maxWords > 0) {
+        var wc = val.split(/\\s+/).length;
+        if (wc > maxWords) return;
+      }
+      el.dataset.answered = '1';
+      ta.disabled = true;
+      var result = el.querySelector('.quiz-result');
+      result.style.display = 'block';
+      if (autoGrade) {
+        var correct = val.toLowerCase() === answer.toLowerCase();
+        if (correct) { result.style.background = '#dcfce7'; result.style.color = '#166534'; result.textContent = 'Bonne reponse !'; }
+        else { result.style.background = '#fee2e2'; result.style.color = '#991b1b'; result.innerHTML = 'Mauvaise reponse. Reponse attendue : <strong>' + answer + '</strong>'; }
+      } else {
+        result.style.background = '#dbeafe'; result.style.color = '#1e40af'; result.textContent = 'Reponse enregistree. Cette question sera evaluee manuellement.';
+      }
+      var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'block';
+      var retry = el.querySelector('.quiz-retry'); if (retry) retry.style.display = 'inline-block';
+    }
+    function oaReset(id) {
+      var el = document.getElementById(id);
+      delete el.dataset.answered;
+      var ta = el.querySelector('.oa-input');
+      ta.value = ''; ta.disabled = false;
+      el.querySelector('.quiz-result').style.display = 'none';
+      var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'none';
+      el.querySelector('.quiz-retry').style.display = 'none';
+      var wc = el.querySelector('.oa-wordcount'); if (wc) wc.textContent = '0 / ' + wc.textContent.split('/')[1].trim();
+    }
+
+    // Word count for open answer textareas
+    document.addEventListener('input', function(e) {
+      if (e.target.classList && e.target.classList.contains('oa-input')) {
+        var parent = e.target.closest('[id]');
+        var wc = parent ? parent.querySelector('.oa-wordcount') : null;
+        if (wc) {
+          var val = (e.target.value || '').trim();
+          var count = val ? val.split(/\\s+/).length : 0;
+          var max = wc.textContent.split('/')[1].trim().split(' ')[0];
+          wc.textContent = count + ' / ' + max + ' mots';
+          wc.style.color = count > parseInt(max) ? '#ef4444' : '#9ca3af';
+        }
+      }
+    });
 
     // Likert interactivity
     function likertSelect(id, clicked) {

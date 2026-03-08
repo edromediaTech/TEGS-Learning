@@ -333,6 +333,7 @@
                   <BlocksMatchingBlockEdit v-if="block.type === 'matching'" v-model="block.data" />
                   <BlocksSequenceBlockEdit v-if="block.type === 'sequence'" v-model="block.data" />
                   <BlocksLikertBlockEdit v-if="block.type === 'likert'" v-model="block.data" />
+                  <BlocksOpenAnswerBlockEdit v-if="block.type === 'open_answer'" v-model="block.data" />
                 </div>
               </div>
 
@@ -474,6 +475,7 @@
                   <BlocksMatchingBlockPreview v-if="block.type === 'matching'" :data="block.data" />
                   <BlocksSequenceBlockPreview v-if="block.type === 'sequence'" :data="block.data" />
                   <BlocksLikertBlockPreview v-if="block.type === 'likert'" :data="block.data" />
+                  <BlocksOpenAnswerBlockPreview v-if="block.type === 'open_answer'" :data="block.data" />
                 </div>
               </div>
             </div>
@@ -573,6 +575,7 @@ const questionBlocks = [
   { type: 'matching' as BlockType, icon: '\u21C4', label: 'Appariement' },
   { type: 'sequence' as BlockType, icon: '1\u20262\u20263', label: 'Sequence' },
   { type: 'likert' as BlockType, icon: '\u2605', label: 'Likert' },
+  { type: 'open_answer' as BlockType, icon: '\u270D', label: 'Reponse courte' },
 ];
 
 // Toutes les sections du module (arborescence complete)
@@ -886,6 +889,7 @@ function defaultData(type: string): any {
     matching: { instruction: '', pairs: [{ left: '', right: '' }, { left: '', right: '' }], explanation: '' },
     sequence: { instruction: '', items: ['', '', ''], explanation: '' },
     likert: { question: '', scale: 'agreement' },
+    open_answer: { question: '', answer: '', autoGrade: false, maxWords: 0, rows: 3, points: 1, duration: 0, explanation: '' },
   };
   return defaults[type] || {};
 }
@@ -928,7 +932,7 @@ function blockTypeLabel(type: string) {
     text_image: 'TEXTE + IMAGE', video: 'VIDEO', audio: 'AUDIO',
     pdf: 'PDF', embed: 'EMBED',
     true_false: 'VRAI/FAUX', numeric: 'NUMERIQUE', fill_blank: 'TEXTE A TROUS',
-    matching: 'APPARIEMENT', sequence: 'SEQUENCE', likert: 'LIKERT',
+    matching: 'APPARIEMENT', sequence: 'SEQUENCE', likert: 'LIKERT', open_answer: 'REPONSE COURTE',
   };
   return labels[type] || type.toUpperCase();
 }
@@ -952,6 +956,7 @@ function blockTypeClass(type: string) {
     matching: 'bg-violet-100 text-violet-700',
     sequence: 'bg-orange-100 text-orange-700',
     likert: 'bg-pink-100 text-pink-700',
+    open_answer: 'bg-cyan-100 text-cyan-700',
   };
   return classes[type] || 'bg-gray-100 text-gray-700';
 }
