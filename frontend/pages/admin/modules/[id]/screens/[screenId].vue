@@ -160,21 +160,91 @@
         <div v-if="mode === 'edit'" class="flex flex-1 overflow-hidden mt-2">
           <!-- COLONNE GAUCHE : Liste des slides -->
           <div class="w-56 bg-gray-50 border-r border-gray-200 flex flex-col flex-shrink-0">
-            <div class="px-3 py-2 border-b border-gray-200">
-              <p class="text-xs font-bold text-gray-500 uppercase">{{ store.currentScreen.sectionTitle }}</p>
+            <div class="px-3 py-2 border-b border-gray-200 flex items-center justify-between">
+              <p class="text-xs font-bold text-gray-500 uppercase truncate">{{ store.currentScreen.sectionTitle }}</p>
+              <button
+                @click="addScreenToSection"
+                class="text-primary-600 hover:text-primary-800 text-lg leading-none"
+                title="Ajouter un ecran"
+              >+</button>
             </div>
             <div class="flex-1 overflow-y-auto p-2 space-y-1">
-              <NuxtLink
-                v-for="screen in sectionScreens"
+              <div
+                v-for="(screen, sIdx) in sectionScreens"
                 :key="screen._id"
-                :to="`/admin/modules/${moduleId}/screens/${screen._id}`"
-                class="block px-3 py-2 rounded-lg text-sm transition truncate"
-                :class="screen._id === screenId
-                  ? 'bg-primary-100 text-primary-800 font-medium border border-primary-300'
-                  : 'text-gray-600 hover:bg-gray-100'"
+                class="group relative"
               >
-                {{ screen.title }}
-              </NuxtLink>
+                <!-- Renommage en cours -->
+                <div v-if="renamingScreenId === screen._id" class="flex items-center space-x-1">
+                  <input
+                    v-model="renameValue"
+                    @keyup.enter="confirmRename(screen._id!)"
+                    @blur="confirmRename(screen._id!)"
+                    @keyup.escape="renamingScreenId = null"
+                    class="flex-1 px-2 py-1.5 border border-primary-300 rounded text-xs focus:ring-1 focus:ring-primary-500"
+                    ref="renameInput"
+                  />
+                </div>
+
+                <!-- Lien normal -->
+                <NuxtLink
+                  v-else
+                  :to="`/admin/modules/${moduleId}/screens/${screen._id}`"
+                  class="block px-3 py-2 rounded-lg text-sm transition truncate pr-8"
+                  :class="screen._id === screenId
+                    ? 'bg-primary-100 text-primary-800 font-medium border border-primary-300'
+                    : 'text-gray-600 hover:bg-gray-100'"
+                >
+                  <span class="text-[10px] text-gray-400 mr-1">{{ sIdx + 1 }}.</span>
+                  {{ screen.title }}
+                </NuxtLink>
+
+                <!-- Menu contextuel (hover) -->
+                <div
+                  v-if="renamingScreenId !== screen._id"
+                  class="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition"
+                >
+                  <button
+                    @click.prevent="openScreenMenu(screen._id!)"
+                    class="text-gray-400 hover:text-gray-600 px-1 text-xs"
+                  >&#8942;</button>
+                </div>
+
+                <!-- Dropdown menu -->
+                <div
+                  v-if="screenMenuId === screen._id"
+                  class="absolute right-0 top-full z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-36"
+                >
+                  <button @click="startRename(screen)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">
+                    Renommer
+                  </button>
+                  <button @click="duplicateScreen(screen)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">
+                    Dupliquer
+                  </button>
+                  <template v-if="sectionScreens.length > 1">
+                    <button v-if="sIdx > 0" @click="moveScreenInSection(sIdx, -1)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">
+                      Monter
+                    </button>
+                    <button v-if="sIdx < sectionScreens.length - 1" @click="moveScreenInSection(sIdx, 1)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">
+                      Descendre
+                    </button>
+                  </template>
+                  <hr class="my-1 border-gray-100" />
+                  <button @click="deleteScreen(screen._id!)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-red-50 text-red-600">
+                    Supprimer
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bouton ajouter en bas -->
+            <div class="p-2 border-t border-gray-200">
+              <button
+                @click="addScreenToSection"
+                class="w-full text-xs border border-dashed border-gray-300 text-gray-400 py-2 rounded-lg hover:border-primary-400 hover:text-primary-600 transition"
+              >
+                + Nouvel ecran
+              </button>
             </div>
           </div>
 
@@ -486,6 +556,171 @@ const sectionScreens = computed(() => {
   const section = store.current.sections.find(s => s.title === sectionTitle);
   return section?.screens || [];
 });
+
+// --- Gestion des ecrans dans la sidebar ---
+const screenMenuId = ref<string | null>(null);
+const renamingScreenId = ref<string | null>(null);
+const renameValue = ref('');
+
+// Fermer le menu au clic ailleurs
+function onDocClick(e: Event) {
+  if (screenMenuId.value && !(e.target as HTMLElement).closest('[data-screen-menu]')) {
+    screenMenuId.value = null;
+  }
+}
+onMounted(() => document.addEventListener('click', onDocClick));
+onUnmounted(() => document.removeEventListener('click', onDocClick));
+
+function openScreenMenu(id: string) {
+  screenMenuId.value = screenMenuId.value === id ? null : id;
+}
+
+function startRename(screen: any) {
+  screenMenuId.value = null;
+  renamingScreenId.value = screen._id;
+  renameValue.value = screen.title;
+  nextTick(() => {
+    const input = document.querySelector('input[ref="renameInput"]') as HTMLInputElement;
+    input?.focus();
+  });
+}
+
+async function confirmRename(id: string) {
+  if (!renameValue.value.trim() || !store.current) {
+    renamingScreenId.value = null;
+    return;
+  }
+  // Mettre a jour la structure avec le nouveau titre
+  const sections = store.current.sections.map(s => ({
+    _id: s._id,
+    title: s.title,
+    order: s.order,
+    screens: s.screens.map(sc => ({
+      _id: sc._id,
+      title: sc._id === id ? renameValue.value.trim() : sc.title,
+      order: sc.order,
+    })),
+  }));
+  await store.updateStructure(store.current._id, sections);
+  await store.fetchModule(moduleId);
+  if (id === screenId) {
+    await store.fetchScreen(moduleId, screenId);
+  }
+  renamingScreenId.value = null;
+}
+
+function getCurrentSection() {
+  if (!store.current?.sections) return null;
+  const sectionTitle = store.currentScreen?.sectionTitle;
+  return store.current.sections.find(s => s.title === sectionTitle) || null;
+}
+
+async function addScreenToSection() {
+  if (!store.current) return;
+  const section = getCurrentSection();
+  if (!section) return;
+  const sections = store.current.sections.map(s => ({
+    _id: s._id,
+    title: s.title,
+    order: s.order,
+    screens: s.screens.map(sc => ({ _id: sc._id, title: sc.title, order: sc.order })),
+  }));
+  const target = sections.find(s => s._id === section._id);
+  if (target) {
+    target.screens.push({ title: `Ecran ${target.screens.length + 1}`, order: target.screens.length } as any);
+  }
+  await store.updateStructure(store.current._id, sections);
+  await store.fetchModule(moduleId);
+}
+
+async function deleteScreen(id: string) {
+  if (!store.current) return;
+  if (sectionScreens.value.length <= 1) {
+    alert('Impossible de supprimer le dernier ecran. Supprimez le chapitre depuis la page Structure.');
+    return;
+  }
+  if (!confirm('Supprimer cet ecran et tout son contenu ?')) return;
+  const sections = store.current.sections.map(s => ({
+    _id: s._id,
+    title: s.title,
+    order: s.order,
+    screens: s.screens
+      .filter(sc => sc._id !== id)
+      .map((sc, i) => ({ _id: sc._id, title: sc.title, order: i })),
+  }));
+  await store.updateStructure(store.current._id, sections);
+  await store.fetchModule(moduleId);
+  screenMenuId.value = null;
+  // Si on a supprime l'ecran actuel, naviguer vers le premier ecran restant
+  if (id === screenId) {
+    const remaining = getCurrentSection()?.screens;
+    if (remaining?.length) {
+      navigateTo(`/admin/modules/${moduleId}/screens/${remaining[0]._id}`);
+    } else {
+      navigateTo(`/admin/modules/${moduleId}/structure`);
+    }
+  }
+}
+
+async function duplicateScreen(screen: any) {
+  if (!store.current) return;
+  screenMenuId.value = null;
+  // Recuperer le contenu de l'ecran source
+  await store.fetchScreen(moduleId, screen._id);
+  const sourceBlocks = store.currentScreen?.screen?.contentBlocks || [];
+
+  // Ajouter l'ecran dans la structure
+  const sections = store.current.sections.map(s => ({
+    _id: s._id,
+    title: s.title,
+    order: s.order,
+    screens: s.screens.map(sc => ({ _id: sc._id, title: sc.title, order: sc.order })),
+  }));
+  const section = sections.find(s => s.title === store.currentScreen?.sectionTitle);
+  if (!section) return;
+  const srcIdx = section.screens.findIndex(sc => sc._id === screen._id);
+  section.screens.splice(srcIdx + 1, 0, { title: `${screen.title} (copie)`, order: srcIdx + 1 } as any);
+  section.screens.forEach((sc, i) => { sc.order = i; });
+
+  await store.updateStructure(store.current._id, sections);
+  await store.fetchModule(moduleId);
+
+  // Copier le contenu vers le nouvel ecran
+  const updatedSection = store.current!.sections.find(s => s._id === section._id);
+  const newScreen = updatedSection?.screens[srcIdx + 1];
+  if (newScreen?._id && sourceBlocks.length > 0) {
+    const blocksCopy = sourceBlocks.map((b, i) => ({
+      type: b.type,
+      order: i,
+      data: JSON.parse(JSON.stringify(b.data)),
+    }));
+    await store.saveScreenContent(moduleId, newScreen._id!, blocksCopy);
+  }
+
+  // Recharger l'ecran actuel
+  await store.fetchScreen(moduleId, screenId);
+  loadBlocks();
+}
+
+async function moveScreenInSection(currentIdx: number, dir: number) {
+  if (!store.current) return;
+  screenMenuId.value = null;
+  const sections = store.current.sections.map(s => ({
+    _id: s._id,
+    title: s.title,
+    order: s.order,
+    screens: s.screens.map(sc => ({ _id: sc._id, title: sc.title, order: sc.order })),
+  }));
+  const section = sections.find(s => s.title === store.currentScreen?.sectionTitle);
+  if (!section) return;
+  const targetIdx = currentIdx + dir;
+  const temp = section.screens[currentIdx];
+  section.screens[currentIdx] = section.screens[targetIdx];
+  section.screens[targetIdx] = temp;
+  section.screens.forEach((sc, i) => { sc.order = i; });
+  await store.updateStructure(store.current._id, sections);
+  await store.fetchModule(moduleId);
+}
 
 const sortedBlocks = computed(() =>
   [...blocks.value].sort((a, b) => a.order - b.order)
