@@ -9,58 +9,45 @@
         </label>
       </div>
 
-      <!-- Filtres -->
-      <div class="flex items-center space-x-3 mb-6">
-        <button
-          v-for="f in filters"
-          :key="f.value"
-          @click="activeFilter = f.value"
-          class="px-3 py-1.5 rounded-lg text-xs font-medium transition"
-          :class="activeFilter === f.value ? 'bg-primary-100 text-primary-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-        >
-          {{ f.label }}
-        </button>
-      </div>
-
       <!-- Upload progress -->
       <div v-if="uploading" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
         Import en cours...
+      </div>
+      <div v-if="uploadError" class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        {{ uploadError }}
       </div>
 
       <!-- Grille medias -->
       <div v-if="loading" class="text-center py-12 text-gray-500">Chargement...</div>
 
-      <div v-else-if="filteredItems.length === 0" class="text-center py-16 text-gray-400">
+      <div v-else-if="items.length === 0" class="text-center py-16 text-gray-400">
         <p class="text-lg mb-2">Aucun media</p>
         <p class="text-sm">Importez des fichiers pour alimenter votre mediatheque</p>
       </div>
 
       <div v-else class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
         <div
-          v-for="item in filteredItems"
-          :key="item._id"
+          v-for="(item, idx) in items"
+          :key="idx"
           class="bg-white border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition group"
         >
           <!-- Apercu -->
           <div class="aspect-square bg-gray-100 flex items-center justify-center relative">
-            <img v-if="item.mimetype?.startsWith('image/')" :src="item.url" :alt="item.filename" class="w-full h-full object-cover" />
-            <span v-else-if="item.mimetype?.startsWith('video/')" class="text-3xl text-gray-400">&#9654;</span>
-            <span v-else-if="item.mimetype?.startsWith('audio/')" class="text-3xl text-gray-400">&#9835;</span>
-            <span v-else class="text-3xl text-gray-400">&#128196;</span>
+            <img :src="item.url" :alt="item.filename" class="w-full h-full object-cover" />
 
             <!-- Overlay actions -->
             <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center space-x-2">
               <button @click="copyUrl(item.url)" class="px-3 py-1 bg-white text-gray-800 rounded-lg text-xs font-medium">
-                Copier URL
+                {{ copiedIdx === idx ? 'Copie !' : 'Copier URL' }}
               </button>
-              <button @click="deleteItem(item._id)" class="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-medium">
+              <button @click="deleteItem(item)" class="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-medium">
                 Supprimer
               </button>
             </div>
           </div>
           <div class="p-2">
             <p class="text-xs text-gray-700 truncate font-medium">{{ item.filename }}</p>
-            <p class="text-[10px] text-gray-400">{{ formatSize(item.size) }}</p>
+            <p class="text-[10px] text-gray-400">{{ formatSize(item.size) }} &middot; {{ item.storage === 'gcp' ? 'Cloud' : 'Local' }}</p>
           </div>
         </div>
       </div>
@@ -75,33 +62,18 @@ const config = useRuntimeConfig();
 const apiBase = config.public.apiBase;
 
 interface MediaItem {
-  _id: string;
   filename: string;
   url: string;
-  mimetype: string;
   size: number;
+  storage: string;
+  gcsPath?: string;
 }
 
 const items = ref<MediaItem[]>([]);
 const loading = ref(true);
 const uploading = ref(false);
-const activeFilter = ref('all');
-
-const filters = [
-  { value: 'all', label: 'Tous' },
-  { value: 'image', label: 'Images' },
-  { value: 'video', label: 'Videos' },
-  { value: 'audio', label: 'Audio' },
-  { value: 'other', label: 'Documents' },
-];
-
-const filteredItems = computed(() => {
-  if (activeFilter.value === 'all') return items.value;
-  if (activeFilter.value === 'other') {
-    return items.value.filter(i => !['image/', 'video/', 'audio/'].some(t => i.mimetype?.startsWith(t)));
-  }
-  return items.value.filter(i => i.mimetype?.startsWith(activeFilter.value + '/'));
-});
+const uploadError = ref('');
+const copiedIdx = ref<number | null>(null);
 
 function getHeaders() {
   const token = useCookie('auth_token').value;
@@ -112,7 +84,7 @@ async function fetchLibrary() {
   loading.value = true;
   try {
     const res = await $fetch<any>(`${apiBase}/upload/library`, { headers: getHeaders() });
-    items.value = res.files || [];
+    items.value = res.images || [];
   } catch {
     items.value = [];
   } finally {
@@ -124,30 +96,34 @@ async function uploadFile(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0];
   if (!file) return;
   uploading.value = true;
+  uploadError.value = '';
   try {
     const form = new FormData();
-    form.append('file', file);
-    await $fetch<any>(`${apiBase}/upload`, {
+    form.append('image', file);
+    await $fetch<any>(`${apiBase}/upload/image`, {
       method: 'POST',
       headers: { Authorization: getHeaders().Authorization },
       body: form,
     });
     await fetchLibrary();
-  } catch {
-    // handled
+  } catch (err: any) {
+    uploadError.value = err.data?.error || 'Erreur lors de l\'import';
   } finally {
     uploading.value = false;
+    // Reset input
+    (event.target as HTMLInputElement).value = '';
   }
 }
 
-async function deleteItem(id: string) {
+async function deleteItem(item: MediaItem) {
   if (!confirm('Supprimer ce fichier ?')) return;
   try {
-    await $fetch<any>(`${apiBase}/upload/${id}`, {
+    const query = item.gcsPath ? `?gcsPath=${encodeURIComponent(item.gcsPath)}` : '';
+    await $fetch<any>(`${apiBase}/upload/${encodeURIComponent(item.filename)}${query}`, {
       method: 'DELETE',
       headers: getHeaders(),
     });
-    items.value = items.value.filter(i => i._id !== id);
+    items.value = items.value.filter(i => i !== item);
   } catch {
     // handled
   }
@@ -155,6 +131,9 @@ async function deleteItem(id: string) {
 
 function copyUrl(url: string) {
   navigator.clipboard.writeText(url);
+  const idx = items.value.findIndex(i => i.url === url);
+  copiedIdx.value = idx;
+  setTimeout(() => { copiedIdx.value = null; }, 2000);
 }
 
 function formatSize(bytes: number) {
