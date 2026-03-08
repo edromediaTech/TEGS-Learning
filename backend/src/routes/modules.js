@@ -31,13 +31,19 @@ router.post(
 
       const { title, description, language, coverImage } = req.body;
 
+      // superadmin must specify tenant_id
+      const targetTenant = req.body.tenant_id || req.tenantId;
+      if (!targetTenant) {
+        return res.status(400).json({ error: 'tenant_id requis pour creer un module' });
+      }
+
       const mod = await Module.create({
         title,
         description: description || '',
         language: language || 'fr',
         coverImage: coverImage || '',
         sections: [],
-        tenant_id: req.tenantId,
+        tenant_id: targetTenant,
         created_by: req.user.id,
       });
 

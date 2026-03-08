@@ -112,7 +112,7 @@ export const useModulesStore = defineStore('modules', {
       }
     },
 
-    async createModule(data: { title: string; description?: string; language?: string }) {
+    async createModule(data: { title: string; description?: string; language?: string; tenant_id?: string }) {
       this.error = null;
       try {
         const res = await $fetch<any>(`${this._baseURL()}/modules`, {

@@ -127,6 +127,18 @@
           <!-- Etape 1 : Nom & Description -->
           <div v-if="wizardStep === 1" class="p-6 space-y-4">
             <h3 class="text-lg font-bold text-gray-900">Etape 1 : Chwazi non ak deskripsyon modil la</h3>
+            <!-- SuperAdmin: tenant selector -->
+            <div v-if="auth.isSuperAdmin">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Ecole *</label>
+              <select
+                v-model="createForm.tenant_id"
+                required
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              >
+                <option value="" disabled>Choisir une ecole</option>
+                <option v-for="t in tenantsList" :key="t._id" :value="t._id">{{ t.name }} ({{ t.code }})</option>
+              </select>
+            </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Titre du module *</label>
               <input
@@ -161,7 +173,7 @@
               <button @click="wizardStep = 0" class="px-4 py-2 text-gray-500 hover:text-gray-700">Annuler</button>
               <button
                 @click="wizardStep = 2"
-                :disabled="!createForm.title.trim()"
+                :disabled="!createForm.title.trim() || (auth.isSuperAdmin && !createForm.tenant_id)"
                 class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50 font-medium"
               >
                 Suivant &rarr;
@@ -275,9 +287,12 @@ definePageMeta({ middleware: 'auth' });
 
 const router = useRouter();
 const store = useModulesStore();
+const auth = useAuthStore();
+const { apiFetch } = useApi();
 const wizardStep = ref(0);
 const creating = ref(false);
 const moduleToDelete = ref<Module | null>(null);
+const tenantsList = ref<any[]>([]);
 
 const themes = [
   { id: 'ddene' as ThemeId, name: 'DDENE Officiel', primary: '#1e40af', headerBg: '#1e40af', bodyBg: '#f8fafc', bodyText: '#1e293b' },
@@ -299,6 +314,7 @@ const createForm = reactive({
   description: '',
   language: 'fr' as string,
   theme: 'ddene' as ThemeId,
+  tenant_id: '' as string,
 });
 
 function resetWizard() {
@@ -306,6 +322,7 @@ function resetWizard() {
   createForm.description = '';
   createForm.language = 'fr';
   createForm.theme = 'ddene';
+  createForm.tenant_id = '';
 }
 
 function countScreens(mod: Module) {
@@ -319,11 +336,15 @@ function confirmDelete(mod: Module) {
 async function handleCreate() {
   creating.value = true;
   try {
-    const mod = await store.createModule({
+    const body: any = {
       title: createForm.title,
       description: createForm.description,
       language: createForm.language,
-    });
+    };
+    if (auth.isSuperAdmin && createForm.tenant_id) {
+      body.tenant_id = createForm.tenant_id;
+    }
+    const mod = await store.createModule(body);
     // Appliquer le theme
     if (createForm.theme !== 'ddene') {
       await store.updateModule(mod._id, { theme: createForm.theme } as any);
@@ -348,7 +369,14 @@ async function handleDelete() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   store.fetchModules();
+  // Load tenants list for superadmin
+  if (auth.isSuperAdmin) {
+    try {
+      const res = await apiFetch('/tenants');
+      tenantsList.value = (res.data as any).tenants || [];
+    } catch {}
+  }
 });
 </script>
