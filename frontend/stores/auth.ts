@@ -56,10 +56,34 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async fetchMe() {
-      const config = useRuntimeConfig();
       const token = useCookie('auth_token').value;
       if (!token) return;
 
+      // Cote SSR: faire confiance au token cookie, ne pas appeler le backend
+      // Le backend sera verifie cote client apres hydration
+      if (import.meta.server) {
+        this.token = token;
+        this.tenant_id = useCookie('tenant_id').value || null;
+        // Decoder le JWT pour obtenir les infos minimales (role, id)
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          this.user = {
+            id: payload.id,
+            role: payload.role,
+            tenant_id: payload.tenant_id,
+            email: '',
+            firstName: '',
+            lastName: '',
+          };
+        } catch {
+          // Token invalide, on ignore cote SSR
+          this.token = token; // garder le token, le client verifiera
+        }
+        return;
+      }
+
+      // Cote client: verifier le token avec le backend
+      const config = useRuntimeConfig();
       try {
         const res = await $fetch<any>(`${config.public.apiBase}/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -68,10 +92,7 @@ export const useAuthStore = defineStore('auth', {
         this.token = token;
         this.tenant_id = res.user.tenant_id;
       } catch {
-        // Ne logout que cote client (pas SSR) pour eviter de perdre la session au refresh
-        if (import.meta.client) {
-          this.logout();
-        }
+        this.logout();
       }
     },
 
