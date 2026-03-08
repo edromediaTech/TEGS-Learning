@@ -13,6 +13,7 @@ const moduleRoutes = require('./routes/modules');
 const cmi5Routes = require('./routes/cmi5');
 const shareRoutes = require('./routes/share');
 const uploadRoutes = require('./routes/upload');
+const syncRoutes = require('./routes/sync');
 
 const path = require('path');
 
@@ -21,7 +22,7 @@ const app = express();
 // --- Middlewares globaux ---
 app.use(compression());
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '5mb' }));
 
 // --- Cache headers CDN pour fichiers statiques ---
 app.use('/public', express.static(path.join(__dirname, '..', 'public'), {
@@ -51,6 +52,7 @@ app.use('/api/modules', moduleRoutes);
 app.use('/api/cmi5', cmi5Routes);
 app.use('/api/share', shareRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/sync', syncRoutes);
 
 // --- Gestion d'erreurs globale ---
 app.use((err, _req, res, _next) => {
