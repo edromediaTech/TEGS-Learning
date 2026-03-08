@@ -90,8 +90,25 @@ function renderBlock(block, theme) {
       const sizes = { 1: '28px', 2: '22px', 3: '18px' };
       return `<h${level} style="font-size:${sizes[level]};font-weight:bold;margin:16px 0 8px;color:${theme.bodyText}">${escapeHtml(d.text)}</h${level}>`;
     }
-    case 'text':
+    case 'text': {
+      // Render HTML content (from WYSIWYG editor) while stripping dangerous tags
+      let textContent = d.content || '';
+      // Strip MSO/Word/Google markup
+      textContent = textContent
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/<\?xml[\s\S]*?\?>/gi, '')
+        .replace(/<\/?\w+:[^>]*>/gi, '')
+        .replace(/<script[\s>][\s\S]*?<\/script>/gi, '')
+        .replace(/<\/?(?:script|iframe|object|embed|form|input|button|link|meta|base)[^>]*>/gi, '')
+        .replace(/\bon\w+\s*=/gi, '')
+        .replace(/<\/?mark[^>]*>/gi, '')
+        .replace(/<span\s*>\s*([\s\S]*?)\s*<\/span>/gi, '$1');
+      const isHtml = /<[a-z][\s\S]*>/i.test(textContent);
+      if (isHtml) {
+        return `<div style="line-height:1.7;margin:12px 0">${textContent}</div>`;
+      }
       return `<div style="line-height:1.7;white-space:pre-wrap;margin:12px 0">${escapeHtml(d.content)}</div>`;
+    }
     case 'separator':
       if (d.style === 'space') return '<div style="height:32px"></div>';
       return `<hr style="border-style:${d.style || 'solid'};border-color:#d1d5db;margin:16px 0">`;
@@ -121,22 +138,86 @@ function renderBlock(block, theme) {
       if (!d.url) return '';
       if (d.mediaType === 'video') return `<video src="${escapeHtml(d.url)}" controls style="width:100%;border-radius:8px;margin:16px 0"></video>`;
       return `<img src="${escapeHtml(d.url)}" alt="${escapeHtml(d.caption)}" style="max-width:100%;border-radius:8px;margin:16px 0">`;
-    case 'quiz':
-      return `<div style="background:${theme.cardBg};border:1px solid #dbeafe;border-radius:8px;padding:20px;margin:16px 0"><span style="background:#2563eb;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">QCM</span><p style="font-weight:600;margin:12px 0">${escapeHtml(d.question)}</p>${(d.options || []).map((o, i) => `<div style="padding:8px 16px;margin:4px 0;border:1px solid #e5e7eb;border-radius:6px;font-size:14px"><strong>${String.fromCharCode(65 + i)}.</strong> ${escapeHtml(o.text)}</div>`).join('')}</div>`;
-    case 'true_false':
-      return `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:20px;margin:16px 0"><span style="background:#d97706;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">VRAI / FAUX</span><p style="font-weight:600;margin:12px 0">${escapeHtml(d.statement)}</p><div style="display:flex;gap:12px"><div style="flex:1;text-align:center;padding:12px;border:1px solid #e5e7eb;border-radius:6px;font-weight:600">Vrai</div><div style="flex:1;text-align:center;padding:12px;border:1px solid #e5e7eb;border-radius:6px;font-weight:600">Faux</div></div></div>`;
-    case 'numeric':
-      return `<div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:20px;margin:16px 0"><span style="background:#4f46e5;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">NUMERIQUE</span><p style="font-weight:600;margin:12px 0">${escapeHtml(d.question)}</p><div style="display:flex;align-items:center;gap:8px"><input type="number" placeholder="Reponse" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;width:150px" disabled>${d.unit ? `<span>${escapeHtml(d.unit)}</span>` : ''}</div></div>`;
+    case 'quiz': {
+      const qid = `quiz_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const correctIdx = (d.options || []).findIndex(o => o.isCorrect);
+      return `<div id="${qid}" style="background:${theme.cardBg};border:1px solid #dbeafe;border-radius:8px;padding:20px;margin:16px 0">
+        <span style="background:#2563eb;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">QCM</span>
+        <p style="font-weight:600;margin:12px 0">${escapeHtml(d.question)}</p>
+        ${(d.options || []).map((o, i) => `<div onclick="quizSelect('${qid}',${i},${correctIdx})" style="padding:10px 16px;margin:4px 0;border:1px solid #e5e7eb;border-radius:6px;font-size:14px;cursor:pointer;transition:all 0.2s" class="quiz-opt" onmouseover="if(!this.parentNode.dataset.answered)this.style.background='#eff6ff';this.style.borderColor='#93c5fd'" onmouseout="if(!this.parentNode.dataset.answered){this.style.background='';this.style.borderColor='#e5e7eb'}"><strong>${String.fromCharCode(65 + i)}.</strong> ${escapeHtml(o.text)}</div>`).join('')}
+        <div class="quiz-result" style="display:none;margin-top:12px;padding:12px;border-radius:8px;font-size:14px"></div>
+        ${d.explanation ? `<p class="quiz-explanation" style="display:none;margin-top:8px;font-size:13px;color:#6b7280;font-style:italic">${escapeHtml(d.explanation)}</p>` : ''}
+        <button onclick="quizReset('${qid}')" class="quiz-retry" style="display:none;margin-top:8px;font-size:13px;color:#2563eb;background:none;border:none;cursor:pointer">Recommencer</button>
+      </div>`;
+    }
+    case 'true_false': {
+      const tfid = `tf_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const ans = d.answer === true ? 'true' : 'false';
+      return `<div id="${tfid}" style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:20px;margin:16px 0">
+        <span style="background:#d97706;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">VRAI / FAUX</span>
+        <p style="font-weight:600;margin:12px 0">${escapeHtml(d.statement)}</p>
+        <div style="display:flex;gap:12px">
+          <div onclick="tfSelect('${tfid}','true','${ans}')" style="flex:1;text-align:center;padding:12px;border:1px solid #e5e7eb;border-radius:6px;font-weight:600;cursor:pointer;transition:all 0.2s" class="tf-btn" onmouseover="if(!this.parentNode.parentNode.dataset.answered)this.style.background='#fef3c7'" onmouseout="if(!this.parentNode.parentNode.dataset.answered)this.style.background=''">Vrai</div>
+          <div onclick="tfSelect('${tfid}','false','${ans}')" style="flex:1;text-align:center;padding:12px;border:1px solid #e5e7eb;border-radius:6px;font-weight:600;cursor:pointer;transition:all 0.2s" class="tf-btn" onmouseover="if(!this.parentNode.parentNode.dataset.answered)this.style.background='#fef3c7'" onmouseout="if(!this.parentNode.parentNode.dataset.answered)this.style.background=''">Faux</div>
+        </div>
+        <div class="quiz-result" style="display:none;margin-top:12px;padding:12px;border-radius:8px;font-size:14px"></div>
+        ${d.explanation ? `<p class="quiz-explanation" style="display:none;margin-top:8px;font-size:13px;color:#6b7280;font-style:italic">${escapeHtml(d.explanation)}</p>` : ''}
+        <button onclick="tfReset('${tfid}')" class="quiz-retry" style="display:none;margin-top:8px;font-size:13px;color:#d97706;background:none;border:none;cursor:pointer">Recommencer</button>
+      </div>`;
+    }
+    case 'numeric': {
+      const nid = `num_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const tolerance = d.tolerance || 0;
+      return `<div id="${nid}" style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;padding:20px;margin:16px 0">
+        <span style="background:#4f46e5;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">NUMERIQUE</span>
+        <p style="font-weight:600;margin:12px 0">${escapeHtml(d.question)}</p>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" step="any" placeholder="Votre reponse" class="num-input" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;width:150px;font-size:14px">
+          ${d.unit ? `<span style="font-size:14px">${escapeHtml(d.unit)}</span>` : ''}
+          <button onclick="numCheck('${nid}',${d.answer},${tolerance})" style="padding:8px 16px;background:#4f46e5;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">Valider</button>
+        </div>
+        <div class="quiz-result" style="display:none;margin-top:12px;padding:12px;border-radius:8px;font-size:14px"></div>
+        ${d.explanation ? `<p class="quiz-explanation" style="display:none;margin-top:8px;font-size:13px;color:#6b7280;font-style:italic">${escapeHtml(d.explanation)}</p>` : ''}
+        <button onclick="numReset('${nid}')" class="quiz-retry" style="display:none;margin-top:8px;font-size:13px;color:#4f46e5;background:none;border:none;cursor:pointer">Recommencer</button>
+      </div>`;
+    }
     case 'fill_blank': {
-      const rendered = escapeHtml(d.text || '').replace(/\{\{(.+?)\}\}/g, '<span style="display:inline-block;border-bottom:2px solid #0d9488;width:80px;text-align:center;margin:0 4px">___</span>');
-      return `<div style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:20px;margin:16px 0"><span style="background:#0d9488;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">TEXTE A TROUS</span><div style="line-height:2;margin-top:12px">${rendered}</div></div>`;
+      const fbid = `fb_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const blanks = [];
+      const rawText = d.text || '';
+      const regex = /\{\{(.+?)\}\}/g;
+      let m;
+      while ((m = regex.exec(rawText)) !== null) blanks.push(m[1]);
+      let blankIdx = 0;
+      const rendered = escapeHtml(rawText).replace(/\{\{(.+?)\}\}/g, () => {
+        const idx = blankIdx++;
+        return `<input type="text" class="fb-input" data-idx="${idx}" placeholder="..." style="display:inline-block;border:none;border-bottom:2px solid #0d9488;width:100px;text-align:center;margin:0 4px;padding:4px;font-size:inherit;background:transparent;outline:none">`;
+      });
+      return `<div id="${fbid}" style="background:#f0fdfa;border:1px solid #99f6e4;border-radius:8px;padding:20px;margin:16px 0">
+        <span style="background:#0d9488;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">TEXTE A TROUS</span>
+        <div style="line-height:2.2;margin-top:12px">${rendered}</div>
+        <button onclick="fbCheck('${fbid}',${JSON.stringify(blanks)})" style="margin-top:12px;padding:8px 16px;background:#0d9488;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer">Valider</button>
+        <div class="quiz-result" style="display:none;margin-top:12px;padding:12px;border-radius:8px;font-size:14px"></div>
+        ${d.explanation ? `<p class="quiz-explanation" style="display:none;margin-top:8px;font-size:13px;color:#6b7280;font-style:italic">${escapeHtml(d.explanation)}</p>` : ''}
+        <button onclick="fbReset('${fbid}')" class="quiz-retry" style="display:none;margin-top:8px;font-size:13px;color:#0d9488;background:none;border:none;cursor:pointer">Recommencer</button>
+      </div>`;
     }
     case 'matching':
       return `<div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:20px;margin:16px 0"><span style="background:#7c3aed;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">APPARIEMENT</span>${d.instruction ? `<p style="margin:12px 0;font-size:14px">${escapeHtml(d.instruction)}</p>` : ''}${(d.pairs || []).map((p, i) => `<div style="display:flex;align-items:center;gap:12px;margin:6px 0"><div style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px">${i + 1}. ${escapeHtml(p.left)}</div><span>&harr;</span><div style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:6px;font-size:14px">${escapeHtml(p.right)}</div></div>`).join('')}</div>`;
     case 'sequence':
       return `<div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:20px;margin:16px 0"><span style="background:#ea580c;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">SEQUENCE</span>${d.instruction ? `<p style="margin:12px 0;font-size:14px">${escapeHtml(d.instruction)}</p>` : ''}${(d.items || []).map((it, i) => `<div style="padding:8px 16px;margin:4px 0;border:1px solid #e5e7eb;border-radius:6px;font-size:14px"><strong>${i + 1}.</strong> ${escapeHtml(it)}</div>`).join('')}</div>`;
-    case 'likert':
-      return `<div style="background:#fdf2f8;border:1px solid #fbcfe8;border-radius:8px;padding:20px;margin:16px 0"><span style="background:#db2777;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">LIKERT</span><p style="font-weight:600;margin:12px 0">${escapeHtml(d.question)}</p><div style="display:flex;justify-content:space-between;gap:4px;font-size:11px;text-align:center">${['1', '2', '3', '4', '5'].map(n => `<div style="flex:1;padding:8px;border:1px solid #e5e7eb;border-radius:6px">${n}</div>`).join('')}</div></div>`;
+    case 'likert': {
+      const lid = `lik_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const labels = { agreement: ['Pas du tout', '', 'Neutre', '', 'Tout a fait'], satisfaction: ['Tres insatisfait', '', 'Neutre', '', 'Tres satisfait'], frequency: ['Jamais', 'Rarement', 'Parfois', 'Souvent', 'Toujours'] };
+      const scaleLabels = labels[d.scale] || labels.agreement;
+      return `<div id="${lid}" style="background:#fdf2f8;border:1px solid #fbcfe8;border-radius:8px;padding:20px;margin:16px 0">
+        <span style="background:#db2777;color:#fff;padding:2px 8px;border-radius:4px;font-size:12px;font-weight:bold">LIKERT</span>
+        <p style="font-weight:600;margin:12px 0">${escapeHtml(d.question)}</p>
+        <div style="display:flex;justify-content:space-between;gap:4px;text-align:center">
+          ${[1,2,3,4,5].map((n, i) => `<div onclick="likertSelect('${lid}',this)" style="flex:1;padding:12px 4px;border:1px solid #e5e7eb;border-radius:6px;cursor:pointer;transition:all 0.2s" onmouseover="if(!this.dataset.selected)this.style.background='#fce7f3'" onmouseout="if(!this.dataset.selected)this.style.background=''"><div style="font-size:16px;font-weight:bold">${n}</div><div style="font-size:10px;color:#6b7280;margin-top:4px">${scaleLabels[i]}</div></div>`).join('')}
+        </div>
+      </div>`;
+    }
     default:
       return '';
   }
@@ -240,6 +321,130 @@ router.get('/public/:shareToken', async (req, res, next) => {
       if (currentNav) { currentNav.classList.remove('nav-active'); currentNav.style.background = 'transparent'; }
       currentNav = document.getElementById('nav-' + id);
       if (currentNav) { currentNav.classList.add('nav-active'); currentNav.style.background = 'rgba(255,255,255,0.2)'; }
+    }
+
+    // Quiz (QCM) interactivity
+    function quizSelect(id, selected, correct) {
+      var el = document.getElementById(id);
+      if (el.dataset.answered) return;
+      el.dataset.answered = '1';
+      var opts = el.querySelectorAll('.quiz-opt');
+      opts.forEach(function(o, i) {
+        o.style.cursor = 'default';
+        if (i === correct) { o.style.background = '#dcfce7'; o.style.borderColor = '#4ade80'; }
+        else if (i === selected) { o.style.background = '#fee2e2'; o.style.borderColor = '#f87171'; }
+        else { o.style.opacity = '0.5'; }
+      });
+      var result = el.querySelector('.quiz-result');
+      result.style.display = 'block';
+      if (selected === correct) { result.style.background = '#dcfce7'; result.style.color = '#166534'; result.textContent = 'Bonne reponse !'; }
+      else { result.style.background = '#fee2e2'; result.style.color = '#991b1b'; result.textContent = 'Mauvaise reponse.'; }
+      var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'block';
+      var retry = el.querySelector('.quiz-retry'); if (retry) retry.style.display = 'inline-block';
+    }
+    function quizReset(id) {
+      var el = document.getElementById(id);
+      delete el.dataset.answered;
+      el.querySelectorAll('.quiz-opt').forEach(function(o) { o.style.background = ''; o.style.borderColor = '#e5e7eb'; o.style.opacity = '1'; o.style.cursor = 'pointer'; });
+      el.querySelector('.quiz-result').style.display = 'none';
+      var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'none';
+      el.querySelector('.quiz-retry').style.display = 'none';
+    }
+
+    // True/False interactivity
+    function tfSelect(id, selected, correct) {
+      var el = document.getElementById(id);
+      if (el.dataset.answered) return;
+      el.dataset.answered = '1';
+      var btns = el.querySelectorAll('.tf-btn');
+      btns.forEach(function(b, i) {
+        b.style.cursor = 'default';
+        var val = i === 0 ? 'true' : 'false';
+        if (val === correct) { b.style.background = '#dcfce7'; b.style.borderColor = '#4ade80'; b.style.color = '#166534'; }
+        else if (val === selected) { b.style.background = '#fee2e2'; b.style.borderColor = '#f87171'; b.style.color = '#991b1b'; }
+        else { b.style.opacity = '0.5'; }
+      });
+      var result = el.querySelector('.quiz-result');
+      result.style.display = 'block';
+      if (selected === correct) { result.style.background = '#dcfce7'; result.style.color = '#166534'; result.textContent = 'Bonne reponse !'; }
+      else { result.style.background = '#fee2e2'; result.style.color = '#991b1b'; result.textContent = 'Mauvaise reponse.'; }
+      var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'block';
+      var retry = el.querySelector('.quiz-retry'); if (retry) retry.style.display = 'inline-block';
+    }
+    function tfReset(id) {
+      var el = document.getElementById(id);
+      delete el.dataset.answered;
+      el.querySelectorAll('.tf-btn').forEach(function(b) { b.style.background = ''; b.style.borderColor = '#e5e7eb'; b.style.color = ''; b.style.opacity = '1'; b.style.cursor = 'pointer'; });
+      el.querySelector('.quiz-result').style.display = 'none';
+      var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'none';
+      el.querySelector('.quiz-retry').style.display = 'none';
+    }
+
+    // Numeric interactivity
+    function numCheck(id, answer, tolerance) {
+      var el = document.getElementById(id);
+      if (el.dataset.answered) return;
+      var input = el.querySelector('.num-input');
+      var val = parseFloat(input.value);
+      if (isNaN(val)) return;
+      el.dataset.answered = '1';
+      input.disabled = true;
+      var correct = Math.abs(val - answer) <= tolerance;
+      var result = el.querySelector('.quiz-result');
+      result.style.display = 'block';
+      if (correct) { result.style.background = '#dcfce7'; result.style.color = '#166534'; result.textContent = 'Bonne reponse !'; input.style.borderColor = '#4ade80'; }
+      else { result.style.background = '#fee2e2'; result.style.color = '#991b1b'; result.textContent = 'Mauvaise reponse. La reponse est ' + answer + '.'; input.style.borderColor = '#f87171'; }
+      var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'block';
+      var retry = el.querySelector('.quiz-retry'); if (retry) retry.style.display = 'inline-block';
+    }
+    function numReset(id) {
+      var el = document.getElementById(id);
+      delete el.dataset.answered;
+      var input = el.querySelector('.num-input');
+      input.value = ''; input.disabled = false; input.style.borderColor = '#d1d5db';
+      el.querySelector('.quiz-result').style.display = 'none';
+      var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'none';
+      el.querySelector('.quiz-retry').style.display = 'none';
+    }
+
+    // Fill in the blank interactivity
+    function fbCheck(id, answers) {
+      var el = document.getElementById(id);
+      if (el.dataset.answered) return;
+      el.dataset.answered = '1';
+      var inputs = el.querySelectorAll('.fb-input');
+      var allCorrect = true;
+      inputs.forEach(function(inp) {
+        var idx = parseInt(inp.dataset.idx);
+        var correct = (inp.value || '').trim().toLowerCase() === (answers[idx] || '').trim().toLowerCase();
+        inp.disabled = true;
+        if (correct) { inp.style.borderColor = '#4ade80'; inp.style.background = '#dcfce7'; }
+        else { inp.style.borderColor = '#f87171'; inp.style.background = '#fee2e2'; allCorrect = false; }
+      });
+      var result = el.querySelector('.quiz-result');
+      result.style.display = 'block';
+      if (allCorrect) { result.style.background = '#dcfce7'; result.style.color = '#166534'; result.textContent = 'Tout est correct !'; }
+      else { result.style.background = '#fee2e2'; result.style.color = '#991b1b'; result.innerHTML = 'Certaines reponses sont incorrectes. Reponses : ' + answers.map(function(a, i) { return (i+1) + '. <strong>' + a + '</strong>'; }).join(', '); }
+      var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'block';
+      var retry = el.querySelector('.quiz-retry'); if (retry) retry.style.display = 'inline-block';
+    }
+    function fbReset(id) {
+      var el = document.getElementById(id);
+      delete el.dataset.answered;
+      el.querySelectorAll('.fb-input').forEach(function(inp) { inp.value = ''; inp.disabled = false; inp.style.borderColor = '#0d9488'; inp.style.background = 'transparent'; });
+      el.querySelector('.quiz-result').style.display = 'none';
+      var expl = el.querySelector('.quiz-explanation'); if (expl) expl.style.display = 'none';
+      el.querySelector('.quiz-retry').style.display = 'none';
+    }
+
+    // Likert interactivity
+    function likertSelect(id, clicked) {
+      var el = document.getElementById(id);
+      var items = clicked.parentNode.children;
+      for (var i = 0; i < items.length; i++) {
+        items[i].style.background = ''; items[i].style.borderColor = '#e5e7eb'; delete items[i].dataset.selected;
+      }
+      clicked.style.background = '#fce7f3'; clicked.style.borderColor = '#ec4899'; clicked.dataset.selected = '1';
     }
   </script>
 </body>

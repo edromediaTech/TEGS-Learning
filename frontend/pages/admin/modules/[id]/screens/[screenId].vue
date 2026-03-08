@@ -159,7 +159,7 @@
         <!-- ===== MODE EDITEUR : Layout 3 colonnes ===== -->
         <div v-if="mode === 'edit'" class="flex flex-1 overflow-hidden mt-2">
           <!-- COLONNE GAUCHE : Arborescence Module > Chapitres > Ecrans -->
-          <div class="w-60 bg-gradient-to-b from-slate-50 to-white border-r border-gray-200 flex flex-col flex-shrink-0">
+          <div class="w-60 bg-gradient-to-b from-slate-100 to-slate-50 border-r border-gray-200 flex flex-col flex-shrink-0">
             <!-- Module title -->
             <div class="px-3 py-2.5 border-b border-gray-200 bg-gradient-to-r from-primary-600 to-primary-700">
               <p class="text-[10px] font-bold text-primary-200 uppercase tracking-wider">Module</p>
@@ -345,7 +345,7 @@
           </div>
 
           <!-- COLONNE DROITE : Palette -->
-          <div class="w-64 bg-white border-l border-gray-200 flex flex-col flex-shrink-0">
+          <div class="w-64 bg-gradient-to-b from-slate-100 to-slate-50 border-l border-gray-200 flex flex-col flex-shrink-0">
             <!-- Onglets Palette -->
             <div class="flex border-b border-gray-200 flex-shrink-0">
               <button
