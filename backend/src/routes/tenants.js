@@ -45,6 +45,19 @@ router.post(
 );
 
 // ---------------------------------------------------------------------------
+// GET /api/tenants/public
+// Liste publique des ecoles (nom + id uniquement, pour le login)
+// ---------------------------------------------------------------------------
+router.get('/public', async (_req, res, next) => {
+  try {
+    const tenants = await Tenant.find({ active: { $ne: false } }, { name: 1 }).sort({ name: 1 });
+    res.json({ tenants });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------------------------------------------------------------------------
 // GET /api/tenants
 // Liste toutes les ecoles. Superadmin et admin_ddene.
 // ---------------------------------------------------------------------------

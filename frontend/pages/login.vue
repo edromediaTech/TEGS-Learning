@@ -1,11 +1,11 @@
 <template>
-  <div class="flex items-center justify-center min-h-screen">
-    <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+  <div class="flex items-center justify-center min-h-screen bg-gradient-to-br from-primary-900 via-primary-800 to-primary-900">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
       <div class="flex justify-center mb-4">
         <img src="/logo.png" alt="TEGS Learning" class="h-16 w-16 rounded-lg" />
       </div>
-      <h1 class="text-2xl font-bold text-center text-primary-800 mb-2">TEGS-Learning</h1>
-      <p class="text-center text-gray-500 mb-6">Connexion au LCMS</p>
+      <h1 class="text-2xl font-bold text-center text-primary-800 mb-1">TEGS-Learning</h1>
+      <p class="text-center text-gray-500 mb-6 text-sm">Connexion au LCMS</p>
 
       <div v-if="error" class="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
         {{ error }}
@@ -28,16 +28,22 @@
           </button>
         </div>
 
+        <!-- Selecteur d'ecole -->
         <div v-if="!isSuperAdmin">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Code Ecole (Tenant ID)</label>
-          <input
+          <label class="block text-sm font-medium text-gray-700 mb-1">Ecole</label>
+          <select
             v-model="form.tenant_id"
-            type="text"
             :required="!isSuperAdmin"
-            placeholder="ID de votre ecole"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          />
+            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+          >
+            <option value="" disabled>Choisir votre ecole...</option>
+            <option v-for="t in tenants" :key="t._id" :value="t._id">
+              {{ t.name }}
+            </option>
+          </select>
+          <p v-if="tenantsLoading" class="text-xs text-gray-400 mt-1">Chargement des ecoles...</p>
         </div>
+
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
           <input
@@ -45,7 +51,7 @@
             type="email"
             required
             placeholder="votre@email.com"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
         <div>
@@ -55,13 +61,13 @@
             type="password"
             required
             placeholder="••••••"
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            class="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
           />
         </div>
         <button
           type="submit"
           :disabled="loading"
-          class="w-full bg-primary-600 text-white py-2 rounded-lg hover:bg-primary-700 transition disabled:opacity-50"
+          class="w-full bg-primary-600 text-white py-2.5 rounded-lg hover:bg-primary-700 transition disabled:opacity-50 font-medium"
         >
           {{ loading ? 'Connexion...' : 'Se connecter' }}
         </button>
@@ -73,6 +79,8 @@
 <script setup lang="ts">
 const auth = useAuthStore();
 const router = useRouter();
+const config = useRuntimeConfig();
+const apiBase = config.public.apiBase;
 
 const isSuperAdmin = ref(false);
 const form = reactive({
@@ -83,11 +91,33 @@ const form = reactive({
 const loading = ref(false);
 const error = ref('');
 
+// Chargement des ecoles
+interface TenantPublic { _id: string; name: string; }
+const tenants = ref<TenantPublic[]>([]);
+const tenantsLoading = ref(true);
+
+async function fetchTenants() {
+  tenantsLoading.value = true;
+  try {
+    const res = await $fetch<any>(`${apiBase}/tenants/public`);
+    tenants.value = res.tenants || [];
+  } catch {
+    tenants.value = [];
+  } finally {
+    tenantsLoading.value = false;
+  }
+}
+
 async function handleLogin() {
   loading.value = true;
   error.value = '';
   try {
-    const tenantId = isSuperAdmin.value ? undefined : form.tenant_id.trim();
+    const tenantId = isSuperAdmin.value ? undefined : form.tenant_id;
+    if (!isSuperAdmin.value && !tenantId) {
+      error.value = 'Veuillez selectionner une ecole';
+      loading.value = false;
+      return;
+    }
     await auth.login(form.email.trim(), form.password, tenantId);
     router.push('/admin/modules');
   } catch (err: any) {
@@ -96,4 +126,6 @@ async function handleLogin() {
     loading.value = false;
   }
 }
+
+onMounted(() => fetchTenants());
 </script>
