@@ -227,23 +227,28 @@
                       {{ screen.title }}
                     </NuxtLink>
 
-                    <!-- Screen actions -->
+                    <!-- Screen actions - always visible -->
                     <div
                       v-if="renamingScreenId !== screen._id"
-                      class="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/s:opacity-100 transition"
+                      class="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5"
                     >
-                      <button @click.prevent="openScreenMenu(screen._id!)" class="text-gray-400 hover:text-gray-600 px-1 text-[10px]">&#8942;</button>
-                    </div>
-
-                    <div v-if="screenMenuId === screen._id" class="absolute right-0 top-full z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 w-36">
-                      <button @click="startRename(screen)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">Renommer</button>
-                      <button @click="duplicateScreen(screen)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">Dupliquer</button>
+                      <button @click.prevent="startRename(screen)" class="text-gray-400 hover:text-blue-600 p-0.5 rounded hover:bg-blue-50 transition" title="Renommer">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                      </button>
+                      <button @click.prevent="duplicateScreen(screen)" class="text-gray-400 hover:text-green-600 p-0.5 rounded hover:bg-green-50 transition" title="Dupliquer">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                      </button>
                       <template v-if="section.screens.length > 1">
-                        <button v-if="sIdx > 0" @click="moveScreenInSection(sIdx, -1)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">Monter</button>
-                        <button v-if="sIdx < section.screens.length - 1" @click="moveScreenInSection(sIdx, 1)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-gray-50 text-gray-700">Descendre</button>
+                        <button v-if="sIdx > 0" @click.prevent="moveScreenInSection(sIdx, -1)" class="text-gray-400 hover:text-amber-600 p-0.5 rounded hover:bg-amber-50 transition" title="Monter">
+                          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                        </button>
+                        <button v-if="sIdx < section.screens.length - 1" @click.prevent="moveScreenInSection(sIdx, 1)" class="text-gray-400 hover:text-amber-600 p-0.5 rounded hover:bg-amber-50 transition" title="Descendre">
+                          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
                       </template>
-                      <hr class="my-1 border-gray-100" />
-                      <button @click="deleteScreen(screen._id!)" class="w-full text-left px-3 py-1.5 text-xs hover:bg-red-50 text-red-600">Supprimer</button>
+                      <button @click.prevent="deleteScreen(screen._id!)" class="text-gray-400 hover:text-red-600 p-0.5 rounded hover:bg-red-50 transition" title="Supprimer">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
                     </div>
                   </div>
 

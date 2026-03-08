@@ -48,10 +48,10 @@ export const useAuthStore = defineStore('auth', {
       this.token = res.token;
       this.tenant_id = res.user.tenant_id || null;
 
-      const tokenCookie = useCookie('auth_token', { maxAge: 60 * 60 * 24 });
+      const tokenCookie = useCookie('auth_token', { maxAge: 60 * 60 * 24 * 7, path: '/', sameSite: 'lax' });
       tokenCookie.value = res.token;
 
-      const tenantCookie = useCookie('tenant_id', { maxAge: 60 * 60 * 24 });
+      const tenantCookie = useCookie('tenant_id', { maxAge: 60 * 60 * 24 * 7, path: '/', sameSite: 'lax' });
       tenantCookie.value = res.user.tenant_id || '';
     },
 
