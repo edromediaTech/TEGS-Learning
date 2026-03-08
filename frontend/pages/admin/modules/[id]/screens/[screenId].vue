@@ -15,7 +15,7 @@
       </div>
 
       <!-- Studio 3 colonnes -->
-      <div v-else-if="store.currentScreen" class="h-[calc(100vh-80px)] flex flex-col">
+      <div v-else-if="store.currentScreen" class="h-[calc(100vh-48px)] flex flex-col">
         <!-- Barre superieure Studio -->
         <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between flex-shrink-0">
           <div class="flex items-center space-x-3">
@@ -31,6 +31,13 @@
             <span class="text-sm text-gray-600">{{ store.currentScreen.screen.title }}</span>
           </div>
           <div class="flex items-center space-x-3">
+            <button
+              @click="showShareModal = true"
+              class="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition text-sm font-medium"
+            >
+              <span>&#128279;</span>
+              <span>Diffuser</span>
+            </button>
             <div class="bg-gray-100 rounded-lg p-0.5 flex">
               <button
                 @click="mode = 'edit'; clearError()"
@@ -56,6 +63,90 @@
             </button>
           </div>
         </div>
+
+        <!-- Modal Diffuser / Partager -->
+        <Teleport to="body">
+          <div v-if="showShareModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showShareModal = false">
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+              <!-- Header -->
+              <div class="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4 flex items-center justify-between">
+                <h3 class="text-white font-bold text-lg">Diffuser ce module</h3>
+                <button @click="showShareModal = false" class="text-white/70 hover:text-white text-xl">&times;</button>
+              </div>
+
+              <div class="p-6 space-y-5">
+                <!-- Activer le partage -->
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                  <div>
+                    <p class="font-medium text-gray-800 text-sm">Partage public</p>
+                    <p class="text-xs text-gray-500">Rendre ce module accessible via un lien</p>
+                  </div>
+                  <button
+                    @click="handleToggleShare(!shareData.shareEnabled)"
+                    :disabled="shareLoading"
+                    class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
+                    :class="shareData.shareEnabled ? 'bg-emerald-500' : 'bg-gray-300'"
+                  >
+                    <span
+                      class="inline-block h-4 w-4 rounded-full bg-white shadow transition-transform"
+                      :class="shareData.shareEnabled ? 'translate-x-6' : 'translate-x-1'"
+                    ></span>
+                  </button>
+                </div>
+
+                <template v-if="shareData.shareEnabled && shareData.shareUrl">
+                  <!-- URL -->
+                  <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase mb-1.5 block">URL publique</label>
+                    <div class="flex items-center space-x-2">
+                      <input
+                        :value="shareData.shareUrl"
+                        readonly
+                        class="flex-1 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50 text-sm font-mono text-gray-700"
+                      />
+                      <button
+                        @click="copyText(shareData.shareUrl!, 'url')"
+                        class="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-xs font-medium whitespace-nowrap"
+                      >
+                        {{ shareCopied === 'url' ? 'Copie !' : 'Copier' }}
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Iframe -->
+                  <div>
+                    <label class="text-xs font-bold text-gray-500 uppercase mb-1.5 block">Code Iframe</label>
+                    <div class="bg-gray-900 text-green-400 rounded-lg p-3 font-mono text-xs break-all">
+                      {{ shareIframeCode }}
+                    </div>
+                    <div class="flex items-center justify-between mt-2">
+                      <div class="flex items-center space-x-3">
+                        <div class="flex items-center space-x-1">
+                          <label class="text-xs text-gray-500">L:</label>
+                          <input v-model.number="shareEmbedW" type="number" min="300" max="1400" class="w-16 px-1.5 py-1 border border-gray-200 rounded text-xs" />
+                        </div>
+                        <div class="flex items-center space-x-1">
+                          <label class="text-xs text-gray-500">H:</label>
+                          <input v-model.number="shareEmbedH" type="number" min="300" max="1000" class="w-16 px-1.5 py-1 border border-gray-200 rounded text-xs" />
+                        </div>
+                      </div>
+                      <button
+                        @click="copyText(shareIframeCode, 'iframe')"
+                        class="px-3 py-1.5 bg-gray-800 text-white rounded-lg hover:bg-gray-700 text-xs font-medium"
+                      >
+                        {{ shareCopied === 'iframe' ? 'Copie !' : 'Copier le code' }}
+                      </button>
+                    </div>
+                  </div>
+                </template>
+
+                <div v-else-if="!shareData.shareEnabled" class="text-center py-4 text-gray-400 text-sm">
+                  Activez le partage pour obtenir l'URL et le code iframe.
+                </div>
+              </div>
+            </div>
+          </div>
+        </Teleport>
 
         <!-- Messages -->
         <div v-if="saved" class="mx-4 mt-2 p-2 bg-green-50 border border-green-200 text-green-700 rounded-lg text-xs flex-shrink-0">
@@ -312,6 +403,50 @@ const mode = ref<'edit' | 'preview'>('edit');
 const saving = ref(false);
 const saved = ref(false);
 
+// Share modal
+const showShareModal = ref(false);
+const shareLoading = ref(false);
+const shareCopied = ref('');
+const shareEmbedW = ref(800);
+const shareEmbedH = ref(600);
+const shareData = reactive({
+  shareEnabled: false,
+  shareToken: null as string | null,
+  shareUrl: null as string | null,
+});
+
+const shareIframeCode = computed(() => {
+  if (!shareData.shareUrl) return '';
+  return `<iframe width="${shareEmbedW.value}" height="${shareEmbedH.value}" src="${shareData.shareUrl}" frameborder="0" allowfullscreen></iframe>`;
+});
+
+async function handleToggleShare(enabled: boolean) {
+  shareLoading.value = true;
+  try {
+    const res = await store.toggleShare(moduleId, enabled);
+    shareData.shareEnabled = res.shareEnabled;
+    shareData.shareToken = res.shareToken;
+    shareData.shareUrl = res.shareUrl;
+  } catch { /* handled */ } finally {
+    shareLoading.value = false;
+  }
+}
+
+async function loadShareInfo() {
+  try {
+    const res = await store.getShareInfo(moduleId);
+    shareData.shareEnabled = res.shareEnabled;
+    shareData.shareToken = res.shareToken;
+    shareData.shareUrl = res.shareUrl;
+  } catch { /* not shared */ }
+}
+
+function copyText(text: string, type = 'url') {
+  navigator.clipboard.writeText(text);
+  shareCopied.value = type;
+  setTimeout(() => { shareCopied.value = ''; }, 2000);
+}
+
 interface EditableBlock {
   type: BlockType;
   order: number;
@@ -482,5 +617,6 @@ onMounted(async () => {
     store.fetchScreen(moduleId, screenId),
   ]);
   loadBlocks();
+  loadShareInfo();
 });
 </script>

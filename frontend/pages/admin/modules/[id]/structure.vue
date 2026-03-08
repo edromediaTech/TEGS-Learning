@@ -143,14 +143,15 @@
                   <span v-else class="flex-1 text-sm text-gray-700 cursor-pointer" @click="screen.editing = true">
                     {{ screen.title }}
                   </span>
-                  <div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition">
+                  <div class="flex items-center space-x-1">
                     <NuxtLink
                       v-if="screen._id"
                       :to="`/admin/modules/${moduleId}/screens/${screen._id}`"
-                      class="text-xs text-primary-500 hover:text-primary-700 px-1 font-medium"
+                      class="text-xs bg-primary-50 text-primary-600 hover:bg-primary-100 px-2 py-1 rounded font-medium"
                     >
                       Contenu
                     </NuxtLink>
+                    <span v-else class="text-xs text-orange-500 italic">Sauvegarder d'abord</span>
                     <button
                       @click="screen.editing = !screen.editing"
                       class="text-xs text-gray-400 hover:text-primary-600 px-1"
@@ -307,6 +308,9 @@ async function saveStructure() {
       })),
     }));
     await store.updateStructure(store.current._id, payload);
+    // Recharger le module pour obtenir les _id generes
+    await store.fetchModule(moduleId);
+    loadSections();
     saved.value = true;
     setTimeout(() => { saved.value = false; }, 3000);
   } catch {

@@ -126,7 +126,7 @@
 
           <!-- Etape 1 : Nom & Description -->
           <div v-if="wizardStep === 1" class="p-6 space-y-4">
-            <h3 class="text-lg font-bold text-gray-900">Etape 1 : Chwazi non ak deskripsyon modil la</h3>
+            <h3 class="text-lg font-bold text-gray-900">Etape 1 : Nom et description du module</h3>
             <!-- SuperAdmin: tenant selector -->
             <div v-if="auth.isSuperAdmin">
               <label class="block text-sm font-medium text-gray-700 mb-1">Ecole *</label>
@@ -183,7 +183,7 @@
 
           <!-- Etape 2 : Theme graphique -->
           <div v-if="wizardStep === 2" class="p-6 space-y-4">
-            <h3 class="text-lg font-bold text-gray-900">Etape 2 : Chwazi yon tem grafik</h3>
+            <h3 class="text-lg font-bold text-gray-900">Etape 2 : Choisir un theme graphique</h3>
             <p class="text-sm text-gray-500">Selectionnez un habillage visuel pour votre module</p>
             <div class="grid grid-cols-3 gap-3">
               <button

@@ -4,6 +4,14 @@
       <span class="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">QUIZ</span>
     </div>
 
+    <!-- Countdown Timer -->
+    <BlocksCountdownTimer
+      v-if="data.timerEnabled && !answered"
+      :minutes="data.timerMinutes || 5"
+      :mode="data.timerMode || 'countdown'"
+      @time-up="handleTimeUp"
+    />
+
     <p class="font-medium text-gray-800">{{ data.question }}</p>
 
     <div class="space-y-2">
@@ -11,7 +19,7 @@
         v-for="(option, idx) in data.options"
         :key="idx"
         @click="selectAnswer(idx)"
-        :disabled="answered"
+        :disabled="answered || expired"
         class="w-full text-left px-4 py-2 rounded-lg border transition text-sm"
         :class="optionClass(idx)"
       >
@@ -20,6 +28,13 @@
         <span v-if="answered && option.isCorrect" class="float-right text-green-600 font-bold">&#10003;</span>
         <span v-if="answered && selected === idx && !option.isCorrect" class="float-right text-red-600 font-bold">&#10007;</span>
       </button>
+    </div>
+
+    <!-- Temps ecoule -->
+    <div v-if="expired && !answered" class="pt-2">
+      <div class="p-3 rounded-lg text-sm bg-orange-100 text-orange-800">
+        Temps ecoule ! {{ data.timerAction === 'block' ? 'Reponse bloquee.' : 'La question a ete validee automatiquement.' }}
+      </div>
     </div>
 
     <!-- Resultat -->
@@ -54,24 +69,42 @@ const props = defineProps<{
     question: string;
     options: QuizOption[];
     explanation: string;
+    timerEnabled?: boolean;
+    timerMinutes?: number;
+    timerMode?: 'countdown' | 'stopwatch';
+    timerAction?: 'auto_submit' | 'block';
   };
 }>();
 
 const selected = ref<number | null>(null);
 const answered = ref(false);
+const expired = ref(false);
 
 const isCorrect = computed(() => {
   if (selected.value === null) return false;
   return props.data.options[selected.value]?.isCorrect === true;
 });
 
-function selectAnswer(idx: number) {
+function handleTimeUp() {
   if (answered.value) return;
+  expired.value = true;
+  if (props.data.timerAction === 'auto_submit') {
+    // Auto-submit: if user selected something, validate it; otherwise mark as unanswered
+    answered.value = true;
+  }
+  // 'block' mode: just disable the buttons (expired = true)
+}
+
+function selectAnswer(idx: number) {
+  if (answered.value || expired.value) return;
   selected.value = idx;
   answered.value = true;
 }
 
 function optionClass(idx: number) {
+  if (expired.value && !answered.value) {
+    return 'border-gray-200 bg-white opacity-50 cursor-not-allowed';
+  }
   if (!answered.value) {
     return selected.value === idx
       ? 'border-primary-400 bg-primary-50'
@@ -86,5 +119,6 @@ function optionClass(idx: number) {
 function reset() {
   selected.value = null;
   answered.value = false;
+  expired.value = false;
 }
 </script>
