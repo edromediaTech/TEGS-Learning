@@ -15,6 +15,44 @@ interface AuthState {
   tenant_id: string | null;
 }
 
+// Firebase Hosting only forwards the __session cookie to Cloud Run SSR.
+// We store { token, tenant_id } as JSON inside __session.
+const SESSION_COOKIE = '__session';
+const COOKIE_OPTS = { maxAge: 60 * 60 * 24 * 7, path: '/', sameSite: 'lax' as const };
+
+function readSession(): { token: string; tenant_id: string } | null {
+  const raw = useCookie(SESSION_COOKIE).value;
+  if (!raw) return null;
+  try {
+    // Could be JSON or a plain token string (backwards compat)
+    if (typeof raw === 'string' && raw.startsWith('{')) {
+      return JSON.parse(raw);
+    }
+    // Plain JWT token (old format)
+    if (typeof raw === 'string' && raw.includes('.')) {
+      return { token: raw, tenant_id: '' };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSession(token: string, tenant_id: string) {
+  const cookie = useCookie(SESSION_COOKIE, COOKIE_OPTS);
+  cookie.value = JSON.stringify({ token, tenant_id });
+}
+
+function clearSession() {
+  const cookie = useCookie(SESSION_COOKIE);
+  cookie.value = null;
+  // Also clear legacy cookies
+  const legacyToken = useCookie('auth_token');
+  legacyToken.value = null;
+  const legacyTenant = useCookie('tenant_id');
+  legacyTenant.value = null;
+}
+
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     user: null,
@@ -48,18 +86,28 @@ export const useAuthStore = defineStore('auth', {
       this.token = res.token;
       this.tenant_id = res.user.tenant_id || null;
 
-      const tokenCookie = useCookie('auth_token', { maxAge: 60 * 60 * 24 * 7, path: '/', sameSite: 'lax' });
-      tokenCookie.value = res.token;
-
-      const tenantCookie = useCookie('tenant_id', { maxAge: 60 * 60 * 24 * 7, path: '/', sameSite: 'lax' });
-      tenantCookie.value = res.user.tenant_id || '';
+      writeSession(res.token, res.user.tenant_id || '');
     },
 
     async fetchMe() {
-      const token = useCookie('auth_token').value;
-      if (!token) return;
+      // Read from __session cookie (Firebase-compatible)
+      let session = readSession();
 
-      // Decoder le JWT pour obtenir les infos de base (fonctionne SSR + client)
+      // Fallback: try legacy cookies
+      if (!session) {
+        const legacyToken = useCookie('auth_token').value;
+        if (legacyToken) {
+          const legacyTenant = useCookie('tenant_id').value || '';
+          session = { token: legacyToken, tenant_id: legacyTenant };
+          // Migrate to __session
+          writeSession(legacyToken, legacyTenant);
+        }
+      }
+
+      if (!session?.token) return;
+      const token = session.token;
+
+      // Decode JWT for basic user info (works SSR + client)
       const decodeToken = (t: string) => {
         try {
           const payload = JSON.parse(atob(t.split('.')[1]));
@@ -76,24 +124,24 @@ export const useAuthStore = defineStore('auth', {
         }
       };
 
-      // SSR: decoder le token, pas d'appel backend
+      // SSR: decode token, no backend call
       if (import.meta.server) {
         this.token = token;
-        this.tenant_id = useCookie('tenant_id').value || null;
+        this.tenant_id = session.tenant_id || null;
         const decoded = decodeToken(token);
         if (decoded) this.user = decoded;
         return;
       }
 
-      // Client: d'abord restaurer depuis le JWT pour eviter le flash de login
+      // Client: restore from JWT immediately to prevent login flash
       if (!this.token) {
         this.token = token;
-        this.tenant_id = useCookie('tenant_id').value || null;
+        this.tenant_id = session.tenant_id || null;
         const decoded = decodeToken(token);
         if (decoded) this.user = decoded;
       }
 
-      // Puis verifier avec le backend en arriere-plan (non-bloquant)
+      // Then verify with backend (non-blocking)
       const config = useRuntimeConfig();
       try {
         const res = await $fetch<any>(`${config.public.apiBase}/auth/me`, {
@@ -103,11 +151,11 @@ export const useAuthStore = defineStore('auth', {
         this.token = token;
         this.tenant_id = res.user.tenant_id;
       } catch (err: any) {
-        // Seulement logout si le token est explicitement rejete (401)
+        // Only logout on explicit 401 (token rejected)
         if (err?.response?.status === 401 || err?.status === 401) {
           this.logout();
         }
-        // Sinon (erreur reseau, 500, etc.) : garder la session JWT
+        // Network errors, 500, etc.: keep JWT session alive
       }
     },
 
@@ -115,10 +163,7 @@ export const useAuthStore = defineStore('auth', {
       this.user = null;
       this.token = null;
       this.tenant_id = null;
-      const tokenCookie = useCookie('auth_token');
-      tokenCookie.value = null;
-      const tenantCookie = useCookie('tenant_id');
-      tenantCookie.value = null;
+      clearSession();
       navigateTo('/login');
     },
   },
