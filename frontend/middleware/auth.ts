@@ -6,6 +6,16 @@ export default defineNuxtRouteMiddleware(async (to) => {
     await auth.fetchMe();
   }
 
+  // Cote client : si toujours pas connecte mais cookie present, retenter
+  if (!auth.isLoggedIn && import.meta.client) {
+    const token = useCookie('auth_token').value;
+    if (token) {
+      // Le token existe en cookie mais fetchMe a echoue cote SSR
+      // Retenter cote client
+      await auth.fetchMe();
+    }
+  }
+
   if (!auth.isLoggedIn) {
     return navigateTo('/login');
   }

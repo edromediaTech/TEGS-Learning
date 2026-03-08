@@ -68,7 +68,10 @@ export const useAuthStore = defineStore('auth', {
         this.token = token;
         this.tenant_id = res.user.tenant_id;
       } catch {
-        this.logout();
+        // Ne logout que cote client (pas SSR) pour eviter de perdre la session au refresh
+        if (import.meta.client) {
+          this.logout();
+        }
       }
     },
 
