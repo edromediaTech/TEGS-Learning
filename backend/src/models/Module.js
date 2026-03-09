@@ -7,7 +7,7 @@ const contentBlockSchema = new mongoose.Schema({
     enum: [
       'text', 'media', 'quiz',
       'heading', 'separator', 'image', 'text_image', 'video', 'audio', 'pdf', 'embed',
-      'true_false', 'numeric', 'fill_blank', 'matching', 'sequence', 'likert',
+      'true_false', 'numeric', 'fill_blank', 'matching', 'sequence', 'likert', 'open_answer',
     ],
     required: [true, 'Le type de bloc est requis'],
   },
