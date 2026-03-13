@@ -481,16 +481,23 @@
                 Questions
               </button>
               <button
+                @click="paletteTab = 'ia'"
+                class="flex-1 px-2 py-2.5 text-xs font-bold uppercase border-b-2 transition"
+                :class="paletteTab === 'ia' ? 'border-violet-600 text-violet-700 bg-violet-50' : 'border-transparent text-gray-500 hover:text-gray-700'"
+              >
+                IA
+              </button>
+              <button
                 @click="paletteTab = 'aide'"
                 class="flex-1 px-2 py-2.5 text-xs font-bold uppercase border-b-2 transition"
                 :class="paletteTab === 'aide' ? 'border-amber-600 text-amber-700 bg-amber-50' : 'border-transparent text-gray-500 hover:text-gray-700'"
               >
-                Aide
+                ?
               </button>
             </div>
 
             <!-- Palette search -->
-            <div v-if="paletteTab !== 'aide'" class="px-3 pt-3 pb-1">
+            <div v-if="paletteTab === 'blocs' || paletteTab === 'questions'" class="px-3 pt-3 pb-1">
               <input
                 v-model="paletteSearch"
                 type="text"
@@ -533,6 +540,96 @@
                 </button>
                 <div v-if="filteredQuestionBlocks.length === 0" class="col-span-2 text-center text-xs text-gray-400 py-4">
                   Aucune question ne correspond
+                </div>
+              </div>
+
+              <!-- IA Generator -->
+              <div v-if="paletteTab === 'ia'" class="space-y-3">
+                <div class="bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 rounded-xl p-3">
+                  <h4 class="font-bold text-violet-800 text-xs mb-2 flex items-center gap-1">
+                    <span class="text-base">&#9733;</span> Generateur IA
+                  </h4>
+                  <div class="space-y-2">
+                    <div>
+                      <label class="text-[10px] font-bold text-gray-500 uppercase">Sujet / Theme</label>
+                      <textarea
+                        v-model="aiTopic"
+                        rows="2"
+                        placeholder="Ex: L'independance d'Haiti, les volcans, les fractions..."
+                        class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-violet-400 focus:border-transparent resize-none"
+                      ></textarea>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                      <div>
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Questions</label>
+                        <select v-model="aiCount" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs">
+                          <option :value="3">3</option>
+                          <option :value="5">5</option>
+                          <option :value="7">7</option>
+                          <option :value="10">10</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Difficulte</label>
+                        <select v-model="aiDifficulty" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs">
+                          <option value="facile">Facile</option>
+                          <option value="moyen">Moyen</option>
+                          <option value="difficile">Difficile</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label class="text-[10px] font-bold text-gray-500 uppercase mb-1 block">Types de questions</label>
+                      <div class="flex flex-wrap gap-1.5">
+                        <label v-for="qt in aiQuestionTypes" :key="qt.value" class="flex items-center gap-1 text-[11px] cursor-pointer">
+                          <input type="checkbox" v-model="aiSelectedTypes" :value="qt.value" class="rounded border-gray-300 text-violet-600 focus:ring-violet-500 w-3 h-3" />
+                          <span>{{ qt.label }}</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    @click="generateAI"
+                    :disabled="aiGenerating || !aiTopic.trim()"
+                    class="mt-3 w-full py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5"
+                    :class="aiGenerating || !aiTopic.trim()
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:from-violet-700 hover:to-purple-700 shadow-sm'"
+                  >
+                    <span v-if="aiGenerating" class="animate-spin">&#9696;</span>
+                    <span v-else>&#9733;</span>
+                    {{ aiGenerating ? 'Generation en cours...' : 'Generer avec l\'IA' }}
+                  </button>
+                </div>
+
+                <!-- AI Results Preview -->
+                <div v-if="aiResults.length > 0" class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-[10px] font-bold text-gray-500 uppercase">{{ aiResults.length }} questions generees</span>
+                    <button
+                      @click="insertAllAI"
+                      class="text-[10px] font-bold text-violet-600 hover:text-violet-800 underline"
+                    >
+                      Tout inserer
+                    </button>
+                  </div>
+                  <div
+                    v-for="(q, qi) in aiResults"
+                    :key="qi"
+                    class="bg-white border border-gray-200 rounded-lg p-2.5 hover:border-violet-300 hover:shadow-sm transition cursor-pointer group"
+                    @click="insertAIBlock(qi)"
+                  >
+                    <div class="flex items-center justify-between mb-1">
+                      <span class="text-[10px] font-bold uppercase" :class="blockTypeClass(q.type)">{{ blockTypeLabel(q.type) }}</span>
+                      <span class="text-[10px] text-gray-400 group-hover:text-violet-600">+ Inserer</span>
+                    </div>
+                    <p class="text-xs text-gray-700 line-clamp-2">{{ q.data?.question || q.data?.statement || q.data?.text || q.data?.instruction || '' }}</p>
+                  </div>
+                </div>
+
+                <!-- AI Error -->
+                <div v-if="aiError" class="bg-red-50 border border-red-200 rounded-lg p-2.5 text-xs text-red-700">
+                  {{ aiError }}
                 </div>
               </div>
 
@@ -776,7 +873,87 @@ interface EditableBlock {
 }
 
 const blocks = ref<EditableBlock[]>([]);
-const paletteTab = ref<'blocs' | 'questions' | 'aide'>('blocs');
+const paletteTab = ref<'blocs' | 'questions' | 'ia' | 'aide'>('blocs');
+
+// AI Generator state
+const aiTopic = ref('');
+const aiCount = ref(5);
+const aiDifficulty = ref('moyen');
+const aiSelectedTypes = ref(['quiz', 'true_false', 'fill_blank']);
+const aiGenerating = ref(false);
+const aiResults = ref<Array<{ type: string; order: number; data: any }>>([]);
+const aiError = ref('');
+const aiQuestionTypes = [
+  { value: 'quiz', label: 'QCM' },
+  { value: 'true_false', label: 'Vrai/Faux' },
+  { value: 'numeric', label: 'Numerique' },
+  { value: 'fill_blank', label: 'Texte a trous' },
+  { value: 'matching', label: 'Appariement' },
+  { value: 'sequence', label: 'Sequence' },
+];
+
+async function generateAI() {
+  if (!aiTopic.value.trim() || aiGenerating.value) return;
+  aiGenerating.value = true;
+  aiError.value = '';
+  aiResults.value = [];
+  try {
+    const { apiFetch } = useApi();
+    const { data } = await apiFetch(`/modules/${moduleId}/ai-generate`, {
+      method: 'POST',
+      body: JSON.stringify({
+        topic: aiTopic.value,
+        count: aiCount.value,
+        types: aiSelectedTypes.value,
+        difficulty: aiDifficulty.value,
+      }),
+    });
+    if (data.blocks && data.blocks.length > 0) {
+      aiResults.value = data.blocks;
+      showToast('success', data.message || `${data.blocks.length} questions generees`);
+    } else {
+      aiError.value = data.error || 'Aucune question generee';
+    }
+  } catch (err: any) {
+    aiError.value = err?.data?.error || err?.message || 'Erreur de generation IA';
+  } finally {
+    aiGenerating.value = false;
+  }
+}
+
+function insertAIBlock(idx: number) {
+  const q = aiResults.value[idx];
+  if (!q) return;
+  pushUndo();
+  const newBlock: EditableBlock = {
+    type: q.type as BlockType,
+    order: blocks.value.length,
+    data: JSON.parse(JSON.stringify(q.data)),
+    _uid: ++uidCounter,
+  };
+  blocks.value.push(newBlock);
+  reorder();
+  selectedBlockIdx.value = blocks.value.length - 1;
+  aiResults.value.splice(idx, 1);
+  showToast('success', `Question ${blockTypeLabel(q.type)} inseree`);
+}
+
+function insertAllAI() {
+  if (aiResults.value.length === 0) return;
+  pushUndo();
+  for (const q of aiResults.value) {
+    blocks.value.push({
+      type: q.type as BlockType,
+      order: blocks.value.length,
+      data: JSON.parse(JSON.stringify(q.data)),
+      _uid: ++uidCounter,
+    });
+  }
+  reorder();
+  selectedBlockIdx.value = blocks.value.length - 1;
+  showToast('success', `${aiResults.value.length} questions inserees`);
+  aiResults.value = [];
+}
 
 const contentBlocks = [
   { type: 'heading' as BlockType, icon: 'H', label: 'Titre' },

@@ -516,4 +516,154 @@ router.get('/:id/share', async (req, res, next) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// POST /api/modules/:id/ai-generate
+// Generate quiz questions via AI Gateway
+// ---------------------------------------------------------------------------
+router.post(
+  '/:id/ai-generate',
+  [
+    param('id').isMongoId(),
+    body('topic').notEmpty().withMessage('Le sujet est requis'),
+    body('count').optional().isInt({ min: 1, max: 10 }),
+    body('types').optional().isArray(),
+    body('difficulty').optional().isIn(['facile', 'moyen', 'difficile']),
+  ],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+
+      const mod = await Module.findOne({ _id: req.params.id, ...req.tenantFilter() });
+      if (!mod) return res.status(404).json({ error: 'Module introuvable' });
+
+      const { topic, count = 5, types = ['quiz', 'true_false', 'fill_blank'], difficulty = 'moyen' } = req.body;
+
+      const typesDesc = types.map(t => {
+        const labels = {
+          quiz: 'QCM (4 choix, 1 correct)',
+          true_false: 'Vrai/Faux (statement + answer true/false)',
+          numeric: 'Numérique (question + answer number)',
+          fill_blank: 'Texte à trous (text avec ___ + answer)',
+          matching: 'Appariement (pairs [{left, right}])',
+          sequence: 'Séquence (items à ordonner)',
+        };
+        return labels[t] || t;
+      }).join(', ');
+
+      const prompt = `Tu es un expert pédagogique haïtien. Génère exactement ${count} questions de quiz sur le sujet : "${topic}".
+
+Contexte : Module "${mod.title}" pour des élèves haïtiens.
+Difficulté : ${difficulty}
+Types de questions à utiliser : ${typesDesc}
+
+IMPORTANT : Réponds UNIQUEMENT avec un tableau JSON valide (pas de texte avant/après). Chaque élément doit avoir cette structure exacte :
+
+Pour type "quiz" :
+{"type":"quiz","data":{"question":"...","options":[{"text":"...","isCorrect":true},{"text":"...","isCorrect":false},{"text":"...","isCorrect":false},{"text":"...","isCorrect":false}],"explanation":"...","points":5,"duration":1}}
+
+Pour type "true_false" :
+{"type":"true_false","data":{"statement":"...","answer":true,"explanation":"...","points":5,"duration":1}}
+
+Pour type "numeric" :
+{"type":"numeric","data":{"question":"...","answer":42,"tolerance":0,"unit":"","explanation":"...","points":5,"duration":1}}
+
+Pour type "fill_blank" :
+{"type":"fill_blank","data":{"text":"La capitale de Haïti est ___.","answer":"Port-au-Prince","explanation":"...","points":5,"duration":1}}
+
+Pour type "matching" :
+{"type":"matching","data":{"instruction":"...","pairs":[{"left":"...","right":"..."},{"left":"...","right":"..."}],"explanation":"...","points":5,"duration":1}}
+
+Pour type "sequence" :
+{"type":"sequence","data":{"instruction":"...","items":["premier","deuxieme","troisieme"],"explanation":"...","points":5,"duration":1}}
+
+Varie les types parmi ceux demandés. Les questions doivent être pertinentes, éducatives et adaptées au niveau ${difficulty}.`;
+
+      const aiText = await callAIGateway(prompt, 'generate', req.tenantId);
+
+      // Parse JSON from AI response
+      let questions = [];
+      try {
+        // Extract JSON array from response (handle markdown code blocks)
+        const jsonMatch = aiText.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          questions = JSON.parse(jsonMatch[0]);
+        } else {
+          throw new Error('No JSON array found');
+        }
+      } catch (parseErr) {
+        return res.status(422).json({
+          error: 'L\'IA n\'a pas retourné un format valide',
+          raw: aiText.substring(0, 500),
+        });
+      }
+
+      // Validate and sanitize each question
+      const validTypes = ['quiz', 'true_false', 'numeric', 'fill_blank', 'matching', 'sequence'];
+      const sanitized = questions
+        .filter(q => q && q.type && validTypes.includes(q.type) && q.data)
+        .slice(0, 10)
+        .map((q, i) => ({
+          type: q.type,
+          order: i,
+          data: q.data,
+        }));
+
+      res.json({
+        message: `${sanitized.length} questions générées par l'IA`,
+        blocks: sanitized,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * Call the dp-ai-gateway-service for AI generation.
+ */
+async function callAIGateway(prompt, taskType, tenantId) {
+  const gatewayUrl = process.env.AI_GATEWAY_URL || 'https://dp-ai-gateway-service-746425674533.us-central1.run.app';
+  const gatewayToken = process.env.GATEWAY_AUTH_TOKEN;
+
+  if (!gatewayToken) {
+    console.warn('[MODULES] GATEWAY_AUTH_TOKEN not set — returning placeholder');
+    return '[IA non disponible — configurez GATEWAY_AUTH_TOKEN]';
+  }
+
+  try {
+    const { default: fetch } = await import('node-fetch').catch(() => ({ default: globalThis.fetch }));
+
+    const response = await fetch(`${gatewayUrl}/api/ai-gateway`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${gatewayToken}`,
+      },
+      body: JSON.stringify({
+        prompt,
+        task_type: taskType,
+        preferred_tier: 'free',
+        preferred_model: 'gemini-2.0-flash',
+        service_id: 'tegs-learning',
+        user_id: String(tenantId),
+        max_tokens: 3000,
+        temperature: 0.7,
+        language: 'fr',
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`Gateway ${response.status}: ${errText}`);
+    }
+
+    const data = await response.json();
+    return data.response || data.text || data.content || '';
+  } catch (err) {
+    console.error('[MODULES] AI Gateway error:', err.message);
+    return `[Erreur IA: ${err.message}]`;
+  }
+}
+
 module.exports = router;
