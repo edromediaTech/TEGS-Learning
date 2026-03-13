@@ -25,7 +25,10 @@
     "undici": "^7.22.0"
   },
   "devDependencies": {
+    "gif-encoder-2": "^1.0.5",
     "nodemon": "^3.1.9",
+    "pngjs": "^7.0.0",
+    "puppeteer-core": "^24.39.1",
     "socket.io-client": "^4.8.3"
   }
 }
