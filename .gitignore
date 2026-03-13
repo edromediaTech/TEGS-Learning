@@ -26,3 +26,19 @@ backend/public/uploads/*
 # Logs
 *.log
 npm-debug.log*
+
+# Claude Code
+.claude/settings.local.json
+.ai-context/
+
+# Firebase
+frontend/.firebase/
+
+# Captures / screenshots
+captures/
+
+# Test scripts (manual)
+backend/test-*.js
+
+# SigePro utilities
+sigepro-*.js
