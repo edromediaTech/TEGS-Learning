@@ -15,10 +15,16 @@ const shareRoutes = require('./routes/share');
 const uploadRoutes = require('./routes/upload');
 const syncRoutes = require('./routes/sync');
 const analyticsRoutes = require('./routes/analytics');
+const reportingRoutes = require('./routes/reporting');
+const subscriptionRoutes = require('./routes/subscription');
+const liveArenaRoutes = require('./routes/live-arena');
 
+const http = require('http');
 const path = require('path');
+const { initSocket } = require('./socket');
 
 const app = express();
+const server = http.createServer(app);
 
 // --- Middlewares globaux ---
 app.use(compression());
@@ -55,6 +61,9 @@ app.use('/api/share', shareRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/sync', syncRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/reporting', reportingRoutes);
+app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/live-arena', liveArenaRoutes);
 
 // --- Gestion d'erreurs globale ---
 app.use((err, _req, res, _next) => {
@@ -69,7 +78,8 @@ const PORT = process.env.PORT || 3000;
 
 connectDB()
   .then(() => {
-    app.listen(PORT, '0.0.0.0', () => {
+    initSocket(server);
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`[SERVER] TEGS-Learning backend demarre sur le port ${PORT}`);
     });
   })
