@@ -31,6 +31,25 @@
             <span class="text-sm text-gray-600">{{ store.currentScreen.screen.title }}</span>
           </div>
           <div class="flex items-center space-x-3">
+            <!-- Undo / Redo -->
+            <div class="flex items-center bg-gray-100 rounded-lg p-0.5">
+              <button
+                @click="undo"
+                :disabled="!canUndo"
+                class="p-1.5 rounded-md text-gray-500 hover:text-gray-700 disabled:opacity-30 transition"
+                title="Annuler (Ctrl+Z)"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a5 5 0 015 5v2M3 10l4-4m-4 4l4 4"/></svg>
+              </button>
+              <button
+                @click="redo"
+                :disabled="!canRedo"
+                class="p-1.5 rounded-md text-gray-500 hover:text-gray-700 disabled:opacity-30 transition"
+                title="Retablir (Ctrl+Y)"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10H11a5 5 0 00-5 5v2m15-7l-4-4m4 4l-4 4"/></svg>
+              </button>
+            </div>
             <button
               @click="showShareModal = true"
               class="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition text-sm font-medium"
@@ -54,15 +73,42 @@
                 Apercu
               </button>
             </div>
-            <button
-              @click="save"
-              :disabled="saving"
-              class="bg-primary-600 text-white px-4 py-1.5 rounded-lg hover:bg-primary-700 transition disabled:opacity-50 text-sm font-medium"
-            >
-              {{ saving ? 'Sauvegarde...' : 'Sauvegarder' }}
-            </button>
+            <!-- Save with auto-save indicator -->
+            <div class="flex items-center space-x-2">
+              <span v-if="autoSaveStatus === 'saving'" class="text-xs text-amber-500 animate-pulse">Sauvegarde auto...</span>
+              <span v-else-if="autoSaveStatus === 'saved'" class="text-xs text-green-500">Sauvegarde</span>
+              <span v-else-if="isDirty" class="text-xs text-amber-500">Non sauvegarde</span>
+              <button
+                @click="save"
+                :disabled="saving"
+                class="bg-primary-600 text-white px-4 py-1.5 rounded-lg hover:bg-primary-700 transition disabled:opacity-50 text-sm font-medium"
+              >
+                {{ saving ? 'Sauvegarde...' : 'Sauvegarder' }}
+              </button>
+            </div>
           </div>
         </div>
+
+        <!-- Toast Notifications -->
+        <Teleport to="body">
+          <TransitionGroup name="toast" tag="div" class="fixed top-4 right-4 z-[60] flex flex-col gap-2">
+            <div
+              v-for="t in toasts"
+              :key="t.id"
+              class="px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2 min-w-[200px] max-w-[360px] backdrop-blur"
+              :class="{
+                'bg-green-600 text-white': t.type === 'success',
+                'bg-red-600 text-white': t.type === 'error',
+                'bg-blue-600 text-white': t.type === 'info',
+              }"
+            >
+              <span v-if="t.type === 'success'">&#10003;</span>
+              <span v-else-if="t.type === 'error'">&#10007;</span>
+              <span v-else>&#8505;</span>
+              <span class="flex-1">{{ t.message }}</span>
+            </div>
+          </TransitionGroup>
+        </Teleport>
 
         <!-- Modal Diffuser / Partager -->
         <Teleport to="body">
@@ -148,10 +194,7 @@
           </div>
         </Teleport>
 
-        <!-- Messages -->
-        <div v-if="saved" class="mx-4 mt-2 p-2 bg-green-50 border border-green-200 text-green-700 rounded-lg text-xs flex-shrink-0">
-          Contenu sauvegarde avec succes !
-        </div>
+        <!-- Error bar (toast for success) -->
         <div v-if="store.error" class="mx-4 mt-2 p-2 bg-red-50 border border-red-200 text-red-700 rounded-lg text-xs flex-shrink-0">
           {{ store.error }}
         </div>
@@ -275,73 +318,146 @@
           </div>
 
           <!-- COLONNE CENTRALE : Canevas -->
-          <div class="flex-1 overflow-y-auto p-4 bg-gray-100">
-            <div class="max-w-3xl mx-auto space-y-3">
-              <!-- Blocs existants -->
-              <div
-                v-for="(block, idx) in blocks"
-                :key="idx"
-                class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
-              >
-                <!-- Header du bloc -->
-                <div class="bg-gray-50 px-3 py-1.5 flex items-center justify-between border-b border-gray-200">
-                  <div class="flex items-center space-x-2">
-                    <span
-                      class="px-2 py-0.5 text-xs font-bold rounded"
-                      :class="blockTypeClass(block.type)"
-                    >
-                      {{ blockTypeLabel(block.type) }}
-                    </span>
-                    <span class="text-xs text-gray-400">{{ idx + 1 }}</span>
-                  </div>
-                  <div class="flex items-center space-x-1">
-                    <button
-                      v-if="idx > 0"
-                      @click="moveBlock(idx, -1)"
-                      class="text-gray-400 hover:text-gray-600 px-1 text-sm"
-                      title="Monter"
-                    >&uarr;</button>
-                    <button
-                      v-if="idx < blocks.length - 1"
-                      @click="moveBlock(idx, 1)"
-                      class="text-gray-400 hover:text-gray-600 px-1 text-sm"
-                      title="Descendre"
-                    >&darr;</button>
-                    <button
-                      @click="removeBlock(idx)"
-                      class="text-red-400 hover:text-red-600 px-2 text-xs"
-                    >Supprimer</button>
-                  </div>
-                </div>
+          <div
+            class="flex-1 overflow-y-auto p-4 bg-gray-100"
+            @dragover.prevent
+            @drop.prevent="onCanvasDrop"
+          >
+            <div class="max-w-3xl mx-auto space-y-1">
+              <!-- Blocs existants avec drag-and-drop -->
+              <TransitionGroup name="block-list" tag="div" class="space-y-1">
+                <div
+                  v-for="(block, idx) in blocks"
+                  :key="block._uid"
+                  class="group/block transition-all duration-200"
+                  :class="{
+                    'ring-2 ring-primary-400 ring-offset-1 rounded-xl': selectedBlockIdx === idx,
+                    'opacity-40 scale-[0.98]': dragIdx === idx,
+                  }"
+                  draggable="true"
+                  @dragstart="onDragStart(idx, $event)"
+                  @dragend="onDragEnd"
+                  @dragover.prevent="onDragOver(idx, $event)"
+                  @drop.prevent="onDrop(idx)"
+                  @click="selectedBlockIdx = idx"
+                >
+                  <!-- Drop indicator line above -->
+                  <div
+                    v-if="dropTargetIdx === idx && dragIdx !== idx && dragIdx !== idx - 1"
+                    class="h-1 bg-primary-500 rounded-full mx-4 -mb-0.5 animate-pulse"
+                  ></div>
 
-                <!-- Editeur du bloc -->
-                <div class="p-4">
-                  <BlocksTextBlockEdit v-if="block.type === 'text'" v-model="block.data" />
-                  <BlocksMediaBlockEdit v-if="block.type === 'media'" v-model="block.data" />
-                  <BlocksQuizBlockEdit v-if="block.type === 'quiz'" v-model="block.data" :block-id="String(idx)" />
-                  <BlocksHeadingBlockEdit v-if="block.type === 'heading'" v-model="block.data" />
-                  <BlocksSeparatorBlockEdit v-if="block.type === 'separator'" v-model="block.data" />
-                  <BlocksImageBlockEdit v-if="block.type === 'image'" v-model="block.data" />
-                  <BlocksTextImageBlockEdit v-if="block.type === 'text_image'" v-model="block.data" />
-                  <BlocksVideoBlockEdit v-if="block.type === 'video'" v-model="block.data" />
-                  <BlocksAudioBlockEdit v-if="block.type === 'audio'" v-model="block.data" />
-                  <BlocksPdfBlockEdit v-if="block.type === 'pdf'" v-model="block.data" />
-                  <BlocksEmbedBlockEdit v-if="block.type === 'embed'" v-model="block.data" />
-                  <BlocksTrueFalseBlockEdit v-if="block.type === 'true_false'" v-model="block.data" />
-                  <BlocksNumericBlockEdit v-if="block.type === 'numeric'" v-model="block.data" />
-                  <BlocksFillBlankBlockEdit v-if="block.type === 'fill_blank'" v-model="block.data" />
-                  <BlocksMatchingBlockEdit v-if="block.type === 'matching'" v-model="block.data" />
-                  <BlocksSequenceBlockEdit v-if="block.type === 'sequence'" v-model="block.data" />
-                  <BlocksLikertBlockEdit v-if="block.type === 'likert'" v-model="block.data" />
-                  <BlocksOpenAnswerBlockEdit v-if="block.type === 'open_answer'" v-model="block.data" />
-                  <BlocksCalloutBlockEdit v-if="block.type === 'callout'" v-model="block.data" />
+                  <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                    <!-- Header du bloc -->
+                    <div
+                      class="px-3 py-1.5 flex items-center justify-between border-b border-gray-200 cursor-grab active:cursor-grabbing select-none"
+                      :class="selectedBlockIdx === idx ? 'bg-primary-50' : 'bg-gray-50'"
+                    >
+                      <div class="flex items-center space-x-2">
+                        <!-- Drag handle -->
+                        <span class="text-gray-300 group-hover/block:text-gray-400 cursor-grab" title="Glisser pour reordonner">
+                          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><circle cx="9" cy="5" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="19" r="1.5"/></svg>
+                        </span>
+                        <span
+                          class="px-2 py-0.5 text-xs font-bold rounded"
+                          :class="blockTypeClass(block.type)"
+                        >
+                          {{ blockTypeLabel(block.type) }}
+                        </span>
+                        <span class="text-xs text-gray-400">{{ idx + 1 }}</span>
+                      </div>
+                      <div class="flex items-center space-x-0.5">
+                        <!-- Collapse toggle -->
+                        <button
+                          @click.stop="toggleCollapse(idx)"
+                          class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100 transition"
+                          :title="collapsedBlocks.has(idx) ? 'Deplier' : 'Replier'"
+                        >
+                          <svg class="w-3.5 h-3.5 transition-transform" :class="collapsedBlocks.has(idx) ? '' : 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                        </button>
+                        <!-- Move up -->
+                        <button
+                          v-if="idx > 0"
+                          @click.stop="moveBlock(idx, -1)"
+                          class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100 transition"
+                          title="Monter"
+                        >
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+                        </button>
+                        <!-- Move down -->
+                        <button
+                          v-if="idx < blocks.length - 1"
+                          @click.stop="moveBlock(idx, 1)"
+                          class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100 transition"
+                          title="Descendre"
+                        >
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <!-- Duplicate -->
+                        <button
+                          @click.stop="duplicateBlock(idx)"
+                          class="text-gray-400 hover:text-green-600 p-1 rounded hover:bg-green-50 transition"
+                          title="Dupliquer le bloc"
+                        >
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                        </button>
+                        <!-- Delete -->
+                        <button
+                          @click.stop="removeBlock(idx)"
+                          class="text-gray-400 hover:text-red-600 p-1 rounded hover:bg-red-50 transition"
+                          title="Supprimer"
+                        >
+                          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Editeur du bloc (collapsible) -->
+                    <div v-show="!collapsedBlocks.has(idx)" class="p-4">
+                      <BlocksTextBlockEdit v-if="block.type === 'text'" v-model="block.data" />
+                      <BlocksMediaBlockEdit v-if="block.type === 'media'" v-model="block.data" />
+                      <BlocksQuizBlockEdit v-if="block.type === 'quiz'" v-model="block.data" :block-id="String(idx)" />
+                      <BlocksHeadingBlockEdit v-if="block.type === 'heading'" v-model="block.data" />
+                      <BlocksSeparatorBlockEdit v-if="block.type === 'separator'" v-model="block.data" />
+                      <BlocksImageBlockEdit v-if="block.type === 'image'" v-model="block.data" />
+                      <BlocksTextImageBlockEdit v-if="block.type === 'text_image'" v-model="block.data" />
+                      <BlocksVideoBlockEdit v-if="block.type === 'video'" v-model="block.data" />
+                      <BlocksAudioBlockEdit v-if="block.type === 'audio'" v-model="block.data" />
+                      <BlocksPdfBlockEdit v-if="block.type === 'pdf'" v-model="block.data" />
+                      <BlocksEmbedBlockEdit v-if="block.type === 'embed'" v-model="block.data" />
+                      <BlocksTrueFalseBlockEdit v-if="block.type === 'true_false'" v-model="block.data" />
+                      <BlocksNumericBlockEdit v-if="block.type === 'numeric'" v-model="block.data" />
+                      <BlocksFillBlankBlockEdit v-if="block.type === 'fill_blank'" v-model="block.data" />
+                      <BlocksMatchingBlockEdit v-if="block.type === 'matching'" v-model="block.data" />
+                      <BlocksSequenceBlockEdit v-if="block.type === 'sequence'" v-model="block.data" />
+                      <BlocksLikertBlockEdit v-if="block.type === 'likert'" v-model="block.data" />
+                      <BlocksOpenAnswerBlockEdit v-if="block.type === 'open_answer'" v-model="block.data" />
+                      <BlocksCalloutBlockEdit v-if="block.type === 'callout'" v-model="block.data" />
+                    </div>
+
+                    <!-- Collapsed preview -->
+                    <div v-if="collapsedBlocks.has(idx)" class="px-4 py-2 text-xs text-gray-400 italic truncate">
+                      {{ blockSummary(block) }}
+                    </div>
+                  </div>
                 </div>
+              </TransitionGroup>
+
+              <!-- Drop zone at end -->
+              <div
+                v-if="dragIdx !== null"
+                class="border-2 border-dashed border-primary-300 rounded-xl py-4 text-center text-primary-400 text-sm transition-all"
+                @dragover.prevent="dropTargetIdx = blocks.length"
+                @drop.prevent="onDrop(blocks.length)"
+              >
+                Deposer ici (fin)
               </div>
 
               <!-- Zone de depot vide -->
               <div v-if="blocks.length === 0" class="border-2 border-dashed border-gray-300 rounded-xl py-16 text-center text-gray-400">
-                <p class="text-lg mb-2">Glissez/deposez un nouveau bloc ici</p>
-                <p class="text-sm">ou choisissez un bloc dans la palette a droite</p>
+                <p class="text-lg mb-2">Glissez un bloc depuis la palette</p>
+                <p class="text-sm">ou cliquez sur un bloc dans la palette a droite</p>
+                <p class="text-xs text-gray-300 mt-2">Ctrl+S pour sauvegarder | Ctrl+Z pour annuler</p>
               </div>
             </div>
           </div>
@@ -373,31 +489,51 @@
               </button>
             </div>
 
+            <!-- Palette search -->
+            <div v-if="paletteTab !== 'aide'" class="px-3 pt-3 pb-1">
+              <input
+                v-model="paletteSearch"
+                type="text"
+                placeholder="Rechercher un bloc..."
+                class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-primary-400 focus:border-transparent"
+              />
+            </div>
+
             <div class="flex-1 overflow-y-auto p-3">
               <!-- Blocs contenu -->
               <div v-if="paletteTab === 'blocs'" class="grid grid-cols-2 gap-2">
                 <button
-                  v-for="b in contentBlocks"
+                  v-for="b in filteredContentBlocks"
                   :key="b.type"
                   @click="addBlock(b.type)"
+                  draggable="true"
+                  @dragstart="onPaletteDragStart(b.type, $event)"
                   class="flex flex-col items-center p-3 rounded-lg border border-gray-200 hover:border-primary-400 hover:bg-primary-50 hover:shadow-sm transition text-xs text-gray-600 hover:text-primary-700 cursor-pointer"
                 >
                   <span class="text-lg mb-1">{{ b.icon }}</span>
                   <span class="font-medium text-center leading-tight">{{ b.label }}</span>
                 </button>
+                <div v-if="filteredContentBlocks.length === 0" class="col-span-2 text-center text-xs text-gray-400 py-4">
+                  Aucun bloc ne correspond
+                </div>
               </div>
 
               <!-- Blocs questions -->
               <div v-if="paletteTab === 'questions'" class="grid grid-cols-2 gap-2">
                 <button
-                  v-for="b in questionBlocks"
+                  v-for="b in filteredQuestionBlocks"
                   :key="b.type"
                   @click="addBlock(b.type)"
+                  draggable="true"
+                  @dragstart="onPaletteDragStart(b.type, $event)"
                   class="flex flex-col items-center p-3 rounded-lg border border-gray-200 hover:border-green-400 hover:bg-green-50 hover:shadow-sm transition text-xs text-gray-600 hover:text-green-700 cursor-pointer"
                 >
                   <span class="text-lg mb-1">{{ b.icon }}</span>
                   <span class="font-medium text-center leading-tight">{{ b.label }}</span>
                 </button>
+                <div v-if="filteredQuestionBlocks.length === 0" class="col-span-2 text-center text-xs text-gray-400 py-4">
+                  Aucune question ne correspond
+                </div>
               </div>
 
               <!-- Aide -->
@@ -501,7 +637,92 @@ const screenId = route.params.screenId as string;
 
 const mode = ref<'edit' | 'preview'>('edit');
 const saving = ref(false);
-const saved = ref(false);
+const isDirty = ref(false);
+const autoSaveStatus = ref<'idle' | 'saving' | 'saved'>('idle');
+let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Toast system
+interface Toast { id: number; type: 'success' | 'error' | 'info'; message: string }
+const toasts = ref<Toast[]>([]);
+let toastCounter = 0;
+function showToast(type: Toast['type'], message: string, duration = 3000) {
+  const id = ++toastCounter;
+  toasts.value.push({ id, type, message });
+  setTimeout(() => { toasts.value = toasts.value.filter(t => t.id !== id); }, duration);
+}
+
+// Undo/Redo system
+const undoStack = ref<string[]>([]);
+const redoStack = ref<string[]>([]);
+const canUndo = computed(() => undoStack.value.length > 0);
+const canRedo = computed(() => redoStack.value.length > 0);
+let lastSnapshot = '';
+
+function pushUndo() {
+  const snap = JSON.stringify(blocks.value);
+  if (snap === lastSnapshot) return;
+  undoStack.value.push(lastSnapshot);
+  if (undoStack.value.length > 50) undoStack.value.shift();
+  redoStack.value = [];
+  lastSnapshot = snap;
+  isDirty.value = true;
+  scheduleAutoSave();
+}
+
+function undo() {
+  if (!canUndo.value) return;
+  redoStack.value.push(JSON.stringify(blocks.value));
+  const prev = undoStack.value.pop()!;
+  blocks.value = JSON.parse(prev);
+  assignUids();
+  lastSnapshot = prev;
+  isDirty.value = true;
+}
+
+function redo() {
+  if (!canRedo.value) return;
+  undoStack.value.push(JSON.stringify(blocks.value));
+  const next = redoStack.value.pop()!;
+  blocks.value = JSON.parse(next);
+  assignUids();
+  lastSnapshot = next;
+  isDirty.value = true;
+}
+
+function scheduleAutoSave() {
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(async () => {
+    if (!isDirty.value) return;
+    autoSaveStatus.value = 'saving';
+    try {
+      const payload = blocks.value.map((b, i) => ({ type: b.type, order: i, data: b.data }));
+      await store.saveScreenContent(moduleId, screenId, payload);
+      isDirty.value = false;
+      autoSaveStatus.value = 'saved';
+      setTimeout(() => { if (autoSaveStatus.value === 'saved') autoSaveStatus.value = 'idle'; }, 2000);
+    } catch {
+      autoSaveStatus.value = 'idle';
+    }
+  }, 5000);
+}
+
+// Drag-and-drop state
+const dragIdx = ref<number | null>(null);
+const dropTargetIdx = ref<number | null>(null);
+const paletteDragType = ref<BlockType | null>(null);
+
+// Block selection & collapse
+const selectedBlockIdx = ref<number | null>(null);
+const collapsedBlocks = ref(new Set<number>());
+
+// Palette search
+const paletteSearch = ref('');
+
+// Unique IDs for blocks (for TransitionGroup keys)
+let uidCounter = 0;
+function assignUids() {
+  blocks.value.forEach(b => { if (!(b as any)._uid) (b as any)._uid = ++uidCounter; });
+}
 
 // Share modal
 const showShareModal = ref(false);
@@ -551,6 +772,7 @@ interface EditableBlock {
   type: BlockType;
   order: number;
   data: any;
+  _uid?: number;
 }
 
 const blocks = ref<EditableBlock[]>([]);
@@ -580,6 +802,111 @@ const questionBlocks = [
   { type: 'likert' as BlockType, icon: '\u2605', label: 'Likert' },
   { type: 'open_answer' as BlockType, icon: '\u270D', label: 'Reponse courte' },
 ];
+
+// Filtered palette blocks
+const filteredContentBlocks = computed(() => {
+  if (!paletteSearch.value) return contentBlocks;
+  const q = paletteSearch.value.toLowerCase();
+  return contentBlocks.filter(b => b.label.toLowerCase().includes(q) || b.type.toLowerCase().includes(q));
+});
+const filteredQuestionBlocks = computed(() => {
+  if (!paletteSearch.value) return questionBlocks;
+  const q = paletteSearch.value.toLowerCase();
+  return questionBlocks.filter(b => b.label.toLowerCase().includes(q) || b.type.toLowerCase().includes(q));
+});
+
+// Drag-and-drop handlers
+function onDragStart(idx: number, e: DragEvent) {
+  dragIdx.value = idx;
+  dropTargetIdx.value = null;
+  e.dataTransfer!.effectAllowed = 'move';
+  e.dataTransfer!.setData('text/plain', String(idx));
+}
+function onDragEnd() {
+  dragIdx.value = null;
+  dropTargetIdx.value = null;
+}
+function onDragOver(idx: number, e: DragEvent) {
+  e.dataTransfer!.dropEffect = paletteDragType.value ? 'copy' : 'move';
+  dropTargetIdx.value = idx;
+}
+function onDrop(targetIdx: number) {
+  // Drop from palette
+  if (paletteDragType.value) {
+    pushUndo();
+    const newBlock: EditableBlock = {
+      type: paletteDragType.value,
+      order: targetIdx,
+      data: defaultData(paletteDragType.value),
+      _uid: ++uidCounter,
+    };
+    blocks.value.splice(targetIdx, 0, newBlock);
+    reorder();
+    selectedBlockIdx.value = targetIdx;
+    paletteDragType.value = null;
+    showToast('info', `Bloc ${blockTypeLabel(newBlock.type)} ajoute`);
+  }
+  // Drop from canvas (reorder)
+  else if (dragIdx.value !== null && dragIdx.value !== targetIdx) {
+    pushUndo();
+    const item = blocks.value.splice(dragIdx.value, 1)[0];
+    const insertAt = targetIdx > dragIdx.value ? targetIdx - 1 : targetIdx;
+    blocks.value.splice(insertAt, 0, item);
+    reorder();
+    selectedBlockIdx.value = insertAt;
+  }
+  dragIdx.value = null;
+  dropTargetIdx.value = null;
+}
+function onPaletteDragStart(type: BlockType, e: DragEvent) {
+  paletteDragType.value = type;
+  e.dataTransfer!.effectAllowed = 'copy';
+  e.dataTransfer!.setData('text/plain', type);
+}
+function onCanvasDrop() {
+  if (paletteDragType.value) {
+    onDrop(blocks.value.length);
+  }
+}
+
+// Block collapse
+function toggleCollapse(idx: number) {
+  if (collapsedBlocks.value.has(idx)) {
+    collapsedBlocks.value.delete(idx);
+  } else {
+    collapsedBlocks.value.add(idx);
+  }
+  collapsedBlocks.value = new Set(collapsedBlocks.value);
+}
+
+// Block summary for collapsed view
+function blockSummary(block: EditableBlock): string {
+  const d = block.data || {};
+  if (d.question) return d.question.substring(0, 80);
+  if (d.content) return d.content.substring(0, 80);
+  if (d.text) return d.text.substring(0, 80);
+  if (d.statement) return d.statement.substring(0, 80);
+  if (d.instruction) return d.instruction.substring(0, 80);
+  if (d.title) return d.title.substring(0, 80);
+  if (d.url) return d.url.substring(0, 60);
+  return '(vide)';
+}
+
+// Block duplication
+function duplicateBlock(idx: number) {
+  pushUndo();
+  const source = blocks.value[idx];
+  const clone: EditableBlock = {
+    type: source.type,
+    order: idx + 1,
+    data: JSON.parse(JSON.stringify(source.data)),
+    _uid: ++uidCounter,
+  };
+  blocks.value.splice(idx + 1, 0, clone);
+  reorder();
+  selectedBlockIdx.value = idx + 1;
+  showToast('success', 'Bloc duplique');
+}
 
 // Toutes les sections du module (arborescence complete)
 const allSections = computed(() => store.current?.sections || []);
@@ -705,8 +1032,7 @@ function onDocClick(e: Event) {
     screenMenuId.value = null;
   }
 }
-onMounted(() => document.addEventListener('click', onDocClick));
-onUnmounted(() => document.removeEventListener('click', onDocClick));
+// onDocClick is handled in the main onMounted/onUnmounted below
 
 function openScreenMenu(id: string) {
   screenMenuId.value = screenMenuId.value === id ? null : id;
@@ -870,7 +1196,12 @@ function loadBlocks() {
     type: b.type,
     order: b.order ?? i,
     data: JSON.parse(JSON.stringify(b.data)),
+    _uid: ++uidCounter,
   }));
+  lastSnapshot = JSON.stringify(blocks.value);
+  undoStack.value = [];
+  redoStack.value = [];
+  isDirty.value = false;
 }
 
 function defaultData(type: string): any {
@@ -904,25 +1235,35 @@ function clearError() {
 
 function addBlock(type: BlockType) {
   clearError();
-  blocks.value.push({
+  pushUndo();
+  const newBlock: EditableBlock = {
     type,
     order: blocks.value.length,
     data: defaultData(type),
-  });
+    _uid: ++uidCounter,
+  };
+  blocks.value.push(newBlock);
+  selectedBlockIdx.value = blocks.value.length - 1;
+  showToast('info', `Bloc ${blockTypeLabel(type)} ajoute`);
 }
 
 function removeBlock(idx: number) {
   clearError();
+  pushUndo();
   blocks.value.splice(idx, 1);
   reorder();
+  if (selectedBlockIdx.value === idx) selectedBlockIdx.value = null;
+  showToast('info', 'Bloc supprime');
 }
 
 function moveBlock(idx: number, dir: number) {
+  pushUndo();
   const target = idx + dir;
   const temp = blocks.value[idx];
   blocks.value[idx] = blocks.value[target];
   blocks.value[target] = temp;
   reorder();
+  selectedBlockIdx.value = target;
 }
 
 function reorder() {
@@ -969,8 +1310,8 @@ function blockTypeClass(type: string) {
 
 async function save() {
   saving.value = true;
-  saved.value = false;
   store.error = null;
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
   try {
     const payload = blocks.value.map((b, i) => ({
       type: b.type,
@@ -978,16 +1319,55 @@ async function save() {
       data: b.data,
     }));
     await store.saveScreenContent(moduleId, screenId, payload);
-    saved.value = true;
-    setTimeout(() => { saved.value = false; }, 3000);
+    isDirty.value = false;
+    autoSaveStatus.value = 'saved';
+    showToast('success', 'Contenu sauvegarde !');
+    setTimeout(() => { if (autoSaveStatus.value === 'saved') autoSaveStatus.value = 'idle'; }, 2000);
   } catch {
-    // error in store
+    showToast('error', 'Erreur de sauvegarde');
   } finally {
     saving.value = false;
   }
 }
 
+// Keyboard shortcuts
+function onKeyDown(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    save();
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+    e.preventDefault();
+    undo();
+  }
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+    e.preventDefault();
+    redo();
+  }
+  // Delete selected block
+  if (e.key === 'Delete' && selectedBlockIdx.value !== null && !(e.target as HTMLElement).closest('input, textarea, [contenteditable]')) {
+    e.preventDefault();
+    removeBlock(selectedBlockIdx.value);
+  }
+  // Escape to deselect
+  if (e.key === 'Escape') {
+    selectedBlockIdx.value = null;
+    showShareModal.value = false;
+  }
+}
+
+// Warn before leaving with unsaved changes
+function onBeforeUnload(e: BeforeUnloadEvent) {
+  if (isDirty.value) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+}
+
 onMounted(async () => {
+  document.addEventListener('keydown', onKeyDown);
+  document.addEventListener('click', onDocClick);
+  window.addEventListener('beforeunload', onBeforeUnload);
   // Charger le module complet (pour la sidebar des ecrans)
   await Promise.all([
     store.fetchModule(moduleId),
@@ -996,4 +1376,26 @@ onMounted(async () => {
   loadBlocks();
   loadShareInfo();
 });
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKeyDown);
+  document.removeEventListener('click', onDocClick);
+  window.removeEventListener('beforeunload', onBeforeUnload);
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+});
 </script>
+
+<style scoped>
+/* Block list transitions */
+.block-list-enter-active { transition: all 0.3s ease; }
+.block-list-leave-active { transition: all 0.2s ease; }
+.block-list-enter-from { opacity: 0; transform: translateY(-10px); }
+.block-list-leave-to { opacity: 0; transform: translateX(-20px); }
+.block-list-move { transition: transform 0.3s ease; }
+
+/* Toast transitions */
+.toast-enter-active { transition: all 0.3s ease; }
+.toast-leave-active { transition: all 0.3s ease; }
+.toast-enter-from { opacity: 0; transform: translateX(40px); }
+.toast-leave-to { opacity: 0; transform: translateX(40px); }
+</style>
