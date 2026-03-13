@@ -6,7 +6,8 @@ export function useApi() {
     path: string,
     options: RequestInit = {}
   ): Promise<{ data: T; status: number }> {
-    const token = useCookie('auth_token').value;
+    const session = useCookie<{ token: string; tenant_id: string } | null>('__session').value;
+    const token = session?.token || useCookie('auth_token').value;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
