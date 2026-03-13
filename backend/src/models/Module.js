@@ -7,7 +7,7 @@ const contentBlockSchema = new mongoose.Schema({
     enum: [
       'text', 'media', 'quiz',
       'heading', 'separator', 'image', 'text_image', 'video', 'audio', 'pdf', 'embed',
-      'true_false', 'numeric', 'fill_blank', 'matching', 'sequence', 'likert', 'open_answer',
+      'true_false', 'numeric', 'fill_blank', 'matching', 'sequence', 'likert', 'open_answer', 'callout',
     ],
     required: [true, 'Le type de bloc est requis'],
   },
@@ -90,6 +90,68 @@ const moduleSchema = new mongoose.Schema(
     shareEnabled: {
       type: Boolean,
       default: false,
+    },
+    surveillanceMode: {
+      type: String,
+      enum: ['light', 'strict'],
+      default: 'light',
+    },
+    globalTimeLimit: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    evaluationType: {
+      type: String,
+      enum: ['live', 'personalized'],
+      default: 'personalized',
+    },
+    liveStartTime: {
+      type: Date,
+      default: null,
+    },
+    liveEndTime: {
+      type: Date,
+      default: null,
+    },
+    contestMode: {
+      type: Boolean,
+      default: false,
+    },
+    proctoring: {
+      type: String,
+      enum: ['none', 'snapshot', 'video'],
+      default: 'none',
+    },
+    snapshotInterval: {
+      type: Number,
+      default: 30,
+      min: 10,
+      max: 120,
+    },
+    strictSettings: {
+      fullscreen: {
+        type: Boolean,
+        default: true,
+      },
+      antiCopy: {
+        type: Boolean,
+        default: true,
+      },
+      blurDetection: {
+        type: Boolean,
+        default: true,
+      },
+      maxBlurCount: {
+        type: Number,
+        default: 3,
+        min: 1,
+        max: 20,
+      },
+      autoSubmitOnExceed: {
+        type: Boolean,
+        default: false,
+      },
     },
     sections: [sectionSchema],
     tenant_id: {

@@ -93,6 +93,13 @@
 
         <!-- Onglet Partager -->
         <div v-if="activeTab === 'share'" class="max-w-2xl space-y-6">
+          <!-- Live mode time window info -->
+          <div v-if="evalForm.evaluationType === 'live' && evalForm.liveStartTime && evalForm.liveEndTime" class="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-800">
+            <span class="font-bold">Examen Live programme :</span>
+            Du {{ new Date(evalForm.liveStartTime).toLocaleString('fr-FR') }}
+            au {{ new Date(evalForm.liveEndTime).toLocaleString('fr-FR') }}.
+            Le lien ne sera accessible qu'entre ces horaires.
+          </div>
           <!-- Activer/Desactiver -->
           <div class="bg-white border border-gray-200 rounded-xl p-5">
             <div class="flex items-center justify-between">
@@ -159,6 +166,334 @@
           </div>
         </div>
 
+        <!-- Onglet Surveillance -->
+        <div v-if="activeTab === 'surveillance'" class="max-w-2xl space-y-6">
+          <!-- Live mode override notice -->
+          <div v-if="evalForm.evaluationType === 'live'" class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+            <span class="font-bold">Mode Live actif :</span> La surveillance stricte est forcee automatiquement (plein ecran, anti-copie, detection d'onglet, soumission auto). Les options ci-dessous ne s'appliquent qu'en mode Personnalise.
+          </div>
+          <!-- Mode selector -->
+          <div class="bg-white border border-gray-200 rounded-xl p-5">
+            <h3 class="font-bold text-gray-900 mb-1">Mode de surveillance</h3>
+            <p class="text-sm text-gray-500 mb-4">Definir le niveau de controle lors du passage du module par les eleves</p>
+            <div class="grid grid-cols-2 gap-4">
+              <button
+                @click="survForm.surveillanceMode = 'light'"
+                class="p-4 rounded-xl border-2 text-left transition"
+                :class="survForm.surveillanceMode === 'light' ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'border-gray-200 hover:border-gray-300'"
+              >
+                <div class="text-lg font-bold mb-1" :class="survForm.surveillanceMode === 'light' ? 'text-green-700' : 'text-gray-700'">Leger</div>
+                <p class="text-xs text-gray-500">Pas de restriction. Chronometre indicatif. L'eleve peut naviguer librement.</p>
+              </button>
+              <button
+                @click="survForm.surveillanceMode = 'strict'"
+                class="p-4 rounded-xl border-2 text-left transition"
+                :class="survForm.surveillanceMode === 'strict' ? 'border-red-500 bg-red-50 ring-2 ring-red-200' : 'border-gray-200 hover:border-gray-300'"
+              >
+                <div class="text-lg font-bold mb-1" :class="survForm.surveillanceMode === 'strict' ? 'text-red-700' : 'text-gray-700'">Strict</div>
+                <p class="text-xs text-gray-500">Plein ecran force, copie desactivee, detection de changement d'onglet.</p>
+              </button>
+            </div>
+          </div>
+
+          <!-- Strict settings (visible only in strict mode) -->
+          <div v-if="survForm.surveillanceMode === 'strict'" class="bg-white border border-orange-200 rounded-xl p-5 space-y-4">
+            <h3 class="font-bold text-orange-800 mb-1">Options du mode strict</h3>
+
+            <label class="flex items-center justify-between cursor-pointer">
+              <div>
+                <span class="font-medium text-gray-700">Plein ecran force</span>
+                <p class="text-xs text-gray-500">Le module se ferme si l'eleve quitte le plein ecran</p>
+              </div>
+              <input type="checkbox" v-model="survForm.strictSettings.fullscreen" class="w-5 h-5 text-primary-600 rounded focus:ring-primary-500" />
+            </label>
+
+            <label class="flex items-center justify-between cursor-pointer">
+              <div>
+                <span class="font-medium text-gray-700">Anti-copie</span>
+                <p class="text-xs text-gray-500">Desactive le clic droit, copier et coller</p>
+              </div>
+              <input type="checkbox" v-model="survForm.strictSettings.antiCopy" class="w-5 h-5 text-primary-600 rounded focus:ring-primary-500" />
+            </label>
+
+            <label class="flex items-center justify-between cursor-pointer">
+              <div>
+                <span class="font-medium text-gray-700">Detection de changement d'onglet</span>
+                <p class="text-xs text-gray-500">Alerte si l'eleve quitte l'onglet du module</p>
+              </div>
+              <input type="checkbox" v-model="survForm.strictSettings.blurDetection" class="w-5 h-5 text-primary-600 rounded focus:ring-primary-500" />
+            </label>
+
+            <div v-if="survForm.strictSettings.blurDetection" class="pl-4 border-l-2 border-orange-200 space-y-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nombre max de sorties d'onglet tolerees</label>
+                <input
+                  type="number" v-model.number="survForm.strictSettings.maxBlurCount"
+                  min="1" max="20"
+                  class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                />
+              </div>
+              <label class="flex items-center justify-between cursor-pointer">
+                <div>
+                  <span class="font-medium text-gray-700">Soumission automatique au depassement</span>
+                  <p class="text-xs text-gray-500">Soumettre automatiquement le quiz si le seuil est depasse</p>
+                </div>
+                <input type="checkbox" v-model="survForm.strictSettings.autoSubmitOnExceed" class="w-5 h-5 text-primary-600 rounded focus:ring-primary-500" />
+              </label>
+            </div>
+          </div>
+
+          <button @click="saveSurveillance" :disabled="saving" class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50 font-medium">
+            {{ saving ? 'Sauvegarde...' : 'Sauvegarder la surveillance' }}
+          </button>
+        </div>
+
+        <!-- Onglet Mode evaluation -->
+        <div v-if="activeTab === 'evaluation'" class="max-w-2xl space-y-6">
+          <!-- Mode selector -->
+          <div class="bg-white border border-gray-200 rounded-xl p-5">
+            <h3 class="font-bold text-gray-900 mb-1">Type d'evaluation</h3>
+            <p class="text-sm text-gray-500 mb-4">Choisir entre un examen synchrone (Live) ou un exercice en autonomie (Personnalise)</p>
+            <div class="grid grid-cols-2 gap-4">
+              <button
+                @click="evalForm.evaluationType = 'personalized'"
+                class="p-4 rounded-xl border-2 text-left transition"
+                :class="evalForm.evaluationType === 'personalized' ? 'border-green-500 bg-green-50 ring-2 ring-green-200' : 'border-gray-200 hover:border-gray-300'"
+              >
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-lg">&#x1F7E2;</span>
+                  <span class="font-bold" :class="evalForm.evaluationType === 'personalized' ? 'text-green-700' : 'text-gray-700'">Personnalise</span>
+                </div>
+                <p class="text-xs text-gray-500">Accessible apres publication. Chronometre individuel. Surveillance personnalisable.</p>
+                <div class="mt-2 space-y-1 text-xs text-gray-400">
+                  <div>&#10003; Devoirs a la maison</div>
+                  <div>&#10003; Exercices d'entrainement</div>
+                  <div>&#10003; Modules de remediation IA</div>
+                </div>
+              </button>
+              <button
+                @click="evalForm.evaluationType = 'live'"
+                class="p-4 rounded-xl border-2 text-left transition"
+                :class="evalForm.evaluationType === 'live' ? 'border-red-500 bg-red-50 ring-2 ring-red-200' : 'border-gray-200 hover:border-gray-300'"
+              >
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-lg">&#x1F534;</span>
+                  <span class="font-bold" :class="evalForm.evaluationType === 'live' ? 'text-red-700' : 'text-gray-700'">En direct (Live)</span>
+                </div>
+                <p class="text-xs text-gray-500">Heure fixe de debut/fin. Surveillance stricte forcee. Monitoring en temps reel.</p>
+                <div class="mt-2 space-y-1 text-xs text-gray-400">
+                  <div>&#10003; Examens officiels DDENE</div>
+                  <div>&#10003; Evaluations synchrones</div>
+                  <div>&#10003; Competitions de groupe</div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Live mode settings -->
+          <div v-if="evalForm.evaluationType === 'live'" class="bg-white border border-red-200 rounded-xl p-5 space-y-4">
+            <h3 class="font-bold text-red-800 mb-1">Programmation de l'examen</h3>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Date et heure de debut</label>
+                <input
+                  v-model="evalForm.liveStartTime"
+                  type="datetime-local"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Date et heure de fin</label>
+                <input
+                  v-model="evalForm.liveEndTime"
+                  type="datetime-local"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <!-- Computed duration -->
+            <div v-if="evalForm.liveStartTime && evalForm.liveEndTime" class="bg-red-50 rounded-lg p-3 text-sm">
+              <span class="font-medium text-red-800">Duree de l'examen : </span>
+              <span class="font-bold text-red-900">
+                {{ Math.max(0, Math.round((new Date(evalForm.liveEndTime).getTime() - new Date(evalForm.liveStartTime).getTime()) / 60000)) }} minutes
+              </span>
+            </div>
+
+            <!-- Info box -->
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+              <p class="font-bold mb-1">En mode Live :</p>
+              <ul class="space-y-1 text-xs">
+                <li>&#8226; L'examen ne sera accessible qu'entre les deux horaires definis</li>
+                <li>&#8226; Le chronometre sera calcule automatiquement (temps restant jusqu'a la fin)</li>
+                <li>&#8226; La surveillance stricte sera forcee (plein ecran, anti-copie, detection d'onglet)</li>
+                <li>&#8226; Soumission automatique a l'expiration du temps</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Contest Mode (Live only) -->
+          <div v-if="evalForm.evaluationType === 'live'" class="bg-white border border-purple-200 rounded-xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-purple-800 mb-1">Mode Concours</h3>
+                <p class="text-xs text-gray-500">Le serveur dicte la cadence. Les questions apparaissent simultanement avec un chronometre par question.</p>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" v-model="evalForm.contestMode" class="sr-only peer" />
+                <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+              </label>
+            </div>
+            <div v-if="evalForm.contestMode" class="bg-purple-50 rounded-lg p-3 text-xs text-purple-700 space-y-1">
+              <p>&#8226; Chaque question utilise sa duree individuelle (champ "duration")</p>
+              <p>&#8226; La question disparait a la fin du temps, meme sans reponse</p>
+              <p>&#8226; Tous les candidats voient la meme question au meme instant</p>
+              <p>&#8226; Le professeur controle le demarrage depuis le Live Dashboard</p>
+            </div>
+          </div>
+
+          <!-- Proctoring (Live only) -->
+          <div v-if="evalForm.evaluationType === 'live'" class="bg-white border border-red-200 rounded-xl p-5 space-y-4">
+            <h3 class="font-bold text-red-800 mb-1">Surveillance Biometrique (Proctoring)</h3>
+            <p class="text-xs text-gray-500 mb-3">Capture camera des eleves pendant l'examen pour detecter la fraude.</p>
+            <div class="grid grid-cols-3 gap-3">
+              <button
+                @click="evalForm.proctoring = 'none'"
+                class="p-3 rounded-lg border-2 text-center text-sm transition"
+                :class="evalForm.proctoring === 'none' ? 'border-gray-500 bg-gray-50' : 'border-gray-200'"
+              >
+                <div class="font-bold text-gray-700">Desactive</div>
+                <p class="text-[10px] text-gray-400 mt-1">Pas de camera</p>
+              </button>
+              <button
+                @click="evalForm.proctoring = 'snapshot'"
+                class="p-3 rounded-lg border-2 text-center text-sm transition"
+                :class="evalForm.proctoring === 'snapshot' ? 'border-red-500 bg-red-50' : 'border-gray-200'"
+              >
+                <div class="font-bold text-red-700">Captures</div>
+                <p class="text-[10px] text-gray-400 mt-1">Photos periodiques</p>
+              </button>
+              <button
+                @click="evalForm.proctoring = 'video'"
+                class="p-3 rounded-lg border-2 text-center text-sm transition"
+                :class="evalForm.proctoring === 'video' ? 'border-red-500 bg-red-50' : 'border-gray-200'"
+              >
+                <div class="font-bold text-red-700">Video</div>
+                <p class="text-[10px] text-gray-400 mt-1">Flux continu (WebRTC)</p>
+              </button>
+            </div>
+            <div v-if="evalForm.proctoring === 'snapshot'" class="flex items-center gap-3">
+              <label class="text-sm text-gray-700">Intervalle de capture :</label>
+              <select v-model.number="evalForm.snapshotInterval" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm">
+                <option :value="10">10 secondes</option>
+                <option :value="15">15 secondes</option>
+                <option :value="30">30 secondes</option>
+                <option :value="60">60 secondes</option>
+                <option :value="120">2 minutes</option>
+              </select>
+              <span class="text-xs text-gray-400">Recommande: 30s pour Haiti (economie bande passante)</span>
+            </div>
+            <div v-if="evalForm.proctoring === 'video'" class="bg-amber-50 rounded-lg p-3 text-xs text-amber-700">
+              Le mode video (WebRTC) necessite une bonne bande passante. Pour les zones reculees d'Haiti, preferez le mode "Captures" (photos toutes les 30s).
+            </div>
+          </div>
+
+          <!-- Personalized mode info -->
+          <div v-if="evalForm.evaluationType === 'personalized'" class="bg-green-50 border border-green-200 rounded-xl p-5 text-sm text-green-800">
+            <p class="font-bold mb-1">En mode Personnalise :</p>
+            <ul class="space-y-1 text-xs">
+              <li>&#8226; Le module est accessible a tout moment apres publication</li>
+              <li>&#8226; Le chronometre individuel est configure dans l'onglet "Chronometre"</li>
+              <li>&#8226; Le mode de surveillance est configurable dans l'onglet "Surveillance"</li>
+            </ul>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <button @click="saveEvaluation" :disabled="saving" class="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50 font-medium">
+              {{ saving ? 'Sauvegarde...' : 'Sauvegarder le mode' }}
+            </button>
+            <NuxtLink
+              v-if="evalForm.evaluationType === 'live'"
+              :to="`/admin/modules/${route.params.id}/live`"
+              class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 font-medium text-sm inline-flex items-center gap-2"
+            >
+              <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+              Live Dashboard
+            </NuxtLink>
+          </div>
+        </div>
+
+        <!-- Onglet Chronometre -->
+        <div v-if="activeTab === 'timer'" class="max-w-2xl space-y-6">
+          <!-- Live mode override notice -->
+          <div v-if="evalForm.evaluationType === 'live'" class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
+            <span class="font-bold">Mode Live actif :</span> Le chronometre est calcule automatiquement a partir de la fenetre horaire de l'examen. Le parametre ci-dessous ne s'applique qu'en mode Personnalise.
+          </div>
+          <div class="bg-white border border-gray-200 rounded-xl p-5">
+            <h3 class="font-bold text-gray-900 mb-1">Compte a rebours global</h3>
+            <p class="text-sm text-gray-500 mb-4">
+              Definir une duree globale pour le module, ou laisser a 0 pour calculer automatiquement
+              la somme des durees individuelles de chaque question.
+            </p>
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Duree globale (minutes)</label>
+                <div class="flex items-center gap-3">
+                  <input
+                    v-model.number="timerForm.globalTimeLimit"
+                    type="number"
+                    min="0"
+                    max="600"
+                    class="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                  />
+                  <span class="text-sm text-gray-500">minutes (0 = somme automatique des questions)</span>
+                </div>
+              </div>
+
+              <!-- Computed timer info -->
+              <div v-if="computedTimer" class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-lg">&#9201;</span>
+                  <span class="font-bold text-blue-800">
+                    {{ timerForm.globalTimeLimit > 0 ? timerForm.globalTimeLimit : computedTimer.totalMinutes }} minutes
+                  </span>
+                  <span class="text-xs text-blue-500">
+                    ({{ timerForm.globalTimeLimit > 0 ? 'duree globale' : 'calculee automatiquement' }})
+                  </span>
+                </div>
+                <div v-if="computedTimer.breakdown && computedTimer.breakdown.length > 0" class="text-xs text-blue-600 space-y-1">
+                  <p class="font-medium">Detail par question :</p>
+                  <div v-for="(b, i) in computedTimer.breakdown" :key="i" class="flex items-center gap-2">
+                    <span class="bg-blue-100 px-1.5 py-0.5 rounded text-blue-700">{{ b.type }}</span>
+                    <span class="text-blue-600 truncate flex-1">{{ b.question || '(sans titre)' }}</span>
+                    <span class="font-mono font-bold">{{ b.duration }}min</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button @click="saveTimer" :disabled="saving" class="mt-4 bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50 font-medium">
+              {{ saving ? 'Sauvegarde...' : 'Sauvegarder le chronometre' }}
+            </button>
+          </div>
+
+          <!-- Link to reporting -->
+          <NuxtLink
+            :to="`/admin/modules/${moduleId}/reporting`"
+            class="block bg-purple-50 border border-purple-200 rounded-xl p-5 hover:bg-purple-100 transition"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-purple-800">Reporting et Resultats</h3>
+                <p class="text-sm text-purple-600 mt-1">Voir les rapports PDF, export Excel, commentaires IA et remediation</p>
+              </div>
+              <span class="text-purple-400 text-2xl">&rarr;</span>
+            </div>
+          </NuxtLink>
+        </div>
+
         <!-- Onglet Exporter -->
         <div v-if="activeTab === 'export'" class="max-w-2xl">
           <div class="bg-gray-50 border border-gray-200 rounded-xl p-6 text-center">
@@ -175,6 +510,20 @@
               Telecharger cmi5.xml
             </a>
           </div>
+
+          <!-- Reporting shortcut -->
+          <NuxtLink
+            :to="`/admin/modules/${moduleId}/reporting`"
+            class="mt-4 block bg-purple-50 border border-purple-200 rounded-xl p-5 hover:bg-purple-100 transition"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="font-bold text-purple-800">Export PDF / Excel des notes</h3>
+                <p class="text-sm text-purple-600 mt-1">Rapports individuels et fichier de notes global</p>
+              </div>
+              <span class="text-purple-400 text-2xl">&rarr;</span>
+            </div>
+          </NuxtLink>
         </div>
 
         <!-- Onglet Supprimer -->
@@ -196,15 +545,14 @@
 </template>
 
 <script setup lang="ts">
-import type { ThemeId } from '~/stores/modules';
+import type { ThemeId, SurveillanceMode, StrictSettings, EvaluationType } from '~/stores/modules';
 
 definePageMeta({ middleware: 'auth' });
 
 const route = useRoute();
 const routerNav = useRouter();
 const store = useModulesStore();
-const config = useRuntimeConfig();
-const apiBase = config.public.apiBase;
+const { apiFetch, baseURL: apiBase } = useApi();
 
 const moduleId = route.params.id as string;
 
@@ -219,7 +567,10 @@ const embedHeight = ref(600);
 const tabs = [
   { id: 'properties', label: 'Proprietes' },
   { id: 'theme', label: 'Theme' },
+  { id: 'evaluation', label: 'Mode evaluation' },
+  { id: 'timer', label: 'Chronometre' },
   { id: 'share', label: 'Partager' },
+  { id: 'surveillance', label: 'Surveillance' },
   { id: 'export', label: 'Exporter' },
   { id: 'delete', label: 'Supprimer' },
 ];
@@ -240,6 +591,31 @@ const editForm = reactive({
   theme: 'ddene' as ThemeId,
 });
 
+const survForm = reactive({
+  surveillanceMode: 'light' as SurveillanceMode,
+  strictSettings: {
+    fullscreen: true,
+    antiCopy: true,
+    blurDetection: true,
+    maxBlurCount: 3,
+    autoSubmitOnExceed: false,
+  } as StrictSettings,
+});
+
+const timerForm = reactive({
+  globalTimeLimit: 0,
+});
+const computedTimer = ref<any>(null);
+
+const evalForm = reactive({
+  evaluationType: 'personalized' as EvaluationType,
+  liveStartTime: '',
+  liveEndTime: '',
+  contestMode: false,
+  proctoring: 'none' as 'none' | 'snapshot' | 'video',
+  snapshotInterval: 30,
+});
+
 const shareInfo = reactive({
   shareEnabled: false,
   shareToken: null as string | null,
@@ -258,6 +634,77 @@ function loadForm() {
   editForm.language = store.current.language;
   editForm.status = store.current.status;
   editForm.theme = store.current.theme || 'ddene';
+  // Surveillance
+  survForm.surveillanceMode = store.current.surveillanceMode || 'light';
+  if (store.current.strictSettings) {
+    Object.assign(survForm.strictSettings, store.current.strictSettings);
+  }
+  // Timer
+  timerForm.globalTimeLimit = (store.current as any).globalTimeLimit || 0;
+  // Evaluation mode
+  evalForm.evaluationType = (store.current as any).evaluationType || 'personalized';
+  evalForm.liveStartTime = (store.current as any).liveStartTime
+    ? new Date((store.current as any).liveStartTime).toISOString().slice(0, 16)
+    : '';
+  evalForm.liveEndTime = (store.current as any).liveEndTime
+    ? new Date((store.current as any).liveEndTime).toISOString().slice(0, 16)
+    : '';
+  evalForm.contestMode = (store.current as any).contestMode || false;
+  evalForm.proctoring = (store.current as any).proctoring || 'none';
+  evalForm.snapshotInterval = (store.current as any).snapshotInterval || 30;
+}
+
+async function loadTimer() {
+  try {
+    const res = await apiFetch(`/reporting/module-timer/${moduleId}`);
+    computedTimer.value = res.data;
+  } catch { /* ignore */ }
+}
+
+async function saveTimer() {
+  saving.value = true;
+  successMsg.value = '';
+  store.error = null;
+  try {
+    await store.updateModule(moduleId, {
+      globalTimeLimit: timerForm.globalTimeLimit,
+    } as any);
+    successMsg.value = 'Chronometre sauvegarde !';
+    setTimeout(() => { successMsg.value = ''; }, 3000);
+    await loadTimer();
+  } catch { /* handled in store */ } finally {
+    saving.value = false;
+  }
+}
+
+async function saveEvaluation() {
+  if (evalForm.evaluationType === 'live') {
+    if (!evalForm.liveStartTime || !evalForm.liveEndTime) {
+      store.error = 'Les dates de debut et fin sont requises pour le mode Live';
+      return;
+    }
+    if (new Date(evalForm.liveEndTime) <= new Date(evalForm.liveStartTime)) {
+      store.error = 'La date de fin doit etre posterieure a la date de debut';
+      return;
+    }
+  }
+  saving.value = true;
+  successMsg.value = '';
+  store.error = null;
+  try {
+    await store.updateModule(moduleId, {
+      evaluationType: evalForm.evaluationType,
+      liveStartTime: evalForm.evaluationType === 'live' ? new Date(evalForm.liveStartTime).toISOString() : null,
+      liveEndTime: evalForm.evaluationType === 'live' ? new Date(evalForm.liveEndTime).toISOString() : null,
+      contestMode: evalForm.evaluationType === 'live' ? evalForm.contestMode : false,
+      proctoring: evalForm.evaluationType === 'live' ? evalForm.proctoring : 'none',
+      snapshotInterval: evalForm.snapshotInterval,
+    } as any);
+    successMsg.value = 'Mode d\'evaluation sauvegarde !';
+    setTimeout(() => { successMsg.value = ''; }, 3000);
+  } catch { /* handled in store */ } finally {
+    saving.value = false;
+  }
 }
 
 async function saveProperties() {
@@ -273,6 +720,22 @@ async function saveProperties() {
       theme: editForm.theme,
     } as any);
     successMsg.value = 'Proprietes sauvegardees !';
+    setTimeout(() => { successMsg.value = ''; }, 3000);
+  } catch { /* handled in store */ } finally {
+    saving.value = false;
+  }
+}
+
+async function saveSurveillance() {
+  saving.value = true;
+  successMsg.value = '';
+  store.error = null;
+  try {
+    await store.updateModule(moduleId, {
+      surveillanceMode: survForm.surveillanceMode,
+      strictSettings: survForm.surveillanceMode === 'strict' ? { ...survForm.strictSettings } : undefined,
+    } as any);
+    successMsg.value = 'Configuration de surveillance sauvegardee !';
     setTimeout(() => { successMsg.value = ''; }, 3000);
   } catch { /* handled in store */ } finally {
     saving.value = false;
@@ -328,5 +791,6 @@ onMounted(async () => {
   await store.fetchModule(moduleId);
   loadForm();
   loadShareInfo();
+  loadTimer();
 });
 </script>

@@ -334,6 +334,7 @@
                   <BlocksSequenceBlockEdit v-if="block.type === 'sequence'" v-model="block.data" />
                   <BlocksLikertBlockEdit v-if="block.type === 'likert'" v-model="block.data" />
                   <BlocksOpenAnswerBlockEdit v-if="block.type === 'open_answer'" v-model="block.data" />
+                  <BlocksCalloutBlockEdit v-if="block.type === 'callout'" v-model="block.data" />
                 </div>
               </div>
 
@@ -476,6 +477,7 @@
                   <BlocksSequenceBlockPreview v-if="block.type === 'sequence'" :data="block.data" />
                   <BlocksLikertBlockPreview v-if="block.type === 'likert'" :data="block.data" />
                   <BlocksOpenAnswerBlockPreview v-if="block.type === 'open_answer'" :data="block.data" />
+                  <BlocksCalloutBlockPreview v-if="block.type === 'callout'" :data="block.data" />
                 </div>
               </div>
             </div>
@@ -565,6 +567,7 @@ const contentBlocks = [
   { type: 'pdf' as BlockType, icon: '\uD83D\uDCC4', label: 'PDF' },
   { type: 'embed' as BlockType, icon: '\u2699', label: 'Objet integre' },
   { type: 'media' as BlockType, icon: '\uD83C\uDFA5', label: 'Media (legacy)' },
+  { type: 'callout' as BlockType, icon: '\uD83D\uDCDD', label: 'Boite de texte' },
 ];
 
 const questionBlocks = [
@@ -890,6 +893,7 @@ function defaultData(type: string): any {
     sequence: { instruction: '', items: ['', '', ''], explanation: '' },
     likert: { question: '', scale: 'agreement' },
     open_answer: { question: '', answer: '', autoGrade: false, maxWords: 0, rows: 3, points: 1, duration: 0, explanation: '' },
+    callout: { variant: 'info', title: '', content: '', collapsible: false, borderStyle: 'left', bgColor: '#eff6ff', borderColor: '#3b82f6', textColor: '#1e3a5f' },
   };
   return defaults[type] || {};
 }
@@ -933,6 +937,7 @@ function blockTypeLabel(type: string) {
     pdf: 'PDF', embed: 'EMBED',
     true_false: 'VRAI/FAUX', numeric: 'NUMERIQUE', fill_blank: 'TEXTE A TROUS',
     matching: 'APPARIEMENT', sequence: 'SEQUENCE', likert: 'LIKERT', open_answer: 'REPONSE COURTE',
+    callout: 'BOITE DE TEXTE',
   };
   return labels[type] || type.toUpperCase();
 }
@@ -957,6 +962,7 @@ function blockTypeClass(type: string) {
     sequence: 'bg-orange-100 text-orange-700',
     likert: 'bg-pink-100 text-pink-700',
     open_answer: 'bg-cyan-100 text-cyan-700',
+    callout: 'bg-blue-100 text-blue-700',
   };
   return classes[type] || 'bg-gray-100 text-gray-700';
 }

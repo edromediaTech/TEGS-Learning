@@ -3,6 +3,7 @@ const { body, param, validationResult } = require('express-validator');
 const Module = require('../models/Module');
 const { authenticate, authorize } = require('../middleware/auth');
 const tenantIsolation = require('../middleware/tenantIsolation');
+const { requireLimit } = require('../middleware/featureGate');
 
 const router = express.Router();
 
@@ -18,6 +19,9 @@ router.use(authorize('admin_ddene', 'teacher'));
 // ---------------------------------------------------------------------------
 router.post(
   '/',
+  requireLimit('modules', async (req) => {
+    return Module.countDocuments({ tenant_id: req.tenantId });
+  }),
   [
     body('title').notEmpty().withMessage('Le titre est requis'),
     body('language').optional().isIn(['fr', 'ht', 'en']).withMessage('Langue invalide'),
@@ -103,6 +107,11 @@ router.put(
   [
     body('title').optional().notEmpty().withMessage('Le titre ne peut pas etre vide'),
     body('language').optional().isIn(['fr', 'ht', 'en']).withMessage('Langue invalide'),
+    body('surveillanceMode').optional().isIn(['light', 'strict']).withMessage('Mode de surveillance invalide (light ou strict)'),
+    body('globalTimeLimit').optional().isNumeric().withMessage('globalTimeLimit doit etre un nombre'),
+    body('evaluationType').optional().isIn(['live', 'personalized']).withMessage('evaluationType invalide (live ou personalized)'),
+    body('liveStartTime').optional({ nullable: true }),
+    body('liveEndTime').optional({ nullable: true }),
   ],
   async (req, res, next) => {
     try {
@@ -111,7 +120,17 @@ router.put(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const allowed = ['title', 'description', 'language', 'coverImage', 'status', 'theme'];
+      // Validate live mode dates
+      if (req.body.evaluationType === 'live') {
+        if (!req.body.liveStartTime || !req.body.liveEndTime) {
+          return res.status(400).json({ error: 'Les dates de debut et fin sont requises pour le mode Live' });
+        }
+        if (new Date(req.body.liveEndTime) <= new Date(req.body.liveStartTime)) {
+          return res.status(400).json({ error: 'La date de fin doit etre posterieure a la date de debut' });
+        }
+      }
+
+      const allowed = ['title', 'description', 'language', 'coverImage', 'status', 'theme', 'surveillanceMode', 'strictSettings', 'globalTimeLimit', 'evaluationType', 'liveStartTime', 'liveEndTime', 'contestMode', 'proctoring', 'snapshotInterval'];
       const updates = {};
       for (const key of allowed) {
         if (req.body[key] !== undefined) updates[key] = req.body[key];
@@ -290,7 +309,7 @@ router.put('/:id/screens/:screenId/content', async (req, res, next) => {
     const validTypes = [
       'text', 'media', 'quiz',
       'heading', 'separator', 'image', 'text_image', 'video', 'audio', 'pdf', 'embed',
-      'true_false', 'numeric', 'fill_blank', 'matching', 'sequence', 'likert', 'open_answer',
+      'true_false', 'numeric', 'fill_blank', 'matching', 'sequence', 'likert', 'open_answer', 'callout',
     ];
     for (let i = 0; i < contentBlocks.length; i++) {
       const block = contentBlocks[i];

@@ -97,6 +97,13 @@
                 Ouvrir le Studio
               </NuxtLink>
               <NuxtLink
+                :to="`/admin/modules/${mod._id}/reporting`"
+                class="px-3 py-2.5 text-purple-400 hover:bg-purple-50 hover:text-purple-600 rounded-xl transition text-sm"
+                title="Reporting"
+              >
+                &#128202;
+              </NuxtLink>
+              <NuxtLink
                 :to="`/admin/modules/${mod._id}/settings`"
                 class="px-3 py-2.5 text-gray-500 hover:bg-gray-100 rounded-xl transition text-sm"
                 title="Configuration"

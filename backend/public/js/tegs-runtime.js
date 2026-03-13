@@ -338,7 +338,157 @@
     }
   }
 
+  // =========================================================================
+  // TEGSSurveillance — Proctoring module (light / strict)
+  // =========================================================================
+
+  class TEGSSurveillance {
+    /**
+     * @param {Object} opts
+     * @param {string} opts.mode           - 'light' | 'strict'
+     * @param {Object} opts.strictSettings - { fullscreen, antiCopy, blurDetection, maxBlurCount, autoSubmitOnExceed }
+     * @param {TEGSRuntime} [opts.runtime] - Optional runtime instance for xAPI reporting
+     * @param {Function} [opts.onExceedBlur] - Callback when blur count exceeds max
+     * @param {Function} [opts.onBlur]       - Callback on each blur event
+     */
+    constructor(opts) {
+      this.mode = opts.mode || 'light';
+      this.settings = Object.assign(
+        { fullscreen: true, antiCopy: true, blurDetection: true, maxBlurCount: 3, autoSubmitOnExceed: false },
+        opts.strictSettings || {}
+      );
+      this.runtime = opts.runtime || null;
+      this.onExceedBlur = opts.onExceedBlur || null;
+      this.onBlur = opts.onBlur || null;
+
+      this._blurCount = 0;
+      this._active = false;
+      this._handlers = {};
+    }
+
+    /** Get current blur/anomaly count */
+    get blurCount() {
+      return this._blurCount;
+    }
+
+    /** Activate surveillance based on mode */
+    activate() {
+      if (this._active) return;
+      this._active = true;
+
+      if (this.mode === 'strict') {
+        if (this.settings.fullscreen) this._enterFullscreen();
+        if (this.settings.antiCopy) this._enableAntiCopy();
+        if (this.settings.blurDetection) this._enableBlurDetection();
+        this._enableFullscreenExitDetection();
+      }
+      // Light mode: just start — no restrictions
+      console.log(`[TEGS-Surveillance] Activated in ${this.mode} mode`);
+    }
+
+    /** Deactivate all surveillance listeners */
+    deactivate() {
+      if (!this._active) return;
+      this._active = false;
+
+      // Remove all registered listeners
+      for (const [event, handler] of Object.entries(this._handlers)) {
+        document.removeEventListener(event, handler);
+      }
+      window.removeEventListener('blur', this._handlers._windowBlur);
+      document.removeEventListener('fullscreenchange', this._handlers._fullscreenChange);
+      this._handlers = {};
+
+      console.log('[TEGS-Surveillance] Deactivated');
+    }
+
+    /** Report anomaly via xAPI statement */
+    async _reportAnomaly(type, details) {
+      if (!this.runtime || !this.runtime._initialized) return;
+      try {
+        const statement = {
+          verb: {
+            id: 'http://adlnet.gov/expapi/verbs/interacted',
+            display: { 'fr-HT': 'anomalie detectee' },
+          },
+          object: {
+            id: this.runtime.activityId,
+            objectType: 'Activity',
+          },
+          context: {
+            registration: this.runtime.registration,
+            extensions: {
+              'https://tegs-learning.edu.ht/ext/session_id': this.runtime.sessionId,
+              'https://tegs-learning.edu.ht/ext/anomaly_type': type,
+              'https://tegs-learning.edu.ht/ext/anomaly_details': details,
+              'https://tegs-learning.edu.ht/ext/blur_count': this._blurCount,
+            },
+          },
+        };
+        await this.runtime._postStatement(statement);
+      } catch (e) {
+        console.warn('[TEGS-Surveillance] Failed to report anomaly:', e.message);
+      }
+    }
+
+    // --- Fullscreen ---
+    _enterFullscreen() {
+      const el = document.documentElement;
+      const request = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+      if (request) {
+        request.call(el).catch((err) => {
+          console.warn('[TEGS-Surveillance] Fullscreen request failed:', err.message);
+        });
+      }
+    }
+
+    _enableFullscreenExitDetection() {
+      this._handlers._fullscreenChange = () => {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          this._blurCount++;
+          this._reportAnomaly('fullscreen_exit', 'Student exited fullscreen mode');
+          if (this.onBlur) this.onBlur('fullscreen_exit', this._blurCount);
+          this._checkBlurLimit();
+        }
+      };
+      document.addEventListener('fullscreenchange', this._handlers._fullscreenChange);
+      document.addEventListener('webkitfullscreenchange', this._handlers._fullscreenChange);
+    }
+
+    // --- Anti-copy ---
+    _enableAntiCopy() {
+      this._handlers.contextmenu = (e) => { e.preventDefault(); };
+      this._handlers.copy = (e) => { e.preventDefault(); };
+      this._handlers.cut = (e) => { e.preventDefault(); };
+      this._handlers.selectstart = (e) => { e.preventDefault(); };
+
+      document.addEventListener('contextmenu', this._handlers.contextmenu);
+      document.addEventListener('copy', this._handlers.copy);
+      document.addEventListener('cut', this._handlers.cut);
+      document.addEventListener('selectstart', this._handlers.selectstart);
+    }
+
+    // --- Blur/Tab switch detection ---
+    _enableBlurDetection() {
+      this._handlers._windowBlur = () => {
+        this._blurCount++;
+        this._reportAnomaly('tab_switch', `Tab lost focus (count: ${this._blurCount})`);
+        if (this.onBlur) this.onBlur('tab_switch', this._blurCount);
+        this._checkBlurLimit();
+      };
+      window.addEventListener('blur', this._handlers._windowBlur);
+    }
+
+    _checkBlurLimit() {
+      if (this._blurCount >= this.settings.maxBlurCount) {
+        this._reportAnomaly('blur_limit_exceeded', `Max blur count (${this.settings.maxBlurCount}) exceeded`);
+        if (this.onExceedBlur) this.onExceedBlur(this._blurCount);
+      }
+    }
+  }
+
   // Expose globally
   global.TEGSRuntime = TEGSRuntime;
+  global.TEGSSurveillance = TEGSSurveillance;
   global.TEGS_VERBS = VERBS;
 })(typeof window !== 'undefined' ? window : globalThis);

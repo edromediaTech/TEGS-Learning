@@ -4,7 +4,8 @@ export type BlockType =
   | 'text' | 'media' | 'quiz'
   | 'heading' | 'separator' | 'image' | 'text_image' | 'video' | 'audio' | 'pdf' | 'embed'
   | 'true_false' | 'numeric' | 'fill_blank' | 'matching' | 'sequence' | 'likert'
-  | 'open_answer';
+  | 'open_answer'
+  | 'callout';
 
 export interface ContentBlock {
   _id?: string;
@@ -29,6 +30,18 @@ export interface Section {
 
 export type ThemeId = 'ddene' | 'nature' | 'contrast' | 'ocean' | 'sunset';
 
+export type SurveillanceMode = 'light' | 'strict';
+
+export type EvaluationType = 'live' | 'personalized';
+
+export interface StrictSettings {
+  fullscreen: boolean;
+  antiCopy: boolean;
+  blurDetection: boolean;
+  maxBlurCount: number;
+  autoSubmitOnExceed: boolean;
+}
+
 export interface Module {
   _id: string;
   title: string;
@@ -39,6 +52,15 @@ export interface Module {
   theme: ThemeId;
   shareToken: string | null;
   shareEnabled: boolean;
+  surveillanceMode: SurveillanceMode;
+  strictSettings: StrictSettings;
+  globalTimeLimit: number;
+  evaluationType: EvaluationType;
+  liveStartTime: string | null;
+  liveEndTime: string | null;
+  contestMode: boolean;
+  proctoring: 'none' | 'snapshot' | 'video';
+  snapshotInterval: number;
   sections: Section[];
   tenant_id: string;
   created_by: string;
@@ -72,7 +94,8 @@ export const useModulesStore = defineStore('modules', {
 
   actions: {
     _headers() {
-      const token = useCookie('auth_token').value;
+      const session = useCookie<{ token: string; tenant_id: string } | null>('__session').value;
+      const token = session?.token || useCookie('auth_token').value;
       return {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,

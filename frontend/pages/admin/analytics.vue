@@ -27,6 +27,10 @@
           <button @click="exportCSV" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700">
             Export CSV
           </button>
+          <!-- Modules list for reporting access -->
+          <NuxtLink to="/admin/modules" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 font-medium">
+            Reporting Modules
+          </NuxtLink>
         </div>
       </div>
 

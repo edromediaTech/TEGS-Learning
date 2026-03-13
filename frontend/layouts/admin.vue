@@ -115,6 +115,9 @@ const navItems = computed(() => {
     { to: '/admin/media', label: 'Mediatheque', icon: '\uD83D\uDCC1' },
     { to: '/admin/analytics', label: 'Analytics', icon: '\uD83D\uDCCA' },
   );
+  if (auth.isSuperAdmin || auth.isAdmin) {
+    items.push({ to: '/admin/billing', label: 'Facturation', icon: '\uD83D\uDCB3' });
+  }
   return items;
 });
 

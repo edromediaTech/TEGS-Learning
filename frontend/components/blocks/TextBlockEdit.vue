@@ -3,7 +3,7 @@
     <label class="block text-sm font-medium text-gray-700">Paragraphe</label>
 
     <!-- Barre d'outils -->
-    <div class="border border-gray-300 rounded-t-lg bg-gray-50 px-1 py-1 flex flex-wrap items-center gap-0.5">
+    <div class="border border-gray-300 rounded-t-lg bg-gray-50 px-1 py-1 flex flex-wrap items-center gap-0.5" @mousedown="onToolbarMousedown">
       <!-- Groupe : Style de bloc -->
       <select
         @change="execBlock(($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = 'p'"
@@ -138,6 +138,9 @@
       contenteditable="true"
       @input="onInput"
       @paste="onPaste"
+      @mouseup="saveSelection"
+      @keyup="saveSelection"
+      @blur="saveSelection"
       class="w-full min-h-[180px] max-h-[400px] overflow-y-auto px-3 py-2 border border-gray-300 border-t-0 rounded-b-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm leading-relaxed prose prose-sm max-w-none"
       :style="{ direction: 'ltr' }"
       data-placeholder="Inserez votre texte ici..."
@@ -165,10 +168,44 @@ const sourceHtml = ref('');
 const textColor = ref('#000000');
 const bgColor = ref('#ffff00');
 const isInternalUpdate = ref(false);
+let savedSelection: Range | null = null;
+
+// Prevent toolbar clicks from stealing focus (except color inputs)
+function onToolbarMousedown(e: MouseEvent) {
+  const target = e.target as HTMLElement;
+  if (target.tagName !== 'INPUT' && target.tagName !== 'SELECT') {
+    e.preventDefault();
+  }
+}
+
+// Save selection when editor loses focus (e.g., clicking toolbar color picker)
+function saveSelection() {
+  const sel = window.getSelection();
+  if (sel && sel.rangeCount > 0 && editorRef.value?.contains(sel.anchorNode)) {
+    savedSelection = sel.getRangeAt(0).cloneRange();
+  }
+}
+
 
 function execCmd(cmd: string, value?: string) {
+  // Restore selection only if editor lost focus (e.g., color picker opened)
+  const sel = window.getSelection();
+  const editorHasFocus = document.activeElement === editorRef.value || editorRef.value?.contains(sel?.anchorNode || null);
+  if (!editorHasFocus && savedSelection) {
+    sel?.removeAllRanges();
+    sel?.addRange(savedSelection);
+  }
   editorRef.value?.focus();
-  document.execCommand(cmd, false, value || '');
+  // hiliteColor not supported in Firefox, use backColor as fallback
+  if (cmd === 'hiliteColor') {
+    try {
+      document.execCommand('hiliteColor', false, value || '');
+    } catch {
+      document.execCommand('backColor', false, value || '');
+    }
+  } else {
+    document.execCommand(cmd, false, value || '');
+  }
   emitContent();
 }
 
@@ -245,9 +282,19 @@ function cleanPastedHtml(html: string): string {
   cleaned = cleaned.replace(/<\/?mark[^>]*>/gi, '');
   // Remove all data-* attributes, js* attributes (Google)
   cleaned = cleaned.replace(/\s*(?:data-\w[\w-]*|jscontroller|jsuid|jsname|jsaction|jsshadow)="[^"]*"/gi, '');
-  // Remove class and style attributes
+  // Remove class attributes
   cleaned = cleaned.replace(/\s*class="[^"]*"/gi, '');
-  cleaned = cleaned.replace(/\s*style="[^"]*"/gi, '');
+  // Sanitize style attributes: keep only safe CSS (color, background, font)
+  cleaned = cleaned.replace(/\s*style="([^"]*)"/gi, (_m: string, s: string) => {
+    const safe = s.split(';')
+      .map((p: string) => p.trim())
+      .filter((p: string) => {
+        const prop = p.split(':')[0]?.trim().toLowerCase() || '';
+        return /^(color|background-color|background|font-size|font-family|font-weight|font-style|text-align|text-decoration)$/.test(prop);
+      })
+      .join('; ');
+    return safe ? ` style="${safe}"` : '';
+  });
   // Remove lang, dir, id attributes
   cleaned = cleaned.replace(/\s*(?:lang|dir|id)="[^"]*"/gi, '');
   // Remove empty spans
@@ -345,4 +392,37 @@ watch(() => props.modelValue.content, (newVal) => {
 [contenteditable] {
   outline: none;
 }
+[contenteditable] :deep(ul) {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+[contenteditable] :deep(ol) {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+[contenteditable] :deep(li) {
+  margin: 0.25em 0;
+}
+[contenteditable] :deep(blockquote) {
+  border-left: 3px solid #d1d5db;
+  padding-left: 1em;
+  margin: 0.5em 0;
+  color: #6b7280;
+  font-style: italic;
+}
+[contenteditable] :deep(pre) {
+  background: #f3f4f6;
+  padding: 0.75em;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 13px;
+  overflow-x: auto;
+}
+[contenteditable] :deep(h1) { font-size: 1.5em; font-weight: bold; margin: 0.5em 0; }
+[contenteditable] :deep(h2) { font-size: 1.25em; font-weight: bold; margin: 0.5em 0; }
+[contenteditable] :deep(h3) { font-size: 1.1em; font-weight: bold; margin: 0.5em 0; }
+[contenteditable] :deep(a) { color: #2563eb; text-decoration: underline; }
+[contenteditable] :deep(hr) { border: none; border-top: 1px solid #d1d5db; margin: 1em 0; }
 </style>

@@ -5,6 +5,18 @@
 <script setup lang="ts">
 const props = defineProps<{ data: { content: string } }>();
 
+function sanitizeStyle(style: string): string {
+  // Keep only safe CSS properties from WYSIWYG (color, background, font, text)
+  const safe = style.split(';')
+    .map(s => s.trim())
+    .filter(s => {
+      const prop = s.split(':')[0]?.trim().toLowerCase() || '';
+      return /^(color|background-color|background|font-size|font-family|font-weight|font-style|text-align|text-decoration)$/.test(prop);
+    })
+    .join('; ');
+  return safe;
+}
+
 const rendered = computed(() => {
   const text = props.data.content || '';
 
@@ -23,9 +35,14 @@ const rendered = computed(() => {
       .replace(/\bon\w+\s*=/gi, '')
       // Remove <mark> tags (Google highlights) but keep content
       .replace(/<\/?mark[^>]*>/gi, '')
-      // Remove data-*, js* attributes (Google), class, style
-      .replace(/\s*(?:data-\w[\w-]*|jscontroller|jsuid|jsname|jsaction|class|style|lang|dir)="[^"]*"/gi, '')
-      // Clean up empty spans
+      // Remove data-*, js* attributes (Google), class, lang, dir
+      .replace(/\s*(?:data-\w[\w-]*|jscontroller|jsuid|jsname|jsaction|class|lang|dir)="[^"]*"/gi, '')
+      // Sanitize style attributes: keep safe CSS properties only
+      .replace(/\s*style="([^"]*)"/gi, (_m, s) => {
+        const safe = sanitizeStyle(s);
+        return safe ? ` style="${safe}"` : '';
+      })
+      // Clean up empty spans (no attributes left)
       .replace(/<span\s*>\s*([\s\S]*?)\s*<\/span>/gi, '$1');
   }
 
