@@ -18,6 +18,7 @@ const analyticsRoutes = require('./routes/analytics');
 const reportingRoutes = require('./routes/reporting');
 const subscriptionRoutes = require('./routes/subscription');
 const liveArenaRoutes = require('./routes/live-arena');
+const qrcodeRoutes = require('./routes/qrcode');
 
 const http = require('http');
 const path = require('path');
@@ -64,6 +65,7 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/reporting', reportingRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/live-arena', liveArenaRoutes);
+app.use('/api/qr', qrcodeRoutes);
 
 // --- Gestion d'erreurs globale ---
 app.use((err, _req, res, _next) => {

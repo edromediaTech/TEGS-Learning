@@ -5,18 +5,8 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
-        "source": "/api/**",
-        "run": {
-          "serviceId": "tegs-backend",
-          "region": "us-central1"
-        }
-      },
-      {
         "source": "**",
-        "run": {
-          "serviceId": "tegs-frontend",
-          "region": "us-central1"
-        }
+        "destination": "/index.html"
       }
     ],
     "headers": [

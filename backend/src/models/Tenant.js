@@ -31,6 +31,12 @@ const tenantSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Phase 5: district grouping for analytics
+    district: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     config: {
       // Champ libre pour configuration future par ecole (ex: theme, langue, etc.)
       type: mongoose.Schema.Types.Mixed,

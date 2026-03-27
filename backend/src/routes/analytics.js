@@ -4,6 +4,7 @@ const Statement = require('../models/Statement');
 const Module = require('../models/Module');
 const Tenant = require('../models/Tenant');
 const User = require('../models/User');
+const QuizResult = require('../models/QuizResult');
 const { authenticate, authorize } = require('../middleware/auth');
 const tenantIsolation = require('../middleware/tenantIsolation');
 

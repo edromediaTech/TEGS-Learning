@@ -319,6 +319,213 @@ router.post('/resolve-conflicts',
   }
 );
 
+/**
+ * POST /api/sync/sqlite-import
+ *
+ * Bridge SIGEEE-Desktop : importe un dump SQLite (format JSON)
+ * contenant des resultats d'apprentissage collectes offline.
+ *
+ * Payload attendu :
+ * {
+ *   "tables": {
+ *     "results": [
+ *       { "student_name": "...", "student_email": "...", "subject": "...",
+ *         "score": 85, "max_score": 100, "passed": true,
+ *         "completed_at": "2026-03-10T...", "duration_seconds": 1800 }
+ *     ],
+ *     "attendance": [
+ *       { "student_name": "...", "date": "2026-03-10", "present": true }
+ *     ]
+ *   },
+ *   "deviceId": "desktop-001",
+ *   "exportedAt": "2026-03-15T10:00:00Z"
+ * }
+ */
+router.post('/sqlite-import',
+  authorize('admin_ddene', 'teacher'),
+  async (req, res, next) => {
+    try {
+      const { tables, deviceId, exportedAt } = req.body;
+
+      if (!tables || typeof tables !== 'object') {
+        return res.status(400).json({ error: 'tables est requis (objet avec results/attendance)' });
+      }
+
+      const results = {
+        imported: 0,
+        duplicates: 0,
+        errors: [],
+        tables: {},
+      };
+
+      const connectedUser = await User.findById(req.user.id);
+
+      // --- Import results table ---
+      if (Array.isArray(tables.results) && tables.results.length > 0) {
+        if (tables.results.length > 1000) {
+          return res.status(400).json({ error: 'Maximum 1000 resultats par import SQLite' });
+        }
+
+        const toInsert = [];
+        const seenIds = new Set();
+
+        for (let i = 0; i < tables.results.length; i++) {
+          const row = tables.results[i];
+          if (!row.subject || row.score === undefined) {
+            results.errors.push({ table: 'results', index: i, error: 'subject et score requis' });
+            continue;
+          }
+
+          const stmtId = row.id || crypto.createHash('md5')
+            .update(`${row.student_name}|${row.subject}|${row.completed_at || ''}|${req.tenantId}`)
+            .digest('hex');
+
+          if (seenIds.has(stmtId)) {
+            results.duplicates++;
+            continue;
+          }
+          seenIds.add(stmtId);
+
+          const scaled = row.max_score > 0 ? row.score / row.max_score : 0;
+          const isPassed = row.passed !== undefined ? row.passed : scaled >= 0.5;
+
+          toInsert.push({
+            statementId: stmtId,
+            actor: {
+              user_id: req.user.id,
+              name: row.student_name || connectedUser?.firstName || 'Unknown',
+              mbox: row.student_email
+                ? `mailto:${row.student_email}`
+                : `mailto:${req.user.id}@tegs.local`,
+            },
+            verb: {
+              id: isPassed
+                ? 'http://adlnet.gov/expapi/verbs/passed'
+                : 'http://adlnet.gov/expapi/verbs/failed',
+              display: { 'fr-HT': isPassed ? 'a reussi' : 'a echoue' },
+            },
+            object: {
+              id: `https://tegs-learning.edu.ht/activities/${encodeURIComponent(row.subject)}`,
+              objectType: 'Activity',
+              definition: {
+                name: { 'fr-HT': row.subject },
+              },
+            },
+            result: {
+              score: {
+                scaled,
+                raw: row.score,
+                max: row.max_score || 100,
+              },
+              success: isPassed,
+              completion: true,
+              duration: row.duration_seconds
+                ? `PT${row.duration_seconds}S`
+                : undefined,
+            },
+            context: {
+              extensions: {
+                syncSource: 'sigeee-desktop',
+                syncDeviceId: deviceId || 'unknown',
+                'https://tegs-learning.edu.ht/extensions/sync-source': 'sigeee-desktop',
+                'https://tegs-learning.edu.ht/extensions/device-id': deviceId || 'unknown',
+                'https://tegs-learning.edu.ht/extensions/synced-at': new Date().toISOString(),
+                'https://tegs-learning.edu.ht/extensions/sqlite-export-date': exportedAt || '',
+              },
+            },
+            tenant_id: req.tenantId,
+            timestamp: row.completed_at ? new Date(row.completed_at) : new Date(),
+            voided: false,
+          });
+        }
+
+        if (toInsert.length > 0) {
+          try {
+            const inserted = await Statement.insertMany(toInsert, { ordered: false });
+            results.imported += inserted.length;
+          } catch (bulkErr) {
+            if (bulkErr.insertedDocs) results.imported += bulkErr.insertedDocs.length;
+            if (bulkErr.writeErrors) {
+              for (const we of bulkErr.writeErrors) {
+                if (we.code === 11000) results.duplicates++;
+                else results.errors.push({ table: 'results', error: we.errmsg });
+              }
+            }
+          }
+        }
+        results.tables.results = { received: tables.results.length, imported: toInsert.length };
+      }
+
+      // --- Import attendance table ---
+      if (Array.isArray(tables.attendance) && tables.attendance.length > 0) {
+        const attendanceStmts = [];
+        for (let i = 0; i < tables.attendance.length; i++) {
+          const row = tables.attendance[i];
+          if (!row.student_name || !row.date) {
+            results.errors.push({ table: 'attendance', index: i, error: 'student_name et date requis' });
+            continue;
+          }
+
+          const stmtId = crypto.createHash('md5')
+            .update(`attendance|${row.student_name}|${row.date}|${req.tenantId}`)
+            .digest('hex');
+
+          attendanceStmts.push({
+            statementId: stmtId,
+            actor: {
+              user_id: req.user.id,
+              name: row.student_name,
+              mbox: `mailto:${req.user.id}@tegs.local`,
+            },
+            verb: {
+              id: 'http://adlnet.gov/expapi/verbs/experienced',
+              display: { 'fr-HT': row.present ? 'etait present' : 'etait absent' },
+            },
+            object: {
+              id: `https://tegs-learning.edu.ht/attendance/${row.date}`,
+              objectType: 'Activity',
+              definition: { name: { 'fr-HT': `Presence ${row.date}` } },
+            },
+            result: {
+              success: row.present !== false,
+              completion: true,
+            },
+            context: {
+              extensions: {
+                syncSource: 'sigeee-desktop',
+                syncDeviceId: deviceId || 'unknown',
+                'https://tegs-learning.edu.ht/extensions/sync-source': 'sigeee-desktop',
+              },
+            },
+            tenant_id: req.tenantId,
+            timestamp: new Date(row.date),
+            voided: false,
+          });
+        }
+
+        if (attendanceStmts.length > 0) {
+          try {
+            const inserted = await Statement.insertMany(attendanceStmts, { ordered: false });
+            results.imported += inserted.length;
+          } catch (bulkErr) {
+            if (bulkErr.insertedDocs) results.imported += bulkErr.insertedDocs.length;
+            if (bulkErr.writeErrors) {
+              for (const we of bulkErr.writeErrors) {
+                if (we.code === 11000) results.duplicates++;
+              }
+            }
+          }
+        }
+        results.tables.attendance = { received: tables.attendance.length, imported: attendanceStmts.length };
+      }
+
+      res.json(results);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 // --- Helpers ---
 
 function buildActor(stmtActor, connectedUser, connectedUserId) {

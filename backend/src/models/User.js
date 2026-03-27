@@ -46,6 +46,17 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    // Phase 5: district & class for analytics filtering
+    district: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    className: {
+      type: String,
+      trim: true,
+      default: '',
+    },
   },
   { timestamps: true }
 );

@@ -21,6 +21,7 @@
     "jspdf-autotable": "^5.0.7",
     "mongoose": "^8.9.5",
     "multer": "^2.1.1",
+    "qrcode": "^1.5.4",
     "socket.io": "^4.8.3",
     "undici": "^7.22.0"
   },
