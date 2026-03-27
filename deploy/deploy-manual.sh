@@ -52,7 +52,7 @@ echo ""
 echo "--- [2/3] Build Frontend (Nuxt 3) ---"
 
 cd frontend
-NUXT_PUBLIC_API_BASE="${BACKEND_URL}/api" npm run build
+NUXT_PUBLIC_API_BASE="${BACKEND_URL}/api" npx nuxi generate
 
 # ============================================================
 # 3. FRONTEND -> Firebase Hosting
