@@ -1958,12 +1958,32 @@ router.get('/public/:shareToken/json', async (req, res, next) => {
       }
     }
 
+    // Compter les questions
+    let questionCount = 0;
+    let totalPoints = 0;
+    for (const section of mod.sections || []) {
+      for (const screen of section.screens || []) {
+        for (const block of screen.contentBlocks || []) {
+          if (['quiz', 'true_false', 'numeric', 'fill_blank', 'matching', 'sequence', 'open_answer'].includes(block.type)) {
+            questionCount++;
+            totalPoints += (block.data || {}).points || 1;
+          }
+        }
+      }
+    }
+
     // Ne pas exposer les IDs internes sensibles
     res.json({
       title: mod.title,
       description: mod.description,
       language: mod.language,
       theme: mod.theme,
+      evaluationType: mod.evaluationType || 'personalized',
+      globalTimeLimit: mod.globalTimeLimit || 0,
+      surveillanceMode: mod.surveillanceMode || 'light',
+      strictSettings: mod.strictSettings || {},
+      questionCount,
+      totalPoints,
       sections: (mod.sections || []).map(s => ({
         title: s.title,
         screens: (s.screens || []).map(sc => ({

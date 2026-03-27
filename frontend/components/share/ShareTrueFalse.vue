@@ -23,6 +23,7 @@
 
 <script setup lang="ts">
 const props = defineProps<{ block: any; theme: any }>()
+const emit = defineEmits<{ answered: [result: { correct: boolean; points: number }] }>()
 const selected = ref<string | null>(null)
 const answered = ref(false)
 const correctAnswer = computed(() => props.block.data.answer === true ? 'true' : 'false')
@@ -32,6 +33,7 @@ function select(val: string) {
   if (answered.value) return
   selected.value = val
   answered.value = true
+  emit('answered', { correct: isCorrect.value, points: props.block.data.points || 1 })
 }
 
 function btnStyle(val: string) {

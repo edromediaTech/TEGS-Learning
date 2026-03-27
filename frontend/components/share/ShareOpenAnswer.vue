@@ -21,9 +21,13 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ block: any; theme: any }>()
+const props = defineProps<{ block: any; theme: any }>()
+const emit = defineEmits<{ answered: [result: { correct: boolean; points: number }] }>()
 const answer = ref('')
 const submitted = ref(false)
-function submit() { submitted.value = true }
+function submit() {
+  submitted.value = true
+  emit('answered', { correct: true, points: props.block.data.points || 1 })
+}
 function reset() { submitted.value = false }
 </script>

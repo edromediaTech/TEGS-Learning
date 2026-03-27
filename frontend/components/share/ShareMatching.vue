@@ -34,9 +34,12 @@ const score = ref(0)
 
 onMounted(() => { answers.value = pairs.value.map(() => '') })
 
+const emit = defineEmits<{ answered: [result: { correct: boolean; points: number }] }>()
+
 function check() {
   score.value = pairs.value.filter((p: any, i: number) => answers.value[i] === p.right).length
   answered.value = true
+  emit('answered', { correct: score.value === pairs.value.length, points: props.block.data.points || 1 })
 }
 
 const resultStyle = computed(() => score.value === pairs.value.length

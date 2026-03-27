@@ -37,9 +37,12 @@ onMounted(() => { userOrder.value = [...correctOrder.value].sort(() => Math.rand
 function moveUp(i: number) { if (i > 0) { const tmp = userOrder.value[i]; userOrder.value[i] = userOrder.value[i - 1]; userOrder.value[i - 1] = tmp } }
 function moveDown(i: number) { if (i < userOrder.value.length - 1) { const tmp = userOrder.value[i]; userOrder.value[i] = userOrder.value[i + 1]; userOrder.value[i + 1] = tmp } }
 
+const emit = defineEmits<{ answered: [result: { correct: boolean; points: number }] }>()
+
 function check() {
   isCorrect.value = userOrder.value.every((item, i) => item === correctOrder.value[i])
   answered.value = true
+  emit('answered', { correct: isCorrect.value, points: props.block.data.points || 1 })
 }
 
 function itemStyle(i: number) {

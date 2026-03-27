@@ -30,7 +30,12 @@ const max = computed(() => props.block.data.scale || props.block.data.max || 5)
 const scaleValues = computed(() => Array.from({ length: max.value }, (_, i) => i + 1))
 const labels = computed(() => props.block.data.labels || null)
 
-function select(val: number) { selected.value = val }
+const emit = defineEmits<{ answered: [result: { correct: boolean; points: number }] }>()
+
+function select(val: number) {
+  selected.value = val
+  emit('answered', { correct: true, points: props.block.data.points || 1 })
+}
 
 function btnStyle(val: number) {
   if (selected.value === val) return { borderColor: '#ec4899', background: '#ec4899', color: '#fff' }
