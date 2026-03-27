@@ -166,6 +166,74 @@
           </div>
         </div>
 
+        <!-- Onglet QR Code -->
+        <div v-if="activeTab === 'qrcode'" class="max-w-2xl space-y-6">
+          <!-- QR Module -->
+          <div class="bg-white border border-gray-200 rounded-xl p-6">
+            <h3 class="font-bold text-gray-900 mb-1">QR Code du Module</h3>
+            <p class="text-sm text-gray-500 mb-4">Generez un QR code pour partager ce module. Les eleves peuvent le scanner pour acceder directement au contenu.</p>
+
+            <div class="flex items-start gap-6">
+              <!-- QR Preview -->
+              <div class="flex-shrink-0">
+                <div v-if="qrLoading" class="w-48 h-48 bg-gray-100 rounded-xl flex items-center justify-center">
+                  <span class="text-gray-400 text-sm">Chargement...</span>
+                </div>
+                <img v-else-if="qrDataUrl" :src="qrDataUrl" alt="QR Code" class="w-48 h-48 rounded-xl border border-gray-200 shadow-sm" />
+                <div v-else class="w-48 h-48 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 flex items-center justify-center">
+                  <button @click="loadQrCode" class="text-primary-600 hover:text-primary-800 text-sm font-medium">
+                    Generer le QR
+                  </button>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div class="flex-1 space-y-3">
+                <div v-if="qrShareUrl" class="text-sm">
+                  <p class="font-medium text-gray-700 mb-1">URL encodee :</p>
+                  <div class="flex items-center gap-2">
+                    <input :value="qrShareUrl" readonly class="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-xs font-mono" />
+                    <button @click="copyToClipboard(qrShareUrl, 'qr-url')" class="px-3 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-xs font-medium whitespace-nowrap">
+                      {{ copied === 'qr-url' ? 'Copie !' : 'Copier' }}
+                    </button>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2 pt-2">
+                  <button @click="loadQrCode" :disabled="qrLoading" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 text-sm font-medium disabled:opacity-50">
+                    {{ qrDataUrl ? 'Regenerer' : 'Generer' }}
+                  </button>
+                  <a v-if="qrDataUrl" :href="qrDataUrl" :download="`qr-module-${route.params.id}.png`" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium inline-block">
+                    Telecharger PNG
+                  </a>
+                </div>
+
+                <div class="pt-2">
+                  <label class="block text-xs font-medium text-gray-600 mb-1">Taille (px)</label>
+                  <select v-model.number="qrSize" @change="loadQrCode" class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm">
+                    <option :value="200">200 x 200</option>
+                    <option :value="300">300 x 300</option>
+                    <option :value="500">500 x 500</option>
+                    <option :value="800">800 x 800 (impression)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- QR Badge (info) -->
+          <div class="bg-purple-50 border border-purple-200 rounded-xl p-5">
+            <h4 class="font-bold text-purple-800 mb-2">QR Badges Eleves</h4>
+            <p class="text-sm text-purple-700">
+              Les badges QR individuels sont generes automatiquement apres evaluation.
+              Un inspecteur peut scanner le badge d'un eleve avec Inspect-mobile pour voir ses resultats.
+            </p>
+            <p class="text-xs text-purple-500 mt-2">
+              Endpoint API : GET /api/qr/badge/:moduleId/:userId
+            </p>
+          </div>
+        </div>
+
         <!-- Onglet Surveillance -->
         <div v-if="activeTab === 'surveillance'" class="max-w-2xl space-y-6">
           <!-- Live mode override notice -->
@@ -570,6 +638,7 @@ const tabs = [
   { id: 'evaluation', label: 'Mode evaluation' },
   { id: 'timer', label: 'Chronometre' },
   { id: 'share', label: 'Partager' },
+  { id: 'qrcode', label: 'QR Code' },
   { id: 'surveillance', label: 'Surveillance' },
   { id: 'export', label: 'Exporter' },
   { id: 'delete', label: 'Supprimer' },
@@ -621,6 +690,26 @@ const shareInfo = reactive({
   shareToken: null as string | null,
   shareUrl: null as string | null,
 });
+
+// QR Code state
+const qrDataUrl = ref('');
+const qrShareUrl = ref('');
+const qrLoading = ref(false);
+const qrSize = ref(300);
+
+async function loadQrCode() {
+  qrLoading.value = true;
+  try {
+    const res = await apiFetch(`/qr/module/${route.params.id}/data?size=${qrSize.value}`);
+    const d = res.data as any;
+    qrDataUrl.value = d.qrDataUrl;
+    qrShareUrl.value = d.shareUrl;
+  } catch {
+    store.error = 'Impossible de generer le QR code';
+  } finally {
+    qrLoading.value = false;
+  }
+}
 
 const iframeCode = computed(() => {
   if (!shareInfo.shareUrl) return '';
