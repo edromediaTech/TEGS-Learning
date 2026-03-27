@@ -27,6 +27,9 @@
           <button @click="exportCSV" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700">
             Export CSV
           </button>
+          <button v-if="auth.isAdmin" @click="exportDDENE" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700 font-medium">
+            Rapport DDENE
+          </button>
           <!-- Modules list for reporting access -->
           <NuxtLink to="/admin/modules" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-purple-700 font-medium">
             Reporting Modules
@@ -53,6 +56,83 @@
         <div class="bg-white rounded-xl shadow p-5">
           <p class="text-sm text-gray-500">Utilisateurs Actifs</p>
           <p class="text-3xl font-bold text-purple-600">{{ overview.totalUsers }}</p>
+        </div>
+      </div>
+
+      <!-- KPIs Strategiques DDENE -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <!-- Completion -->
+        <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow border border-green-200 p-5">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-medium text-green-700">% Completion Global</p>
+            <span class="text-2xl">&#127919;</span>
+          </div>
+          <p class="text-4xl font-black text-green-700">{{ kpi.completion.globalRate }}%</p>
+          <p class="text-xs text-green-600 mt-1">{{ kpi.completion.totalCompleted }} / {{ kpi.completion.totalInitialized }} sessions terminees</p>
+          <div v-if="kpi.completion.byDistrict.length" class="mt-3 space-y-1">
+            <div v-for="d in kpi.completion.byDistrict.slice(0, 3)" :key="d.district" class="flex items-center justify-between text-xs">
+              <span class="text-green-800 truncate max-w-[120px]">{{ d.district }}</span>
+              <div class="flex items-center gap-1">
+                <div class="w-16 h-1.5 bg-green-200 rounded-full overflow-hidden">
+                  <div class="h-full bg-green-600 rounded-full" :style="{ width: d.completionRate + '%' }"></div>
+                </div>
+                <span class="font-bold text-green-700 w-8 text-right">{{ d.completionRate }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Temps moyen -->
+        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl shadow border border-blue-200 p-5">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-medium text-blue-700">Temps Moyen / Question</p>
+            <span class="text-2xl">&#9201;</span>
+          </div>
+          <p class="text-4xl font-black text-blue-700">{{ kpi.responseTime.avgFormatted || '—' }}</p>
+          <p class="text-xs text-blue-600 mt-1">{{ kpi.responseTime.totalMeasured }} reponses mesurees</p>
+          <div class="mt-3 text-xs text-blue-500">
+            <span v-if="kpi.responseTime.avgSeconds < 30" class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Rapide</span>
+            <span v-else-if="kpi.responseTime.avgSeconds < 120" class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">Normal</span>
+            <span v-else class="bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Lent - questions difficiles</span>
+          </div>
+        </div>
+
+        <!-- Fiabilite -->
+        <div class="bg-gradient-to-br from-purple-50 to-fuchsia-50 rounded-xl shadow border border-purple-200 p-5">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-sm font-medium text-purple-700">Score de Fiabilite</p>
+            <span class="text-2xl">&#128274;</span>
+          </div>
+          <p class="text-4xl font-black" :class="kpi.reliability.score >= 80 ? 'text-green-700' : kpi.reliability.score >= 50 ? 'text-yellow-600' : 'text-red-600'">
+            {{ kpi.reliability.score }}<span class="text-lg">/100</span>
+          </p>
+          <p class="text-xs text-purple-600 mt-1">{{ kpi.reliability.totalAlerts }} alertes / {{ kpi.reliability.totalSessions }} sessions</p>
+          <div class="mt-3 text-xs">
+            <span v-if="kpi.reliability.score >= 80" class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Excellent</span>
+            <span v-else-if="kpi.reliability.score >= 50" class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">A surveiller</span>
+            <span v-else class="bg-red-100 text-red-700 px-2 py-0.5 rounded-full">Alerte fraude elevee</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Performance par District (Heatmap Bar) -->
+      <div v-if="kpi.districtPerformance.length" class="bg-white rounded-xl shadow p-6 mb-8">
+        <h3 class="font-semibold text-gray-700 mb-4">Performance par Zone Geographique</h3>
+        <div class="space-y-3">
+          <div v-for="d in kpi.districtPerformance" :key="d.district" class="flex items-center gap-3">
+            <span class="text-sm font-medium text-gray-700 w-32 truncate" :title="d.district">{{ d.district }}</span>
+            <div class="flex-1 h-8 bg-gray-100 rounded-lg overflow-hidden relative">
+              <div
+                class="h-full rounded-lg flex items-center px-2 text-xs font-bold text-white transition-all duration-500"
+                :style="{ width: Math.max(d.successRate, 5) + '%', background: districtColor(d.successRate) }"
+              >
+                {{ d.successRate }}%
+              </div>
+            </div>
+            <div class="text-xs text-gray-500 w-24 text-right">
+              {{ d.studentCount }} eleves
+            </div>
+          </div>
         </div>
       </div>
 
@@ -205,6 +285,20 @@ const sources = ref([] as any[])
 const schools = ref([] as any[])
 const leaderboard = ref([] as any[])
 
+const kpi = ref({
+  completion: { globalRate: 0, totalInitialized: 0, totalCompleted: 0, byDistrict: [] as any[] },
+  responseTime: { avgSeconds: 0, avgFormatted: '—', totalMeasured: 0 },
+  reliability: { score: 100, totalAlerts: 0, totalSessions: 0, alertsPerSession: 0 },
+  districtPerformance: [] as any[],
+})
+
+function districtColor(rate: number) {
+  if (rate >= 75) return '#16a34a'
+  if (rate >= 50) return '#2563eb'
+  if (rate >= 25) return '#d97706'
+  return '#dc2626'
+}
+
 // Chart data
 const weeklyData = computed(() => ({
   labels: weeklyProgress.value.map(d => d.date),
@@ -319,6 +413,18 @@ async function loadAll() {
     console.error('Analytics load error', e)
   }
 
+  // KPIs strategiques
+  try {
+    const kpiRes = await apiFetch(`/analytics/kpi-summary${q}`)
+    const d = kpiRes.data as any
+    kpi.value = {
+      completion: d.completion || kpi.value.completion,
+      responseTime: d.responseTime || kpi.value.responseTime,
+      reliability: d.reliability || kpi.value.reliability,
+      districtPerformance: d.districtPerformance || [],
+    }
+  } catch { /* kpi endpoint may not be available */ }
+
   // Comparaison ecoles (admin only)
   if (auth.isAdmin) {
     try {
@@ -330,8 +436,16 @@ async function loadAll() {
 
 function exportCSV() {
   const q = queryParams()
-  const token = useCookie('auth_token').value
+  const session = useCookie<{ token: string } | null>('__session').value
+  const token = session?.token || useCookie('auth_token').value
   window.open(`${baseURL}/analytics/export/csv${q}${q ? '&' : '?'}token=${token}`, '_blank')
+}
+
+function exportDDENE() {
+  const q = queryParams()
+  const session = useCookie<{ token: string } | null>('__session').value
+  const token = session?.token || useCookie('auth_token').value
+  window.open(`${baseURL}/analytics/export/ddene${q}${q ? '&' : '?'}token=${token}`, '_blank')
 }
 
 onMounted(() => loadAll())
