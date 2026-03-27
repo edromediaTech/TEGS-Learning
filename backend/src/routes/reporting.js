@@ -970,7 +970,7 @@ async function callAIGateway(prompt, taskType, tenantId) {
       body: JSON.stringify({
         prompt,
         task_type: taskType,
-        preferred_tier: 'free',
+        preferred_tier: 'auto',
         preferred_model: 'gemini-2.0-flash',
         service_id: 'tegs-learning',
         user_id: String(tenantId),
