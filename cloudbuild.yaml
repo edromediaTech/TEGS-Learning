@@ -35,12 +35,14 @@ steps:
       - "--platform=managed"
       - "--allow-unauthenticated"
       - "--port=3000"
-      - "--memory=512Mi"
-      - "--cpu=1"
+      - "--memory=1Gi"
+      - "--cpu=2"
       - "--min-instances=1"
       - "--max-instances=10"
-      - "--set-env-vars=GCS_ENABLED=true,GCS_SERVICE_URL=https://dp-storage-service-746425674533.us-central1.run.app,JWT_EXPIRES_IN=24h"
-      - "--set-secrets=MONGODB_URI=tegs-mongo-uri:latest,JWT_SECRET=tegs-jwt-secret:latest,GCS_JWT_SECRET=tegs-gcs-jwt-secret:latest"
+      - "--concurrency=80"
+      - "--timeout=300"
+      - "--set-env-vars=NODE_ENV=production,GCS_ENABLED=true,GCS_SERVICE_URL=https://dp-storage-service-746425674533.us-central1.run.app,JWT_EXPIRES_IN=24h,FRONTEND_URL=https://luminous-mesh-459718-p4.web.app,MONCASH_MODE=sandbox,NATCASH_MODE=sandbox"
+      - "--set-secrets=MONGODB_URI=tegs-mongo-uri:latest,JWT_SECRET=tegs-jwt-secret:latest,GCS_JWT_SECRET=tegs-gcs-jwt-secret:latest,MONCASH_CLIENT_ID=tegs-moncash-client-id:latest,MONCASH_CLIENT_SECRET=tegs-moncash-client-secret:latest,NATCASH_MERCHANT_ID=tegs-natcash-merchant-id:latest,NATCASH_API_KEY=tegs-natcash-api-key:latest"
     waitFor: ["push-backend"]
 
   # --- Frontend: Get backend URL, build Nuxt, deploy to Firebase ---
@@ -60,7 +62,7 @@ steps:
         # Build Nuxt
         cd frontend
         npm ci
-        NUXT_PUBLIC_API_BASE="$${BACKEND_URL}/api" npm run build
+        NUXT_PUBLIC_API_BASE="$${BACKEND_URL}/api" npx nuxi generate
 
         # Deploy to Firebase Hosting
         firebase deploy --only hosting --project=$PROJECT_ID --token="$$FIREBASE_TOKEN"

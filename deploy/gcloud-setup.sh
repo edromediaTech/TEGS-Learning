@@ -32,7 +32,7 @@ gcloud services enable \
 # 3. Creer les secrets (valeurs a remplir)
 echo ""
 echo "--- Creation des secrets ---"
-for SECRET in tegs-mongo-uri tegs-jwt-secret tegs-gcs-jwt-secret; do
+for SECRET in tegs-mongo-uri tegs-jwt-secret tegs-gcs-jwt-secret tegs-moncash-client-id tegs-moncash-client-secret tegs-natcash-merchant-id tegs-natcash-api-key; do
   if gcloud secrets describe "$SECRET" --project="$PROJECT_ID" &>/dev/null; then
     echo "  Secret '$SECRET' existe deja."
   else
@@ -51,7 +51,7 @@ echo "--- Permissions Cloud Run -> Secrets ---"
 PROJECT_NUMBER=$(gcloud projects describe "$PROJECT_ID" --format='value(projectNumber)')
 SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
 
-for SECRET in tegs-mongo-uri tegs-jwt-secret tegs-gcs-jwt-secret; do
+for SECRET in tegs-mongo-uri tegs-jwt-secret tegs-gcs-jwt-secret tegs-moncash-client-id tegs-moncash-client-secret tegs-natcash-merchant-id tegs-natcash-api-key; do
   gcloud secrets add-iam-policy-binding "$SECRET" \
     --member="serviceAccount:${SA}" \
     --role="roles/secretmanager.secretAccessor" \
@@ -67,6 +67,12 @@ echo "1. Mettez a jour les secrets :"
 echo "   echo -n 'mongodb+srv://...' | gcloud secrets versions add tegs-mongo-uri --data-file=-"
 echo "   echo -n 'votre_jwt_secret' | gcloud secrets versions add tegs-jwt-secret --data-file=-"
 echo "   echo -n 'votre_gcs_secret' | gcloud secrets versions add tegs-gcs-jwt-secret --data-file=-"
+echo ""
+echo "   # Tournament / Payment secrets:"
+echo "   echo -n 'MONCASH_ID' | gcloud secrets versions add tegs-moncash-client-id --data-file=-"
+echo "   echo -n 'MONCASH_SECRET' | gcloud secrets versions add tegs-moncash-client-secret --data-file=-"
+echo "   echo -n 'NATCASH_MERCHANT' | gcloud secrets versions add tegs-natcash-merchant-id --data-file=-"
+echo "   echo -n 'NATCASH_KEY' | gcloud secrets versions add tegs-natcash-api-key --data-file=-"
 echo ""
 echo "2. Deploiement :"
 echo "   bash deploy/deploy-manual.sh"

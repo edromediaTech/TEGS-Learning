@@ -191,6 +191,8 @@ function initSocket(server) {
         'http://localhost:3002',
         'http://127.0.0.1:3002',
         process.env.FRONTEND_URL,
+        'https://luminous-mesh-459718-p4.web.app',
+        'https://luminous-mesh-459718-p4.firebaseapp.com',
       ].filter(Boolean),
       credentials: true,
     },
