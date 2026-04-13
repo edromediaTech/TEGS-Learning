@@ -129,6 +129,15 @@ const participantSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // --- Parrainage ---
+    sponsorCode: {
+      type: String,
+      default: '',
+    },
+    sponsorName: {
+      type: String,
+      default: '',
+    },
     transaction_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Transaction',

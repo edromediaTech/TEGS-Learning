@@ -130,7 +130,26 @@ router.post(
         });
       }
 
-      const isFree = tournament.registrationFee === 0;
+      // Vérifier code de parrainage
+      let isSponsored = false;
+      let sponsorName = '';
+      const sponsorCode = req.body.sponsorCode || '';
+      if (sponsorCode) {
+        const SponsorshipPack = require('../models/SponsorshipPack');
+        const pack = await SponsorshipPack.findOne({
+          code: sponsorCode.toUpperCase(),
+          tournament_id: tournament._id,
+          isActive: true,
+        });
+        if (pack && pack.usedCount < pack.maxUses && (!pack.expiresAt || new Date() <= new Date(pack.expiresAt))) {
+          isSponsored = true;
+          sponsorName = pack.sponsorName;
+          pack.usedCount += 1;
+          await pack.save();
+        }
+      }
+
+      const isFree = tournament.registrationFee === 0 || isSponsored;
 
       const participant = await Participant.create({
         tournament_id: tournament._id,
@@ -142,6 +161,8 @@ router.post(
         establishment: req.body.establishment || '',
         district: req.body.district || '',
         paid: isFree,
+        sponsorCode: isSponsored ? sponsorCode.toUpperCase() : '',
+        sponsorName: isSponsored ? sponsorName : '',
         status: 'registered',
       });
 
@@ -151,12 +172,16 @@ router.post(
       });
 
       res.status(201).json({
-        message: isFree ? 'Inscription confirmée' : 'Inscription enregistrée — paiement requis',
+        message: isSponsored
+          ? `Inscription parrainée par ${sponsorName}`
+          : isFree ? 'Inscription confirmée' : 'Inscription enregistrée — paiement requis',
         participant_id: participant._id,
         competitionToken: participant.competitionToken,
         qrCode,
         paid: isFree,
         requiresPayment: !isFree,
+        sponsored: isSponsored,
+        sponsorName: isSponsored ? sponsorName : null,
         amount: isFree ? 0 : tournament.registrationFee,
         currency: tournament.currency,
       });

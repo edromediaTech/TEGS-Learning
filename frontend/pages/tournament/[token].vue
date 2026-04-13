@@ -140,6 +140,17 @@
             </div>
           </div>
 
+          <!-- Code parrainage -->
+          <div v-if="tournament.registrationFee > 0">
+            <label class="block text-xs text-gray-400 mb-1">Code de parrainage (optionnel)</label>
+            <input v-model="form.sponsorCode" type="text"
+              class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none font-mono uppercase"
+              placeholder="BOURSE-XXXXXXXX" />
+            <p v-if="sponsorValid" class="text-green-400 text-xs mt-1">
+              Parrainee par {{ sponsorValid.sponsorName }} ({{ sponsorValid.remaining }} places restantes)
+            </p>
+          </div>
+
           <div v-if="regError" class="bg-red-500/20 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
             {{ regError }}
           </div>
@@ -277,9 +288,25 @@ const form = reactive({
   email: '',
   phone: '',
   establishment: '',
+  sponsorCode: '',
 });
 
+const sponsorValid = ref<any>(null);
 const baseURL = config.public.apiBase as string;
+
+// Valider le code parrainage en temps réel
+watch(() => form.sponsorCode, async (code) => {
+  if (!code || code.length < 6) { sponsorValid.value = null; return; }
+  try {
+    const data = await $fetch<any>(`${baseURL}/sponsorship/validate-code`, {
+      method: 'POST',
+      body: { code, tournament_id: tournament.value?._id },
+    });
+    sponsorValid.value = data.valid ? data.pack : null;
+  } catch {
+    sponsorValid.value = null;
+  }
+}, { debounce: 500 } as any);
 
 const canRegister = computed(() => {
   if (!tournament.value) return false;
