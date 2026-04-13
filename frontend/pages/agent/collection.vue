@@ -71,6 +71,13 @@
         <div class="text-center mt-2 text-[10px] text-gray-500">
           Taux: {{ wallet.commissionRate }}% · {{ wallet.transactionCount }} transactions · {{ wallet.currency }}
         </div>
+
+        <!-- Bouton bordereau -->
+        <button v-if="wallet.amountDue > 0" @click="downloadSlip"
+          class="w-full mt-3 bg-white/10 hover:bg-white/20 text-white py-2.5 rounded-xl text-sm font-medium transition-colors flex items-center justify-center space-x-2">
+          <span>&#128196;</span>
+          <span>Generer mon bordereau de depot ({{ wallet.amountDue.toLocaleString() }} {{ wallet.currency }})</span>
+        </button>
       </div>
 
       <!-- Tabs -->
@@ -387,6 +394,22 @@ async function loadJournal() {
     journalCount.value = data.count || 0;
   } catch {
     journal.value = [];
+  }
+}
+
+async function downloadSlip() {
+  try {
+    const session = useCookie<{ token: string } | null>('__session').value;
+    const token = session?.token || useCookie('auth_token').value;
+    const res = await fetch(`${config.public.apiBase}/payment/agent/deposit-slip`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error('Erreur PDF');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  } catch {
+    alert('Impossible de generer le bordereau');
   }
 }
 

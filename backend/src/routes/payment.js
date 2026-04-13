@@ -613,6 +613,177 @@ router.get(
 );
 
 // ---------------------------------------------------------------------------
+// GET /api/payment/agent/deposit-slip
+// Génère un bordereau de versement PDF (jsPDF)
+// ---------------------------------------------------------------------------
+router.get(
+  '/agent/deposit-slip',
+  authenticate,
+  authorize('authorized_agent', 'admin_ddene'),
+  async (req, res, next) => {
+    try {
+      const agent = await User.findById(req.user.id)
+        .select('firstName lastName email organizationName guaranteeBalance usedQuota commissionRate')
+        .lean();
+
+      // Transactions non réglées (collectées, pas encore versées)
+      const pendingCollections = await Transaction.find({
+        collectedBy: req.user.id,
+        provider: 'agent_cash',
+        status: 'completed',
+      })
+        .sort({ completedAt: -1 })
+        .populate('participant_id', 'firstName lastName competitionToken')
+        .lean();
+
+      const totalCollected = pendingCollections.reduce((s, t) => s + t.amount, 0);
+      const totalCommission = pendingCollections.reduce((s, t) => s + (t.commissionAmount || 0), 0);
+      const totalNet = pendingCollections.reduce((s, t) => s + (t.netAmount || t.amount), 0);
+      const currency = pendingCollections[0]?.currency || 'HTG';
+
+      // Générer le PDF
+      const { jsPDF } = require('jspdf');
+      require('jspdf-autotable');
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+      const w = doc.internal.pageSize.getWidth();
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+      const slipId = `BDV-${now.getTime().toString(36).toUpperCase()}`;
+
+      // --- En-tête officiel ---
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, w, 40, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.setTextColor(245, 158, 11);
+      doc.text('TEGS-Arena', 15, 18);
+
+      doc.setFontSize(10);
+      doc.setTextColor(148, 163, 184);
+      doc.text('Partenaire officiel DDENE', 15, 26);
+
+      doc.setFontSize(14);
+      doc.setTextColor(255, 255, 255);
+      doc.text('BORDEREAU DE VERSEMENT', w - 15, 18, { align: 'right' });
+
+      doc.setFontSize(9);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`N° ${slipId}`, w - 15, 26, { align: 'right' });
+      doc.text(dateStr, w - 15, 33, { align: 'right' });
+
+      // --- Infos Agent ---
+      let y = 50;
+      doc.setFontSize(11);
+      doc.setTextColor(30, 41, 59);
+      doc.setFont('helvetica', 'bold');
+      doc.text('AGENT AUTORISÉ', 15, y);
+
+      y += 8;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text(`Nom : ${agent.firstName} ${agent.lastName}`, 15, y);
+      doc.text(`Email : ${agent.email}`, w / 2, y);
+      y += 6;
+      doc.text(`Organisation : ${agent.organizationName || 'N/A'}`, 15, y);
+      doc.text(`Taux commission : ${agent.commissionRate}%`, w / 2, y);
+
+      // --- Résumé financier ---
+      y += 14;
+      doc.setFillColor(241, 245, 249);
+      doc.rect(15, y - 5, w - 30, 28, 'F');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(30, 41, 59);
+      doc.text('RÉSUMÉ FINANCIER', 20, y + 2);
+
+      y += 10;
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Total collecté :`, 20, y);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`${totalCollected.toLocaleString()} ${currency}`, 80, y);
+
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Commission agent :`, w / 2 + 5, y);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(34, 197, 94);
+      doc.text(`${totalCommission.toLocaleString()} ${currency}`, w - 30, y);
+
+      y += 7;
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(30, 41, 59);
+      doc.text(`Montant à reverser :`, 20, y);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.setTextColor(220, 38, 38);
+      doc.text(`${totalNet.toLocaleString()} ${currency}`, 80, y);
+
+      // --- Tableau des transactions ---
+      y += 18;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(30, 41, 59);
+      doc.text(`DÉTAIL DES TRANSACTIONS (${pendingCollections.length})`, 15, y);
+
+      const tableData = pendingCollections.slice(0, 30).map((t, i) => [
+        i + 1,
+        t.receiptNumber || '-',
+        t.participant_id ? `${t.participant_id.firstName} ${t.participant_id.lastName}` : '-',
+        `${t.amount} ${t.currency}`,
+        `${t.commissionAmount || 0}`,
+        `${t.netAmount || t.amount}`,
+        new Date(t.completedAt).toLocaleDateString('fr-FR'),
+      ]);
+
+      doc.autoTable({
+        startY: y + 4,
+        head: [['#', 'Reçu', 'Participant', 'Montant', 'Comm.', 'Net', 'Date']],
+        body: tableData,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [15, 23, 42], textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        margin: { left: 15, right: 15 },
+      });
+
+      // --- Signatures ---
+      const finalY = doc.lastAutoTable?.finalY || y + 60;
+      const sigY = finalY + 20;
+
+      doc.setDrawColor(200, 200, 200);
+      doc.line(15, sigY + 15, 80, sigY + 15);
+      doc.line(w - 80, sigY + 15, w - 15, sigY + 15);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Signature Agent', 47, sigY + 22, { align: 'center' });
+      doc.text('Signature Comptable DDENE', w - 47, sigY + 22, { align: 'center' });
+
+      // --- QR Code pour régularisation ---
+      const qrData = `SETTLE:${req.user.id}:${totalNet}:${slipId}`;
+      const qrImg = await QRCode.toDataURL(qrData, { width: 200, margin: 1, color: { dark: '#0f172a' } });
+      const qrSize = 25;
+      doc.addImage(qrImg, 'PNG', (w - qrSize) / 2, sigY + 28, qrSize, qrSize);
+
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      doc.text('Scanner pour régulariser', w / 2, sigY + 28 + qrSize + 4, { align: 'center' });
+      doc.text(`Ref: ${slipId}`, w / 2, sigY + 28 + qrSize + 8, { align: 'center' });
+
+      // Envoyer le PDF
+      const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="bordereau-${slipId}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
 // GET /api/payment/agent/wallet
 // Portefeuille de l'agent : commissions accumulées + dette à reverser
 // ---------------------------------------------------------------------------
