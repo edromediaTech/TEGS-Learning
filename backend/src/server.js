@@ -24,6 +24,7 @@ const paymentRoutes = require('./routes/payment');
 const notificationRoutes = require('./routes/notifications');
 const sponsorRoutes = require('./routes/sponsors');
 const sponsorshipRoutes = require('./routes/sponsorship');
+const voteRoutes = require('./routes/votes');
 
 const http = require('http');
 const path = require('path');
@@ -86,6 +87,7 @@ app.use('/api/payment', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/sponsors', sponsorRoutes);
 app.use('/api/sponsorship', sponsorshipRoutes);
+app.use('/api/votes', voteRoutes);
 
 // --- Gestion d'erreurs globale ---
 app.use((err, _req, res, _next) => {

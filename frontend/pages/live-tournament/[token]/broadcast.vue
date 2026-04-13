@@ -36,6 +36,27 @@
       </div>
     </main>
 
+    <!-- Fan Vote overlay (top right) -->
+    <div v-if="popularCandidate" class="absolute top-16 right-6 z-10">
+      <div class="bg-purple-500/20 backdrop-blur border border-purple-500/30 rounded-xl p-3 min-w-[180px]">
+        <div class="text-[10px] text-purple-400 font-bold uppercase mb-1">Coup de Coeur du Public</div>
+        <div class="flex items-center space-x-2">
+          <span class="text-xl animate-pulse">&#128293;</span>
+          <div>
+            <div class="font-bold text-sm">{{ popularCandidate.name }}</div>
+            <div class="text-xs text-purple-300">{{ popularCandidate.votes }} votes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vote pulse animation (when vote received) -->
+    <Transition name="vote-pulse">
+      <div v-if="voteFlash" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none">
+        <div class="text-6xl animate-ping">&#10084;&#65039;</div>
+      </div>
+    </Transition>
+
     <!-- Commentator name plate (configurable) -->
     <div v-if="commentator" class="absolute bottom-16 left-6 z-10">
       <div class="bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2 rounded-lg shadow-xl">
@@ -156,6 +177,8 @@ const showPodium = ref(false);
 const showOBSGuide = ref(false);
 const sponsors = ref<any[]>([]);
 const commentator = ref(route.query.commentator as string || '');
+const popularCandidate = ref<any>(null);
+const voteFlash = ref(false);
 
 const currentUrl = computed(() => typeof window !== 'undefined' ? window.location.href : '');
 
@@ -196,9 +219,31 @@ onMounted(async () => {
         const config = useRuntimeConfig();
         const data = await $fetch<any>(`${config.public.apiBase}/sponsors/public/${t._id}`);
         sponsors.value = (data.sponsors || []).filter((s: any) => s.showOnArena);
+
+        // Charger le candidat populaire
+        const popData = await $fetch<any>(`${config.public.apiBase}/votes/${t._id}/popular`);
+        if (popData.popular) popularCandidate.value = popData.popular;
       } catch {}
     }
   }, { immediate: true });
+
+  // Écouter les votes en temps réel
+  watch(() => ts.socket.value, (socket) => {
+    if (!socket) return;
+    socket.on('vote_received', (data: any) => {
+      // Flash heart animation
+      voteFlash.value = true;
+      setTimeout(() => { voteFlash.value = false; }, 1500);
+
+      // Mettre à jour le candidat populaire si nécessaire
+      if (!popularCandidate.value || data.totalVotes > (popularCandidate.value.votes || 0)) {
+        popularCandidate.value = {
+          name: data.participantName,
+          votes: data.totalVotes,
+        };
+      }
+    });
+  });
 });
 </script>
 
@@ -237,6 +282,11 @@ onMounted(async () => {
 
 .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+.vote-pulse-enter-active { transition: all 0.5s ease; }
+.vote-pulse-enter-from { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+.vote-pulse-leave-active { transition: all 0.5s ease; }
+.vote-pulse-leave-to { opacity: 0; transform: translate(-50%, -50%) scale(2); }
 
 /* 60 FPS optimization */
 * { will-change: transform; }
