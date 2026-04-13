@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const Module = require('../models/Module');
 const LiveSession = require('../models/LiveSession');
 const ProctoringEvidence = require('../models/ProctoringEvidence');
+const { setupTournamentNamespace } = require('./tournament');
 
 /**
  * TEGS-Learning — National Challenge Engine
@@ -204,8 +205,9 @@ function initSocket(server) {
   setupProfessorNamespace();
   setupStudentNamespace();
   setupSpectatorNamespace();
+  setupTournamentNamespace(io);
 
-  console.log('[SOCKET] National Challenge Engine initialise');
+  console.log('[SOCKET] National Challenge Engine + Tournament namespace initialise');
   return io;
 }
 

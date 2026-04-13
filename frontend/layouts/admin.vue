@@ -112,6 +112,7 @@ const navItems = computed(() => {
   }
   items.push(
     { to: '/admin/modules', label: 'Studio', icon: '\uD83C\uDFA8' },
+    { to: '/admin/tournaments', label: 'Tournois', icon: '\uD83C\uDFC6' },
     { to: '/admin/media', label: 'Mediatheque', icon: '\uD83D\uDCC1' },
     { to: '/admin/analytics', label: 'Analytics', icon: '\uD83D\uDCCA' },
   );

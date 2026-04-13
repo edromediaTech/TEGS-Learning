@@ -19,6 +19,9 @@ const reportingRoutes = require('./routes/reporting');
 const subscriptionRoutes = require('./routes/subscription');
 const liveArenaRoutes = require('./routes/live-arena');
 const qrcodeRoutes = require('./routes/qrcode');
+const tournamentRoutes = require('./routes/tournaments');
+const paymentRoutes = require('./routes/payment');
+const notificationRoutes = require('./routes/notifications');
 
 const http = require('http');
 const path = require('path');
@@ -66,6 +69,9 @@ app.use('/api/reporting', reportingRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/live-arena', liveArenaRoutes);
 app.use('/api/qr', qrcodeRoutes);
+app.use('/api/tournaments', tournamentRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // --- Gestion d'erreurs globale ---
 app.use((err, _req, res, _next) => {
