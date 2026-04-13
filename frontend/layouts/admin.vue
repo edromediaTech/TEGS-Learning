@@ -119,6 +119,9 @@ const navItems = computed(() => {
   if (auth.isSuperAdmin || auth.isAdmin) {
     items.push({ to: '/admin/billing', label: 'Facturation', icon: '\uD83D\uDCB3' });
   }
+  if (auth.user?.role === 'authorized_agent' || auth.isSuperAdmin || auth.isAdmin) {
+    items.push({ to: '/agent/collection', label: 'Caisse Agent', icon: '\uD83D\uDCB5' });
+  }
   return items;
 });
 

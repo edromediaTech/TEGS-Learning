@@ -33,8 +33,18 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['superadmin', 'admin_ddene', 'teacher', 'student'],
+      enum: ['superadmin', 'admin_ddene', 'teacher', 'student', 'authorized_agent'],
       default: 'student',
+    },
+    // --- Agent POS fields ---
+    organizationName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    isAgentVerified: {
+      type: Boolean,
+      default: false,
     },
     tenant_id: {
       type: mongoose.Schema.Types.ObjectId,

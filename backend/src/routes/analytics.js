@@ -1034,4 +1034,94 @@ router.get('/tournament-kpis/:tournamentId', async (req, res, next) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════════════
+// AGENT POS COLLECTIONS — Dashboard SuperAdmin / Admin DDENE
+// ═══════════════════════════════════════════════════════════════
+
+const Transaction = require('../models/Transaction');
+
+// ---------------------------------------------------------------------------
+// GET /api/analytics/agent-collections
+// Vue globale des collectes par agent (pour superadmin / admin_ddene)
+// ---------------------------------------------------------------------------
+router.get('/agent-collections',
+  authorize('admin_ddene'),
+  async (req, res, next) => {
+    try {
+      const { since, until } = req.query;
+      const dateMatch = {};
+      if (since) dateMatch.$gte = new Date(since);
+      if (until) dateMatch.$lte = new Date(until);
+
+      const match = {
+        provider: 'agent_cash',
+        status: 'completed',
+        ...req.tenantFilter(),
+      };
+      if (Object.keys(dateMatch).length > 0) match.completedAt = dateMatch;
+
+      // Agrégation par agent
+      const byAgent = await Transaction.aggregate([
+        { $match: match },
+        {
+          $group: {
+            _id: '$collectedBy',
+            agentName: { $first: '$agentName' },
+            organizationName: { $first: '$organizationName' },
+            totalCollected: { $sum: '$amount' },
+            transactionCount: { $sum: 1 },
+            lastCollection: { $max: '$completedAt' },
+            currency: { $first: '$currency' },
+          },
+        },
+        { $sort: { totalCollected: -1 } },
+      ]);
+
+      // Totaux globaux
+      const globalTotal = byAgent.reduce((sum, a) => sum + a.totalCollected, 0);
+      const globalTransactions = byAgent.reduce((sum, a) => sum + a.transactionCount, 0);
+
+      // Agrégation par jour (30 derniers jours)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const dailyMatch = { ...match };
+      if (!dailyMatch.completedAt) dailyMatch.completedAt = { $gte: thirtyDaysAgo };
+
+      const byDay = await Transaction.aggregate([
+        { $match: dailyMatch },
+        {
+          $group: {
+            _id: { $dateToString: { format: '%Y-%m-%d', date: '$completedAt' } },
+            total: { $sum: '$amount' },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]);
+
+      res.json({
+        agents: byAgent.map((a) => ({
+          agentId: a._id,
+          agentName: a.agentName,
+          organizationName: a.organizationName,
+          totalCollected: a.totalCollected,
+          transactionCount: a.transactionCount,
+          lastCollection: a.lastCollection,
+          currency: a.currency,
+          amountDue: a.totalCollected, // montant à reverser à la DDENE
+        })),
+        summary: {
+          totalAgents: byAgent.length,
+          totalCollected: globalTotal,
+          totalTransactions: globalTransactions,
+          currency: byAgent[0]?.currency || 'HTG',
+        },
+        daily: byDay,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 module.exports = router;

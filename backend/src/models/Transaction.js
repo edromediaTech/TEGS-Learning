@@ -40,7 +40,7 @@ const transactionSchema = new mongoose.Schema(
     // --- Passerelle de paiement ---
     provider: {
       type: String,
-      enum: ['moncash', 'natcash', 'stripe', 'manual'],
+      enum: ['moncash', 'natcash', 'stripe', 'manual', 'agent_cash'],
       required: [true, 'Le provider est requis'],
     },
     providerRef: {
@@ -50,6 +50,25 @@ const transactionSchema = new mongoose.Schema(
     providerResponse: {
       type: mongoose.Schema.Types.Mixed,
       default: null,
+    },
+
+    // --- Agent POS (paiement cash) ---
+    collectedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    agentName: {
+      type: String,
+      default: '',
+    },
+    organizationName: {
+      type: String,
+      default: '',
+    },
+    receiptNumber: {
+      type: String,
+      default: '',
     },
 
     // --- Statut ---

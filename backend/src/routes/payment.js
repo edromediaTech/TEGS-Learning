@@ -318,4 +318,226 @@ router.post(
   }
 );
 
+// ═══════════════════════════════════════════════════════════════
+// AGENT POS — Paiement Cash par Agent Autorisé
+// ═══════════════════════════════════════════════════════════════
+
+const { authenticate, authorize } = require('../middleware/auth');
+const User = require('../models/User');
+
+// ---------------------------------------------------------------------------
+// GET /api/payment/agent/search-participant
+// Rechercher un participant par nom, email ou competitionToken
+// ---------------------------------------------------------------------------
+router.get(
+  '/agent/search-participant',
+  authenticate,
+  authorize('authorized_agent', 'admin_ddene'),
+  async (req, res, next) => {
+    try {
+      const { q, tournament_id } = req.query;
+      if (!q || q.length < 2) {
+        return res.status(400).json({ error: 'Recherche trop courte (min 2 caractères)' });
+      }
+
+      const filter = {};
+      if (tournament_id) filter.tournament_id = tournament_id;
+
+      // Recherche par token exact ou par nom/email
+      if (q.startsWith('TKT-')) {
+        filter.competitionToken = q.toUpperCase();
+      } else {
+        filter.$or = [
+          { firstName: { $regex: q, $options: 'i' } },
+          { lastName: { $regex: q, $options: 'i' } },
+          { email: { $regex: q, $options: 'i' } },
+        ];
+      }
+
+      const participants = await Participant.find(filter)
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .lean();
+
+      // Enrichir avec le nom du tournoi
+      const tournamentIds = [...new Set(participants.map((p) => p.tournament_id.toString()))];
+      const tournaments = await Tournament.find({ _id: { $in: tournamentIds } })
+        .select('title registrationFee currency')
+        .lean();
+      const tMap = Object.fromEntries(tournaments.map((t) => [t._id.toString(), t]));
+
+      const results = participants.map((p) => ({
+        _id: p._id,
+        firstName: p.firstName,
+        lastName: p.lastName,
+        email: p.email,
+        phone: p.phone,
+        establishment: p.establishment,
+        competitionToken: p.competitionToken,
+        paid: p.paid,
+        status: p.status,
+        tournament: tMap[p.tournament_id.toString()] || null,
+      }));
+
+      res.json({ participants: results, count: results.length });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /api/payment/agent/collect
+// Agent encaisse le paiement cash d'un participant
+// ---------------------------------------------------------------------------
+router.post(
+  '/agent/collect',
+  authenticate,
+  authorize('authorized_agent', 'admin_ddene'),
+  [
+    body('participant_id').isMongoId().withMessage('participant_id invalide'),
+  ],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      // Vérifier que l'agent est vérifié
+      const agent = await User.findById(req.user.id).lean();
+      if (agent.role === 'authorized_agent' && !agent.isAgentVerified) {
+        return res.status(403).json({ error: 'Votre compte agent n\'est pas encore vérifié par l\'administrateur' });
+      }
+
+      const participant = await Participant.findById(req.body.participant_id);
+      if (!participant) {
+        return res.status(404).json({ error: 'Participant non trouvé' });
+      }
+
+      if (participant.paid) {
+        return res.status(400).json({
+          error: 'Ce participant a déjà payé',
+          competitionToken: participant.competitionToken,
+        });
+      }
+
+      const tournament = await Tournament.findById(participant.tournament_id);
+      if (!tournament) {
+        return res.status(404).json({ error: 'Tournoi non trouvé' });
+      }
+
+      // Générer numéro de reçu unique
+      const receiptNumber = `REC-${Date.now().toString(36).toUpperCase()}-${req.user.id.toString().slice(-4).toUpperCase()}`;
+
+      // Créer la transaction agent_cash
+      const transaction = await Transaction.create({
+        participant_id: participant._id,
+        tournament_id: participant.tournament_id,
+        tenant_id: participant.tenant_id,
+        amount: tournament.registrationFee,
+        currency: tournament.currency,
+        provider: 'agent_cash',
+        providerRef: receiptNumber,
+        collectedBy: req.user.id,
+        agentName: `${agent.firstName} ${agent.lastName}`,
+        organizationName: agent.organizationName || '',
+        receiptNumber,
+        status: 'completed',
+        completedAt: new Date(),
+      });
+
+      // Activer le participant
+      participant.paid = true;
+      participant.transaction_id = transaction._id;
+      await participant.save();
+
+      // Générer QR code
+      const qrCode = await QRCode.toDataURL(participant.competitionToken, {
+        width: 300,
+        margin: 2,
+        color: { dark: '#1e293b', light: '#ffffff' },
+      });
+
+      res.json({
+        message: 'Paiement cash encaissé avec succès',
+        receipt: {
+          number: receiptNumber,
+          amount: tournament.registrationFee,
+          currency: tournament.currency,
+          agent: `${agent.firstName} ${agent.lastName}`,
+          organization: agent.organizationName,
+          date: new Date().toISOString(),
+          participant: `${participant.firstName} ${participant.lastName}`,
+          tournament: tournament.title,
+        },
+        competitionToken: participant.competitionToken,
+        qrCode,
+        participant: {
+          _id: participant._id,
+          firstName: participant.firstName,
+          lastName: participant.lastName,
+          email: participant.email,
+          paid: true,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// GET /api/payment/agent/my-collections
+// Journal de caisse de l'agent connecté
+// ---------------------------------------------------------------------------
+router.get(
+  '/agent/my-collections',
+  authenticate,
+  authorize('authorized_agent', 'admin_ddene'),
+  async (req, res, next) => {
+    try {
+      const { date, tournament_id } = req.query;
+
+      const filter = {
+        collectedBy: req.user.id,
+        provider: 'agent_cash',
+      };
+      if (tournament_id) filter.tournament_id = tournament_id;
+
+      // Filtre par date (aujourd'hui par défaut)
+      if (date) {
+        const day = new Date(date);
+        const nextDay = new Date(day);
+        nextDay.setDate(nextDay.getDate() + 1);
+        filter.completedAt = { $gte: day, $lt: nextDay };
+      }
+
+      const collections = await Transaction.find(filter)
+        .sort({ completedAt: -1 })
+        .populate('participant_id', 'firstName lastName email competitionToken')
+        .lean();
+
+      const total = collections.reduce((sum, c) => sum + c.amount, 0);
+      const currency = collections[0]?.currency || 'HTG';
+
+      res.json({
+        collections: collections.map((c) => ({
+          _id: c._id,
+          receiptNumber: c.receiptNumber,
+          amount: c.amount,
+          currency: c.currency,
+          participant: c.participant_id,
+          completedAt: c.completedAt,
+        })),
+        count: collections.length,
+        total,
+        currency,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 module.exports = router;
