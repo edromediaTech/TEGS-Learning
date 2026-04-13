@@ -46,6 +46,12 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    commissionRate: {
+      type: Number,
+      default: 5,
+      min: 0,
+      max: 50,
+    },
     tenant_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Tenant',

@@ -19,6 +19,27 @@
     </header>
 
     <div class="max-w-2xl mx-auto px-4 pt-6 pb-24">
+      <!-- Wallet summary -->
+      <div class="bg-gradient-to-r from-emerald-900/40 to-green-900/40 border border-emerald-500/20 rounded-2xl p-5 mb-6">
+        <div class="grid grid-cols-3 gap-4 text-center">
+          <div>
+            <div class="text-xl font-black text-emerald-400">{{ wallet.totalCommission.toLocaleString() }}</div>
+            <div class="text-[10px] text-gray-400">Mes commissions</div>
+          </div>
+          <div>
+            <div class="text-xl font-black text-white">{{ wallet.totalCollected.toLocaleString() }}</div>
+            <div class="text-[10px] text-gray-400">Total encaisse</div>
+          </div>
+          <div>
+            <div class="text-xl font-black text-amber-400">{{ wallet.amountDue.toLocaleString() }}</div>
+            <div class="text-[10px] text-gray-400">A reverser</div>
+          </div>
+        </div>
+        <div class="text-center mt-2 text-[10px] text-gray-500">
+          Taux: {{ wallet.commissionRate }}% · {{ wallet.transactionCount }} transactions · {{ wallet.currency }}
+        </div>
+      </div>
+
       <!-- Tabs -->
       <div class="flex items-center space-x-1 mb-6">
         <button @click="tab = 'collect'"
@@ -159,6 +180,14 @@
                   <span class="text-gray-400">Token</span>
                   <span class="font-mono font-bold text-amber-400">{{ receipt.competitionToken }}</span>
                 </div>
+                <div v-if="receipt.receipt?.commissionAmount" class="flex justify-between">
+                  <span class="text-gray-400">Commission ({{ receipt.receipt?.commissionRate }}%)</span>
+                  <span class="text-emerald-400">{{ receipt.receipt?.commissionAmount }} {{ receipt.receipt?.currency }}</span>
+                </div>
+                <div v-if="receipt.receipt?.netAmount" class="flex justify-between">
+                  <span class="text-gray-400">A reverser</span>
+                  <span class="text-amber-400">{{ receipt.receipt?.netAmount }} {{ receipt.receipt?.currency }}</span>
+                </div>
                 <div class="flex justify-between">
                   <span class="text-gray-400">Agent</span>
                   <span>{{ receipt.receipt?.agent }}</span>
@@ -246,6 +275,16 @@ const collectTarget = ref<any>(null);
 const collecting = ref(false);
 const receipt = ref<any>(null);
 
+// Wallet
+const wallet = reactive({
+  totalCollected: 0,
+  totalCommission: 0,
+  amountDue: 0,
+  transactionCount: 0,
+  currency: 'HTG',
+  commissionRate: 5,
+});
+
 // Journal
 const journal = ref<any[]>([]);
 const journalDate = ref('');
@@ -285,6 +324,7 @@ async function executeCollect() {
     receipt.value = data;
     collectTarget.value = null;
     journalCount.value++;
+    loadWallet();
   } catch (e: any) {
     alert(e.data?.error || 'Erreur lors de l\'encaissement');
   } finally {
@@ -310,7 +350,20 @@ function formatTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
+async function loadWallet() {
+  try {
+    const { data } = await apiFetch<any>('/payment/agent/wallet');
+    wallet.totalCollected = data.wallet?.totalCollected || 0;
+    wallet.totalCommission = data.wallet?.totalCommission || 0;
+    wallet.amountDue = data.wallet?.amountDue || 0;
+    wallet.transactionCount = data.wallet?.transactionCount || 0;
+    wallet.currency = data.wallet?.currency || 'HTG';
+    wallet.commissionRate = data.agent?.commissionRate || 5;
+  } catch {}
+}
+
 onMounted(() => {
+  loadWallet();
   loadJournal();
 });
 </script>

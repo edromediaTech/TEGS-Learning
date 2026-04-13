@@ -430,12 +430,18 @@ router.post(
       // Générer numéro de reçu unique
       const receiptNumber = `REC-${Date.now().toString(36).toUpperCase()}-${req.user.id.toString().slice(-4).toUpperCase()}`;
 
+      // Calcul commission agent
+      const fee = tournament.registrationFee;
+      const rate = agent.commissionRate || 0;
+      const commissionAmount = Math.round(fee * (rate / 100));
+      const netAmount = fee - commissionAmount;
+
       // Créer la transaction agent_cash
       const transaction = await Transaction.create({
         participant_id: participant._id,
         tournament_id: participant.tournament_id,
         tenant_id: participant.tenant_id,
-        amount: tournament.registrationFee,
+        amount: fee,
         currency: tournament.currency,
         provider: 'agent_cash',
         providerRef: receiptNumber,
@@ -443,6 +449,9 @@ router.post(
         agentName: `${agent.firstName} ${agent.lastName}`,
         organizationName: agent.organizationName || '',
         receiptNumber,
+        commissionRate: rate,
+        commissionAmount,
+        netAmount,
         status: 'completed',
         completedAt: new Date(),
       });
@@ -463,8 +472,11 @@ router.post(
         message: 'Paiement cash encaissé avec succès',
         receipt: {
           number: receiptNumber,
-          amount: tournament.registrationFee,
+          amount: fee,
           currency: tournament.currency,
+          commissionRate: rate,
+          commissionAmount,
+          netAmount,
           agent: `${agent.firstName} ${agent.lastName}`,
           organization: agent.organizationName,
           date: new Date().toISOString(),
@@ -533,6 +545,119 @@ router.get(
         count: collections.length,
         total,
         currency,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// GET /api/payment/agent/wallet
+// Portefeuille de l'agent : commissions accumulées + dette à reverser
+// ---------------------------------------------------------------------------
+router.get(
+  '/agent/wallet',
+  authenticate,
+  authorize('authorized_agent', 'admin_ddene'),
+  async (req, res, next) => {
+    try {
+      const stats = await Transaction.aggregate([
+        { $match: { collectedBy: req.user.id, provider: 'agent_cash', status: 'completed' } },
+        {
+          $group: {
+            _id: null,
+            totalCollected: { $sum: '$amount' },
+            totalCommission: { $sum: '$commissionAmount' },
+            totalNet: { $sum: '$netAmount' },
+            transactionCount: { $sum: 1 },
+            currency: { $first: '$currency' },
+          },
+        },
+      ]);
+
+      const s = stats[0] || { totalCollected: 0, totalCommission: 0, totalNet: 0, transactionCount: 0, currency: 'HTG' };
+
+      const agent = await User.findById(req.user.id).select('commissionRate organizationName firstName lastName').lean();
+
+      res.json({
+        agent: {
+          name: `${agent.firstName} ${agent.lastName}`,
+          organization: agent.organizationName,
+          commissionRate: agent.commissionRate,
+        },
+        wallet: {
+          totalCollected: s.totalCollected,
+          totalCommission: s.totalCommission,
+          amountDue: s.totalNet,
+          transactionCount: s.transactionCount,
+          currency: s.currency,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// PUT /api/payment/agent/set-commission/:userId
+// SuperAdmin modifie le taux de commission d'un agent
+// ---------------------------------------------------------------------------
+router.put(
+  '/agent/set-commission/:userId',
+  authenticate,
+  authorize(), // superadmin only (authorize() with no args = superadmin via fallback)
+  async (req, res, next) => {
+    try {
+      const { commissionRate } = req.body;
+      if (commissionRate === undefined || commissionRate < 0 || commissionRate > 50) {
+        return res.status(400).json({ error: 'commissionRate doit être entre 0 et 50' });
+      }
+
+      const user = await User.findById(req.params.userId);
+      if (!user || user.role !== 'authorized_agent') {
+        return res.status(404).json({ error: 'Agent non trouvé' });
+      }
+
+      user.commissionRate = commissionRate;
+      await user.save();
+
+      res.json({
+        message: `Taux de commission de ${user.firstName} ${user.lastName} mis à ${commissionRate}%`,
+        agent: {
+          _id: user._id,
+          name: `${user.firstName} ${user.lastName}`,
+          commissionRate: user.commissionRate,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// PUT /api/payment/agent/verify/:userId
+// SuperAdmin / Admin vérifie un agent
+// ---------------------------------------------------------------------------
+router.put(
+  '/agent/verify/:userId',
+  authenticate,
+  authorize('admin_ddene'),
+  async (req, res, next) => {
+    try {
+      const user = await User.findById(req.params.userId);
+      if (!user || user.role !== 'authorized_agent') {
+        return res.status(404).json({ error: 'Agent non trouvé' });
+      }
+
+      user.isAgentVerified = true;
+      await user.save();
+
+      res.json({
+        message: `Agent ${user.firstName} ${user.lastName} vérifié`,
+        agent: { _id: user._id, isAgentVerified: true },
       });
     } catch (err) {
       next(err);

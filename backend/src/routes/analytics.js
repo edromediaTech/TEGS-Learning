@@ -1099,22 +1099,49 @@ router.get('/agent-collections',
         { $sort: { _id: 1 } },
       ]);
 
+      // Recalculer avec commissions
+      const byAgentWithCommission = await Transaction.aggregate([
+        { $match: match },
+        {
+          $group: {
+            _id: '$collectedBy',
+            agentName: { $first: '$agentName' },
+            organizationName: { $first: '$organizationName' },
+            totalCollected: { $sum: '$amount' },
+            totalCommission: { $sum: '$commissionAmount' },
+            totalNet: { $sum: '$netAmount' },
+            transactionCount: { $sum: 1 },
+            lastCollection: { $max: '$completedAt' },
+            currency: { $first: '$currency' },
+            avgRate: { $avg: '$commissionRate' },
+          },
+        },
+        { $sort: { totalCollected: -1 } },
+      ]);
+
+      const globalCommission = byAgentWithCommission.reduce((sum, a) => sum + a.totalCommission, 0);
+      const globalNet = byAgentWithCommission.reduce((sum, a) => sum + a.totalNet, 0);
+
       res.json({
-        agents: byAgent.map((a) => ({
+        agents: byAgentWithCommission.map((a) => ({
           agentId: a._id,
           agentName: a.agentName,
           organizationName: a.organizationName,
           totalCollected: a.totalCollected,
+          totalCommission: a.totalCommission,
+          amountDue: a.totalNet,
+          commissionRate: Math.round(a.avgRate || 0),
           transactionCount: a.transactionCount,
           lastCollection: a.lastCollection,
           currency: a.currency,
-          amountDue: a.totalCollected, // montant à reverser à la DDENE
         })),
         summary: {
-          totalAgents: byAgent.length,
+          totalAgents: byAgentWithCommission.length,
           totalCollected: globalTotal,
+          totalCommission: globalCommission,
+          totalNet: globalNet,
           totalTransactions: globalTransactions,
-          currency: byAgent[0]?.currency || 'HTG',
+          currency: byAgentWithCommission[0]?.currency || 'HTG',
         },
         daily: byDay,
       });

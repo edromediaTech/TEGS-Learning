@@ -71,6 +71,23 @@ const transactionSchema = new mongoose.Schema(
       default: '',
     },
 
+    // --- Commission agent ---
+    commissionRate: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    commissionAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    netAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     // --- Statut ---
     status: {
       type: String,
