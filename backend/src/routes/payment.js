@@ -536,6 +536,12 @@ router.post(
         color: { dark: '#1e293b', light: '#ffffff' },
       });
 
+      // Sponsors pour le reçu
+      const Sponsor = require('../models/Sponsor');
+      const ticketSponsors = await Sponsor.find({
+        tournament_id: tournament._id, isActive: true, showOnTicket: true,
+      }).sort({ tier: 1 }).limit(2).select('name tier').lean();
+
       res.json({
         message: 'Paiement cash encaissé avec succès',
         receipt: {
@@ -550,6 +556,7 @@ router.post(
           date: new Date().toISOString(),
           participant: `${participant.firstName} ${participant.lastName}`,
           tournament: tournament.title,
+          sponsors: ticketSponsors.map((s) => s.name),
         },
         competitionToken: participant.competitionToken,
         qrCode,

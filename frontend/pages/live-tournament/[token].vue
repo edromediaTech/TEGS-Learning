@@ -66,6 +66,9 @@
           </div>
         </div>
 
+        <!-- Sponsor Carousel -->
+        <SponsorCarousel v-if="sponsors.length > 0" :sponsors="sponsors" :dark="true" class="mb-6" />
+
         <!-- Tournament Tree -->
         <div class="mb-8">
           <h2 class="text-sm font-bold text-gray-400 uppercase mb-4">Arbre de progression</h2>
@@ -186,6 +189,7 @@
 
 <script setup lang="ts">
 import TournamentTree from '~/components/tournament/TournamentTree.vue';
+import SponsorCarousel from '~/components/tournament/SponsorCarousel.vue';
 
 const route = useRoute();
 const shareToken = route.params.token as string;
@@ -193,6 +197,7 @@ const shareToken = route.params.token as string;
 const ts = useTournamentSocket();
 const showAdvance = ref(false);
 const showPodium = ref(false);
+const sponsors = ref<any[]>([]);
 
 const activeRound = computed(() => {
   if (!ts.tournament.value) return null;
@@ -219,8 +224,19 @@ watch(() => ts.tournamentFinished.value, (val) => {
   if (val) showPodium.value = true;
 });
 
-onMounted(() => {
+onMounted(async () => {
   ts.connectSpectator(shareToken);
+
+  // Charger sponsors quand le tournoi est connu
+  watch(() => ts.tournament.value, async (t) => {
+    if (t?._id && sponsors.value.length === 0) {
+      try {
+        const config = useRuntimeConfig();
+        const data = await $fetch<any>(`${config.public.apiBase}/sponsors/public/${t._id}`);
+        sponsors.value = data.sponsors || [];
+      } catch {}
+    }
+  }, { immediate: true });
 });
 </script>
 

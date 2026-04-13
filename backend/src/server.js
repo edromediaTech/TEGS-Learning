@@ -22,6 +22,7 @@ const qrcodeRoutes = require('./routes/qrcode');
 const tournamentRoutes = require('./routes/tournaments');
 const paymentRoutes = require('./routes/payment');
 const notificationRoutes = require('./routes/notifications');
+const sponsorRoutes = require('./routes/sponsors');
 
 const http = require('http');
 const path = require('path');
@@ -82,6 +83,7 @@ app.use('/api/qr', qrcodeRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/sponsors', sponsorRoutes);
 
 // --- Gestion d'erreurs globale ---
 app.use((err, _req, res, _next) => {

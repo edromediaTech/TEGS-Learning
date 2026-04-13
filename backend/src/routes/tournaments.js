@@ -1044,10 +1044,28 @@ router.get(
       doc.setTextColor(71, 85, 105);
       doc.text(`Ref: ${participant.competitionToken}`, w / 2, 180, { align: 'center' });
 
+      // Sponsors sur le certificat
+      const Sponsor = require('../models/Sponsor');
+      const certSponsors = await Sponsor.find({
+        tournament_id: tournament._id,
+        isActive: true,
+        showOnCertificate: true,
+      }).sort({ tier: 1 }).limit(3).lean();
+
+      if (certSponsors.length > 0) {
+        doc.setFontSize(8);
+        doc.setTextColor(100, 116, 139);
+        doc.text('Partenaires officiels', w / 2, 182, { align: 'center' });
+        const sponsorNames = certSponsors.map((s) => s.name).join('  ·  ');
+        doc.setFontSize(9);
+        doc.setTextColor(71, 85, 105);
+        doc.text(sponsorNames, w / 2, 187, { align: 'center' });
+      }
+
       // TEGS watermark
-      doc.setFontSize(9);
+      doc.setFontSize(8);
       doc.setTextColor(51, 65, 85);
-      doc.text('TEGS-Learning | Plateforme DDENE', w / 2, 190, { align: 'center' });
+      doc.text('TEGS-Learning | Plateforme DDENE', w / 2, 193, { align: 'center' });
 
       // Envoyer le PDF
       const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
