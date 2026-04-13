@@ -658,7 +658,7 @@ router.get(
 
       // Générer le PDF
       const { jsPDF } = require('jspdf');
-      require('jspdf-autotable');
+      const autoTable = require('jspdf-autotable');
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
       const w = doc.internal.pageSize.getWidth();
@@ -752,7 +752,7 @@ router.get(
         new Date(t.completedAt).toLocaleDateString('fr-FR'),
       ]);
 
-      doc.autoTable({
+      autoTable.default(doc, {
         startY: y + 4,
         head: [['#', 'Reçu', 'Participant', 'Montant', 'Comm.', 'Net', 'Date']],
         body: tableData,
@@ -763,7 +763,7 @@ router.get(
       });
 
       // --- Signatures ---
-      const finalY = doc.lastAutoTable?.finalY || y + 60;
+      const finalY = doc.lastAutoTable?.finalY || doc.previousAutoTable?.finalY || y + 60;
       const sigY = finalY + 20;
 
       doc.setDrawColor(200, 200, 200);
@@ -869,7 +869,7 @@ router.get(
 router.put(
   '/agent/set-commission/:userId',
   authenticate,
-  authorize(), // superadmin only (authorize() with no args = superadmin via fallback)
+  authorize('admin_ddene'),
   async (req, res, next) => {
     try {
       const { commissionRate } = req.body;
@@ -1125,7 +1125,7 @@ router.put(
         return res.status(404).json({ error: 'Agent non trouvé' });
       }
 
-      const { guaranteeBalance, maxPaymentLimit, isBlocked, note } = req.body;
+      const { guaranteeBalance, maxPaymentLimit, isBlocked, commissionRate, note } = req.body;
       const changes = [];
 
       // Mise à jour caution (top-up / adjustment)
@@ -1161,6 +1161,11 @@ router.put(
       if (isBlocked !== undefined) {
         user.isBlocked = isBlocked;
         changes.push(`Bloqué: ${isBlocked}`);
+      }
+
+      if (commissionRate !== undefined && commissionRate >= 0 && commissionRate <= 50) {
+        user.commissionRate = commissionRate;
+        changes.push(`Commission: ${commissionRate}%`);
       }
 
       await user.save();

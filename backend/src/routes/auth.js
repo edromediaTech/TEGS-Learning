@@ -22,7 +22,7 @@ router.post(
     body('firstName').notEmpty().withMessage('Prenom requis'),
     body('lastName').notEmpty().withMessage('Nom requis'),
     body('role')
-      .isIn(['superadmin', 'admin_ddene', 'teacher', 'student'])
+      .isIn(['superadmin', 'admin_ddene', 'teacher', 'student', 'authorized_agent'])
       .withMessage('Role invalide'),
   ],
   async (req, res, next) => {
