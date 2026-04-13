@@ -19,6 +19,39 @@
     </header>
 
     <div class="max-w-2xl mx-auto px-4 pt-6 pb-24">
+      <!-- Blocked banner -->
+      <div v-if="quota.isBlocked" class="bg-red-500/20 border border-red-500/30 rounded-2xl p-4 mb-4">
+        <div class="flex items-center space-x-3">
+          <span class="text-3xl">&#128683;</span>
+          <div>
+            <div class="font-bold text-red-300">Compte suspendu</div>
+            <div class="text-xs text-gray-400">Votre quota est epuise ou votre compte a ete desactive. Contactez l'administration DDENE pour regulariser.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quota progress bar -->
+      <div v-if="quota.guaranteeBalance > 0" class="bg-white/5 border border-white/10 rounded-2xl p-4 mb-4">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs text-gray-400">Quota disponible</span>
+          <span class="text-sm font-bold" :class="quota.quotaPercent > 20 ? 'text-emerald-400' : quota.quotaPercent > 10 ? 'text-amber-400' : 'text-red-400'">
+            {{ quota.available.toLocaleString() }} {{ wallet.currency }} ({{ quota.quotaPercent }}%)
+          </span>
+        </div>
+        <div class="w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+          <div class="h-full rounded-full transition-all duration-500"
+            :class="quota.quotaPercent > 20 ? 'bg-emerald-500' : quota.quotaPercent > 10 ? 'bg-amber-500' : 'bg-red-500'"
+            :style="{ width: Math.max(2, quota.quotaPercent) + '%' }"></div>
+        </div>
+        <div class="flex items-center justify-between mt-1 text-[10px] text-gray-500">
+          <span>Caution: {{ quota.guaranteeBalance.toLocaleString() }} {{ wallet.currency }}</span>
+          <span>Consomme: {{ quota.usedQuota.toLocaleString() }} {{ wallet.currency }}</span>
+        </div>
+        <div v-if="quota.maxPaymentLimit > 0" class="text-[10px] text-gray-500 mt-1 text-center">
+          Transactions: {{ quota.currentPaymentCount }} / {{ quota.maxPaymentLimit }}
+        </div>
+      </div>
+
       <!-- Wallet summary -->
       <div class="bg-gradient-to-r from-emerald-900/40 to-green-900/40 border border-emerald-500/20 rounded-2xl p-5 mb-6">
         <div class="grid grid-cols-3 gap-4 text-center">
@@ -285,6 +318,17 @@ const wallet = reactive({
   commissionRate: 5,
 });
 
+// Quota
+const quota = reactive({
+  guaranteeBalance: 0,
+  usedQuota: 0,
+  available: 0,
+  quotaPercent: 100,
+  maxPaymentLimit: 0,
+  currentPaymentCount: 0,
+  isBlocked: false,
+});
+
 // Journal
 const journal = ref<any[]>([]);
 const journalDate = ref('');
@@ -359,6 +403,16 @@ async function loadWallet() {
     wallet.transactionCount = data.wallet?.transactionCount || 0;
     wallet.currency = data.wallet?.currency || 'HTG';
     wallet.commissionRate = data.agent?.commissionRate || 5;
+    // Quota
+    if (data.quota) {
+      quota.guaranteeBalance = data.quota.guaranteeBalance || 0;
+      quota.usedQuota = data.quota.usedQuota || 0;
+      quota.available = data.quota.available || 0;
+      quota.quotaPercent = data.quota.quotaPercent ?? 100;
+      quota.maxPaymentLimit = data.quota.maxPaymentLimit || 0;
+      quota.currentPaymentCount = data.quota.currentPaymentCount || 0;
+    }
+    quota.isBlocked = data.agent?.isBlocked || false;
   } catch {}
 }
 

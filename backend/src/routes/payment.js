@@ -404,10 +404,21 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      // Vérifier que l'agent est vérifié
-      const agent = await User.findById(req.user.id).lean();
+      // === CHECK 0 : Agent vérifié ===
+      const agent = await User.findById(req.user.id);
       if (agent.role === 'authorized_agent' && !agent.isAgentVerified) {
         return res.status(403).json({ error: 'Votre compte agent n\'est pas encore vérifié par l\'administrateur' });
+      }
+
+      // SuperAdmin / Admin bypass toutes les contraintes agent
+      const isBypass = req.isSuperAdmin || agent.role === 'admin_ddene';
+
+      // === CHECK 1 : Agent actif (pas bloqué) ===
+      if (!isBypass && agent.isBlocked) {
+        return res.status(403).json({
+          error: 'Compte suspendu. Contactez l\'administration DDENE.',
+          code: 'AGENT_BLOCKED',
+        });
       }
 
       const participant = await Participant.findById(req.body.participant_id);
@@ -430,8 +441,34 @@ router.post(
       // Générer numéro de reçu unique
       const receiptNumber = `REC-${Date.now().toString(36).toUpperCase()}-${req.user.id.toString().slice(-4).toUpperCase()}`;
 
-      // Calcul commission agent
       const fee = tournament.registrationFee;
+
+      // === CHECK 2 : Limite de quantité de paiements ===
+      if (!isBypass && agent.maxPaymentLimit > 0 && agent.currentPaymentCount >= agent.maxPaymentLimit) {
+        return res.status(403).json({
+          error: `Limite de quantité atteinte (${agent.maxPaymentLimit} transactions max). Contactez l'administration.`,
+          code: 'PAYMENT_LIMIT_REACHED',
+          current: agent.currentPaymentCount,
+          limit: agent.maxPaymentLimit,
+        });
+      }
+
+      // === CHECK 3 : Quota financier (caution) ===
+      if (!isBypass && agent.guaranteeBalance > 0) {
+        const available = agent.guaranteeBalance - agent.usedQuota;
+        if (fee > available) {
+          return res.status(403).json({
+            error: `Quota insuffisant. Solde restant : ${available} ${tournament.currency}. Veuillez recharger votre caution.`,
+            code: 'INSUFFICIENT_QUOTA',
+            available,
+            required: fee,
+            guaranteeBalance: agent.guaranteeBalance,
+            usedQuota: agent.usedQuota,
+          });
+        }
+      }
+
+      // Calcul commission agent
       const rate = agent.commissionRate || 0;
       const commissionAmount = Math.round(fee * (rate / 100));
       const netAmount = fee - commissionAmount;
@@ -460,6 +497,29 @@ router.post(
       participant.paid = true;
       participant.transaction_id = transaction._id;
       await participant.save();
+
+      // Mettre à jour quota agent
+      await User.findByIdAndUpdate(req.user.id, {
+        $inc: { usedQuota: fee, currentPaymentCount: 1 },
+      });
+
+      // Alerte si quota < 10%
+      if (agent.guaranteeBalance > 0) {
+        const newUsed = (agent.usedQuota || 0) + fee;
+        const remaining = agent.guaranteeBalance - newUsed;
+        const threshold = agent.guaranteeBalance * 0.1;
+        if (remaining > 0 && remaining <= threshold) {
+          // Push notification: quota faible
+          try {
+            const fcm = require('../services/fcm');
+            await fcm.sendToUser(req.user.id, {
+              title: 'Quota presque épuisé !',
+              body: `Attention, il vous reste ${remaining} ${tournament.currency} sur votre caution. Veuillez recharger.`,
+              data: { type: 'quota_low', remaining: String(remaining) },
+            });
+          } catch {}
+        }
+      }
 
       // Générer QR code
       const qrCode = await QRCode.toDataURL(participant.competitionToken, {
@@ -578,13 +638,21 @@ router.get(
 
       const s = stats[0] || { totalCollected: 0, totalCommission: 0, totalNet: 0, transactionCount: 0, currency: 'HTG' };
 
-      const agent = await User.findById(req.user.id).select('commissionRate organizationName firstName lastName').lean();
+      const agent = await User.findById(req.user.id)
+        .select('commissionRate organizationName firstName lastName guaranteeBalance usedQuota maxPaymentLimit currentPaymentCount isBlocked')
+        .lean();
+
+      const available = (agent.guaranteeBalance || 0) - (agent.usedQuota || 0);
+      const quotaPercent = agent.guaranteeBalance > 0
+        ? Math.round((available / agent.guaranteeBalance) * 100)
+        : 100;
 
       res.json({
         agent: {
           name: `${agent.firstName} ${agent.lastName}`,
           organization: agent.organizationName,
           commissionRate: agent.commissionRate,
+          isBlocked: agent.isBlocked,
         },
         wallet: {
           totalCollected: s.totalCollected,
@@ -592,6 +660,14 @@ router.get(
           amountDue: s.totalNet,
           transactionCount: s.transactionCount,
           currency: s.currency,
+        },
+        quota: {
+          guaranteeBalance: agent.guaranteeBalance || 0,
+          usedQuota: agent.usedQuota || 0,
+          available,
+          quotaPercent,
+          maxPaymentLimit: agent.maxPaymentLimit || 0,
+          currentPaymentCount: agent.currentPaymentCount || 0,
         },
       });
     } catch (err) {
@@ -659,6 +735,225 @@ router.put(
         message: `Agent ${user.firstName} ${user.lastName} vérifié`,
         agent: { _id: user._id, isAgentVerified: true },
       });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════
+// ADMIN — Gestion Agents (Caution, Quota, Settlement)
+// ═══════════════════════════════════════════════════════════════
+
+const GuaranteeLog = require('../models/GuaranteeLog');
+
+// ---------------------------------------------------------------------------
+// PUT /api/payment/agent/update-settings/:userId
+// Admin met à jour caution, limite, block d'un agent
+// ---------------------------------------------------------------------------
+router.put(
+  '/agent/update-settings/:userId',
+  authenticate,
+  authorize('admin_ddene'),
+  async (req, res, next) => {
+    try {
+      const user = await User.findById(req.params.userId);
+      if (!user || user.role !== 'authorized_agent') {
+        return res.status(404).json({ error: 'Agent non trouvé' });
+      }
+
+      const { guaranteeBalance, maxPaymentLimit, isBlocked, note } = req.body;
+      const changes = [];
+
+      // Mise à jour caution (top-up / adjustment)
+      if (guaranteeBalance !== undefined && guaranteeBalance !== user.guaranteeBalance) {
+        const before = user.guaranteeBalance;
+        const diff = guaranteeBalance - before;
+        user.guaranteeBalance = guaranteeBalance;
+
+        await GuaranteeLog.create({
+          agent_id: user._id,
+          admin_id: req.user.id,
+          type: diff > 0 ? 'deposit' : 'withdrawal',
+          amount: Math.abs(diff),
+          balanceBefore: before,
+          balanceAfter: guaranteeBalance,
+          note: note || `${diff > 0 ? 'Recharge' : 'Retrait'} caution`,
+          tenant_id: req.tenantId,
+        });
+        changes.push(`Caution: ${before} → ${guaranteeBalance}`);
+
+        // Auto-déblocage si la nouvelle marge est suffisante
+        if (user.isBlocked && guaranteeBalance > user.usedQuota) {
+          user.isBlocked = false;
+          changes.push('Agent auto-débloqué (marge suffisante)');
+        }
+      }
+
+      if (maxPaymentLimit !== undefined) {
+        user.maxPaymentLimit = maxPaymentLimit;
+        changes.push(`Limite paiements: ${maxPaymentLimit || 'illimité'}`);
+      }
+
+      if (isBlocked !== undefined) {
+        user.isBlocked = isBlocked;
+        changes.push(`Bloqué: ${isBlocked}`);
+      }
+
+      await user.save();
+
+      res.json({
+        message: `Agent ${user.firstName} ${user.lastName} mis à jour`,
+        changes,
+        agent: {
+          _id: user._id,
+          name: `${user.firstName} ${user.lastName}`,
+          guaranteeBalance: user.guaranteeBalance,
+          usedQuota: user.usedQuota,
+          available: user.guaranteeBalance - user.usedQuota,
+          maxPaymentLimit: user.maxPaymentLimit,
+          currentPaymentCount: user.currentPaymentCount,
+          isBlocked: user.isBlocked,
+          commissionRate: user.commissionRate,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /api/payment/agent/settle-debt/:userId
+// Admin enregistre un versement (settlement) — libère le quota agent
+// ---------------------------------------------------------------------------
+router.post(
+  '/agent/settle-debt/:userId',
+  authenticate,
+  authorize('admin_ddene'),
+  async (req, res, next) => {
+    try {
+      const { amountSettled, receiptRef, note } = req.body;
+
+      if (!amountSettled || amountSettled <= 0) {
+        return res.status(400).json({ error: 'Montant du versement requis (> 0)' });
+      }
+
+      const user = await User.findById(req.params.userId);
+      if (!user || user.role !== 'authorized_agent') {
+        return res.status(404).json({ error: 'Agent non trouvé' });
+      }
+
+      const usedBefore = user.usedQuota;
+      const newUsed = Math.max(0, user.usedQuota - amountSettled);
+      user.usedQuota = newUsed;
+
+      // Auto-déblocage si quota suffisant
+      const wasBlocked = user.isBlocked;
+      if (user.isBlocked && user.guaranteeBalance > newUsed) {
+        user.isBlocked = false;
+      }
+
+      await user.save();
+
+      // Log du settlement
+      await GuaranteeLog.create({
+        agent_id: user._id,
+        admin_id: req.user.id,
+        type: 'reset',
+        amount: amountSettled,
+        balanceBefore: usedBefore,
+        balanceAfter: newUsed,
+        note: note || `Versement reçu${receiptRef ? ' — Ref: ' + receiptRef : ''}`,
+        tenant_id: req.tenantId,
+      });
+
+      // Push notification à l'agent
+      try {
+        const fcm = require('../services/fcm');
+        const currency = 'HTG';
+        await fcm.sendToUser(user._id, {
+          title: 'Paiement reçu — Quota réinitialisé',
+          body: `Versement de ${amountSettled} ${currency} validé. Quota disponible : ${user.guaranteeBalance - newUsed} ${currency}. Vous pouvez reprendre les inscriptions.`,
+          data: { type: 'settlement_confirmed', amount: String(amountSettled) },
+        });
+      } catch {}
+
+      res.json({
+        message: `Versement de ${amountSettled} enregistré pour ${user.firstName} ${user.lastName}`,
+        settlement: {
+          amountSettled,
+          usedBefore,
+          usedAfter: newUsed,
+          quotaFreed: usedBefore - newUsed,
+          available: user.guaranteeBalance - newUsed,
+          autoUnblocked: wasBlocked && !user.isBlocked,
+          receiptRef: receiptRef || null,
+        },
+        agent: {
+          _id: user._id,
+          name: `${user.firstName} ${user.lastName}`,
+          guaranteeBalance: user.guaranteeBalance,
+          usedQuota: newUsed,
+          available: user.guaranteeBalance - newUsed,
+          isBlocked: user.isBlocked,
+        },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// GET /api/payment/agent/ledger/:userId
+// Historique des mouvements de caution d'un agent
+// ---------------------------------------------------------------------------
+router.get(
+  '/agent/ledger/:userId',
+  authenticate,
+  authorize('admin_ddene'),
+  async (req, res, next) => {
+    try {
+      const logs = await GuaranteeLog.find({ agent_id: req.params.userId })
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .lean();
+
+      res.json({ logs, count: logs.length });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// GET /api/payment/agent/list
+// Liste tous les agents avec leur statut quota
+// ---------------------------------------------------------------------------
+router.get(
+  '/agent/list',
+  authenticate,
+  authorize('admin_ddene'),
+  async (req, res, next) => {
+    try {
+      const agents = await User.find({
+        role: 'authorized_agent',
+        ...(req.tenantId ? { tenant_id: req.tenantId } : {}),
+      })
+        .select('firstName lastName email organizationName isAgentVerified isBlocked commissionRate guaranteeBalance usedQuota maxPaymentLimit currentPaymentCount isActive')
+        .sort({ createdAt: -1 })
+        .lean();
+
+      const result = agents.map((a) => ({
+        ...a,
+        available: a.guaranteeBalance - (a.usedQuota || 0),
+        quotaPercent: a.guaranteeBalance > 0
+          ? Math.round(((a.guaranteeBalance - (a.usedQuota || 0)) / a.guaranteeBalance) * 100)
+          : 100,
+      }));
+
+      res.json({ agents: result, count: result.length });
     } catch (err) {
       next(err);
     }

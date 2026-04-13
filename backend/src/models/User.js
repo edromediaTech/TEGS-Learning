@@ -52,6 +52,31 @@ const userSchema = new mongoose.Schema(
       min: 0,
       max: 50,
     },
+    // --- Caution & Quota ---
+    guaranteeBalance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    usedQuota: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+    maxPaymentLimit: {
+      type: Number,
+      default: 0, // 0 = illimité
+      min: 0,
+    },
+    currentPaymentCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     tenant_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Tenant',
