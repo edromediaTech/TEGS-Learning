@@ -928,4 +928,138 @@ router.get(
   }
 );
 
+// ---------------------------------------------------------------------------
+// GET /api/tournaments/:id/certificate/:participantId
+// Générer un certificat PDF pour un gagnant
+// ---------------------------------------------------------------------------
+router.get(
+  '/:id/certificate/:participantId',
+  [
+    param('id').isMongoId().withMessage('ID tournoi invalide'),
+    param('participantId').isMongoId().withMessage('ID participant invalide'),
+  ],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
+      const tournament = await Tournament.findOne({
+        _id: req.params.id,
+        ...req.tenantFilter(),
+      }).lean();
+
+      if (!tournament) {
+        return res.status(404).json({ error: 'Tournoi non trouvé' });
+      }
+
+      const participant = await Participant.findOne({
+        _id: req.params.participantId,
+        tournament_id: tournament._id,
+        finalRank: { $ne: null },
+      }).lean();
+
+      if (!participant) {
+        return res.status(404).json({ error: 'Participant non trouvé ou pas de classement final' });
+      }
+
+      const prize = tournament.prizes.find((p) => p.rank === participant.finalRank);
+      const rankLabel = participant.finalRank === 1 ? '1er' : `${participant.finalRank}e`;
+
+      // Générer le PDF avec jsPDF
+      const { jsPDF } = require('jspdf');
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+      // Dimensions
+      const w = doc.internal.pageSize.getWidth();
+      const h = doc.internal.pageSize.getHeight();
+
+      // Fond dégradé (rectangles)
+      doc.setFillColor(15, 23, 42); // slate-900
+      doc.rect(0, 0, w, h, 'F');
+
+      // Bordure dorée
+      doc.setDrawColor(245, 158, 11); // amber-500
+      doc.setLineWidth(2);
+      doc.rect(10, 10, w - 20, h - 20);
+      doc.setLineWidth(0.5);
+      doc.rect(14, 14, w - 28, h - 28);
+
+      // Titre
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.setTextColor(156, 163, 175); // gray-400
+      doc.text('CERTIFICAT DE MERITE', w / 2, 35, { align: 'center' });
+
+      // Nom du tournoi
+      doc.setFontSize(28);
+      doc.setTextColor(245, 158, 11); // amber
+      doc.text(tournament.title, w / 2, 55, { align: 'center' });
+
+      // "décerné à"
+      doc.setFontSize(12);
+      doc.setTextColor(156, 163, 175);
+      doc.text('décerné à', w / 2, 72, { align: 'center' });
+
+      // Nom du gagnant
+      doc.setFontSize(32);
+      doc.setTextColor(255, 255, 255);
+      doc.text(`${participant.firstName} ${participant.lastName}`, w / 2, 90, { align: 'center' });
+
+      // Établissement
+      if (participant.establishment) {
+        doc.setFontSize(14);
+        doc.setTextColor(148, 163, 184); // slate-400
+        doc.text(participant.establishment, w / 2, 102, { align: 'center' });
+      }
+
+      // Rang
+      doc.setFontSize(20);
+      doc.setTextColor(245, 158, 11);
+      doc.text(`${rankLabel} Place`, w / 2, 120, { align: 'center' });
+
+      // Prime
+      if (prize && prize.amount > 0) {
+        doc.setFontSize(16);
+        doc.setTextColor(34, 197, 94); // green-500
+        doc.text(`Prime : ${prize.amount.toLocaleString()} ${prize.currency || 'HTG'}`, w / 2, 133, { align: 'center' });
+      }
+
+      // Score
+      doc.setFontSize(11);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`Score total : ${participant.totalScore} points`, w / 2, 148, { align: 'center' });
+
+      // Date
+      const dateStr = new Date(tournament.updatedAt).toLocaleDateString('fr-FR', {
+        year: 'numeric', month: 'long', day: 'numeric',
+      });
+      doc.setFontSize(10);
+      doc.setTextColor(100, 116, 139); // slate-500
+      doc.text(`Délivré le ${dateStr}`, w / 2, 165, { align: 'center' });
+
+      // Token de vérification
+      doc.setFontSize(8);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`Ref: ${participant.competitionToken}`, w / 2, 180, { align: 'center' });
+
+      // TEGS watermark
+      doc.setFontSize(9);
+      doc.setTextColor(51, 65, 85);
+      doc.text('TEGS-Learning | Plateforme DDENE', w / 2, 190, { align: 'center' });
+
+      // Envoyer le PDF
+      const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition',
+        `inline; filename="certificat-${participant.firstName}-${participant.lastName}-${rankLabel}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 module.exports = router;

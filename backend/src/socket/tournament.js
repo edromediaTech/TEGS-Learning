@@ -24,6 +24,7 @@ const jwt = require('jsonwebtoken');
 const Tournament = require('../models/Tournament');
 const Participant = require('../models/Participant');
 const QuizResult = require('../models/QuizResult');
+const fcm = require('../services/fcm');
 
 function setupTournamentNamespace(io) {
   const nsp = io.of('/tournament');
@@ -113,6 +114,11 @@ function setupTournamentNamespace(io) {
           round: { order: round.order, label: round.label, module_id: round.module_id },
           currentRound: tournament.currentRound,
         });
+
+        // Push notification: round started
+        fcm.sendToTournament(tournament._id,
+          fcm.TournamentNotifications.roundStarted(tournament.title, round.label)
+        ).catch(() => {});
         nsp.to(room).emit('tournament_state', {
           tournament: publicTournamentInfo(tournament),
         });
@@ -285,6 +291,20 @@ function setupTournamentNamespace(io) {
             podium,
             tournamentTitle: tournament.title,
           });
+
+          // Push: tournament finished + winner notifications
+          fcm.sendToTournament(tournament._id,
+            fcm.TournamentNotifications.tournamentFinished(tournament.title)
+          ).catch(() => {});
+
+          for (const w of podium) {
+            const winnerP = scored.find((s) => `${s.participant.firstName} ${s.participant.lastName}` === w.name);
+            if (winnerP?.participant?.user_id) {
+              fcm.sendToUser(winnerP.participant.user_id,
+                fcm.TournamentNotifications.winner(tournament.title, w.rank, w.prize?.amount, w.prize?.currency)
+              ).catch(() => {});
+            }
+          }
         }
       } catch (err) {
         socket.emit('error_msg', { message: err.message });

@@ -23,13 +23,11 @@
           <span>Scanner un badge</span>
         </h2>
 
-        <!-- Camera scanner (native) -->
-        <div v-if="scanning" class="relative rounded-xl overflow-hidden mb-4 bg-black aspect-square max-w-xs mx-auto">
-          <video ref="videoEl" autoplay playsinline class="w-full h-full object-cover"></video>
-          <div class="absolute inset-0 border-2 border-amber-400 rounded-xl pointer-events-none"></div>
-          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-amber-400/50 rounded-xl"></div>
+        <!-- Camera scanner (html5-qrcode) -->
+        <div v-if="scanning" class="relative rounded-xl overflow-hidden mb-4 bg-black max-w-xs mx-auto">
+          <div id="qr-reader" class="w-full"></div>
           <button @click="stopScan"
-            class="absolute bottom-3 right-3 bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+            class="absolute bottom-3 right-3 z-10 bg-red-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold">
             Arreter
           </button>
         </div>
@@ -141,9 +139,8 @@ const native = useNativeBridge();
 
 const scanning = ref(false);
 const manualToken = ref('');
-const videoEl = ref<HTMLVideoElement | null>(null);
 const socketConnected = ref(false);
-let mediaStream: MediaStream | null = null;
+let qrScanner: any = null;
 
 interface VerificationResult {
   valid: boolean;
@@ -167,40 +164,38 @@ const baseURL = config.public.apiBase as string;
 
 async function startScan() {
   scanning.value = true;
+  await nextTick();
 
-  // Use native camera if available, otherwise web getUserMedia
-  if (native.isNative.value) {
-    // On native, use Capacitor Camera for single shot
-    const photo = await native.takePhoto();
-    if (photo) {
-      // In a real app, decode QR from image using a decoder library
-      // For now, prompt manual entry
-      scanning.value = false;
-    }
-    return;
-  }
-
-  // Web fallback: open camera stream for continuous scanning
   try {
-    mediaStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: 640, height: 640 },
-    });
-    await nextTick();
-    if (videoEl.value) {
-      videoEl.value.srcObject = mediaStream;
-    }
+    const { Html5Qrcode } = await import('html5-qrcode');
+    qrScanner = new Html5Qrcode('qr-reader');
+
+    await qrScanner.start(
+      { facingMode: 'environment' },
+      { fps: 10, qrbox: { width: 200, height: 200 } },
+      (decodedText: string) => {
+        // QR décodé — vérifier le token
+        verifyToken(decodedText.trim());
+        native.vibrate('light');
+      },
+      () => {
+        // Scan en cours, pas de match
+      }
+    );
   } catch (e) {
     scanning.value = false;
     alert('Impossible d\'acceder a la camera');
   }
 }
 
-function stopScan() {
-  scanning.value = false;
-  if (mediaStream) {
-    mediaStream.getTracks().forEach((t) => t.stop());
-    mediaStream = null;
+async function stopScan() {
+  if (qrScanner) {
+    try {
+      await qrScanner.stop();
+    } catch {}
+    qrScanner = null;
   }
+  scanning.value = false;
 }
 
 async function verifyToken(tokenOverride?: string) {

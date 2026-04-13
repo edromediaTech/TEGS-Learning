@@ -200,6 +200,95 @@
           </div>
         </div>
 
+        <!-- TAB: Analytics -->
+        <div v-if="activeTab === 'analytics'" class="space-y-6">
+          <div v-if="kpiLoading" class="text-center py-8 text-gray-400">Chargement des KPIs...</div>
+
+          <template v-else-if="kpis">
+            <!-- KPI Cards -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <div class="text-2xl font-black text-blue-600">{{ kpis.participation.total }}</div>
+                <div class="text-xs text-gray-400 mt-1">Inscrits</div>
+              </div>
+              <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <div class="text-2xl font-black text-green-600">{{ kpis.participation.paymentRate }}%</div>
+                <div class="text-xs text-gray-400 mt-1">Taux paiement</div>
+              </div>
+              <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <div class="text-2xl font-black" :class="kpis.fraudIndex >= 80 ? 'text-green-600' : kpis.fraudIndex >= 50 ? 'text-amber-600' : 'text-red-600'">
+                  {{ kpis.fraudIndex }}
+                </div>
+                <div class="text-xs text-gray-400 mt-1">Indice fiabilite</div>
+              </div>
+              <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+                <div class="text-2xl font-black text-green-600">{{ kpis.financial.totalRevenue.toLocaleString() }}</div>
+                <div class="text-xs text-gray-400 mt-1">Revenus {{ kpis.financial.currency }}</div>
+              </div>
+            </div>
+
+            <!-- Vitesse par round -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+              <h3 class="font-bold text-gray-900 mb-4">Vitesse de reponse par round</h3>
+              <div class="space-y-3">
+                <div v-for="r in kpis.speedByRound" :key="r.round"
+                  class="flex items-center space-x-4 bg-gray-50 rounded-xl p-3">
+                  <div class="w-8 h-8 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center font-bold text-sm shrink-0">
+                    {{ r.round }}
+                  </div>
+                  <div class="flex-1">
+                    <div class="font-medium text-sm">{{ r.label }}</div>
+                    <div class="text-xs text-gray-400">{{ r.participantCount }} participants</div>
+                  </div>
+                  <div class="text-right">
+                    <div class="font-bold text-sm">{{ r.avgDurationLabel }}</div>
+                    <div class="text-[10px] text-gray-400">{{ r.fastestSec }}s — {{ r.slowestSec }}s</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Completion par district -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+              <h3 class="font-bold text-gray-900 mb-4">Completion par district</h3>
+              <div class="space-y-2">
+                <div v-for="d in kpis.completionByDistrict" :key="d.district"
+                  class="flex items-center space-x-3">
+                  <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium truncate">{{ d.district }}</div>
+                    <div class="text-xs text-gray-400">{{ d.completed }}/{{ d.total }} — score moy. {{ d.avgScore }}</div>
+                  </div>
+                  <div class="w-24 h-2 bg-gray-200 rounded-full overflow-hidden shrink-0">
+                    <div class="h-full bg-blue-500 rounded-full" :style="{ width: d.completionRate + '%' }"></div>
+                  </div>
+                  <span class="text-sm font-bold text-gray-700 w-12 text-right">{{ d.completionRate }}%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Finances -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+              <h3 class="font-bold text-gray-900 mb-4">Bilan financier</h3>
+              <div class="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div class="text-lg font-bold text-green-600">{{ kpis.financial.totalRevenue.toLocaleString() }}</div>
+                  <div class="text-xs text-gray-400">Revenus</div>
+                </div>
+                <div>
+                  <div class="text-lg font-bold text-red-500">{{ kpis.financial.totalPrizes.toLocaleString() }}</div>
+                  <div class="text-xs text-gray-400">Primes</div>
+                </div>
+                <div>
+                  <div class="text-lg font-bold" :class="kpis.financial.netRevenue >= 0 ? 'text-green-600' : 'text-red-500'">
+                    {{ kpis.financial.netRevenue.toLocaleString() }}
+                  </div>
+                  <div class="text-xs text-gray-400">Net {{ kpis.financial.currency }}</div>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+
         <!-- TAB: Settings -->
         <div v-if="activeTab === 'settings'" class="max-w-2xl">
           <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
@@ -252,11 +341,14 @@ const shareCopied = ref(false);
 const tabs = [
   { id: 'bracket', label: 'Bracket' },
   { id: 'participants', label: 'Participants' },
+  { id: 'analytics', label: 'Analytics' },
   { id: 'settings', label: 'Parametres' },
 ];
 
 const regForm = reactive({ firstName: '', lastName: '', email: '', establishment: '' });
 const editForm = reactive({ title: '', description: '' });
+const kpis = ref<any>(null);
+const kpiLoading = ref(false);
 
 // Use live socket data if connected, fallback to store
 const liveBracket = computed(() => ts.bracket.value || []);
@@ -336,6 +428,22 @@ async function handleRegister() {
 async function handleSave() {
   await store.updateTournament(id, editForm as any);
 }
+
+// Load KPIs when analytics tab is selected
+watch(activeTab, async (tab) => {
+  if (tab === 'analytics' && !kpis.value) {
+    kpiLoading.value = true;
+    try {
+      const { apiFetch } = useApi();
+      const { data } = await apiFetch<any>(`/analytics/tournament-kpis/${id}`);
+      kpis.value = data;
+    } catch {
+      // KPIs not available
+    } finally {
+      kpiLoading.value = false;
+    }
+  }
+});
 
 function copyShareLink() {
   if (!store.current?.shareToken) return;

@@ -902,4 +902,136 @@ function formatDurationHuman(secs) {
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// TOURNAMENT KPIs
+// ═══════════════════════════════════════════════════════════════
+
+const Tournament = require('../models/Tournament');
+const Participant = require('../models/Participant');
+
+// ---------------------------------------------------------------------------
+// GET /api/analytics/tournament-kpis/:tournamentId
+// KPIs stratégiques d'un tournoi
+// ---------------------------------------------------------------------------
+router.get('/tournament-kpis/:tournamentId', async (req, res, next) => {
+  try {
+    const tournament = await Tournament.findOne({
+      _id: req.params.tournamentId,
+      ...req.tenantFilter(),
+    }).lean();
+
+    if (!tournament) {
+      return res.status(404).json({ error: 'Tournoi non trouvé' });
+    }
+
+    const participants = await Participant.find({
+      tournament_id: tournament._id,
+    }).lean();
+
+    const totalParticipants = participants.length;
+    const paid = participants.filter((p) => p.paid).length;
+    const qualified = participants.filter((p) => p.status === 'qualified').length;
+    const eliminated = participants.filter((p) => p.status === 'eliminated').length;
+    const winners = participants.filter((p) => p.status === 'winner').length;
+
+    // --- Taux de complétion par district ---
+    const districtMap = {};
+    for (const p of participants) {
+      const d = p.district || 'Non spécifié';
+      if (!districtMap[d]) districtMap[d] = { total: 0, completed: 0, avgScore: 0, scores: [] };
+      districtMap[d].total++;
+      if (['qualified', 'eliminated', 'winner'].includes(p.status)) {
+        districtMap[d].completed++;
+      }
+      if (p.totalScore > 0) districtMap[d].scores.push(p.totalScore);
+    }
+
+    const completionByDistrict = Object.entries(districtMap).map(([district, data]) => ({
+      district,
+      total: data.total,
+      completed: data.completed,
+      completionRate: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0,
+      avgScore: data.scores.length > 0
+        ? Math.round(data.scores.reduce((a, b) => a + b, 0) / data.scores.length)
+        : 0,
+    })).sort((a, b) => b.completionRate - a.completionRate);
+
+    // --- Vitesse de réponse moyenne par round ---
+    const speedByRound = tournament.rounds.map((round) => {
+      const roundResults = participants
+        .flatMap((p) => p.roundResults.filter((rr) => rr.round === round.order))
+        .filter((rr) => rr.duration);
+
+      const durations = roundResults.map((rr) => {
+        const match = (rr.duration || '').match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/);
+        if (!match) return 0;
+        return (parseInt(match[1] || '0') * 3600) + (parseInt(match[2] || '0') * 60) + parseFloat(match[3] || '0');
+      }).filter((d) => d > 0);
+
+      const avgSec = durations.length > 0
+        ? Math.round(durations.reduce((a, b) => a + b, 0) / durations.length)
+        : 0;
+
+      return {
+        round: round.order,
+        label: round.label,
+        participantCount: roundResults.length,
+        avgDurationSec: avgSec,
+        avgDurationLabel: formatDurationHuman(avgSec),
+        fastestSec: durations.length > 0 ? Math.round(Math.min(...durations)) : 0,
+        slowestSec: durations.length > 0 ? Math.round(Math.max(...durations)) : 0,
+      };
+    });
+
+    // --- Indice de fiabilité (fraude) ---
+    // Basé sur les proctoring evidences si disponibles
+    let fraudIndex = 100; // 100 = parfait, 0 = suspect
+    try {
+      const ProctoringEvidence = require('../models/ProctoringEvidence');
+      const evidences = await ProctoringEvidence.countDocuments({
+        tenant_id: tournament.tenant_id,
+        type: { $in: ['fullscreen_exit', 'blur', 'audio_alert'] },
+      });
+      const sessionsCount = participants.length || 1;
+      const alertsPerSession = evidences / sessionsCount;
+      fraudIndex = Math.max(0, Math.round(100 - (alertsPerSession * 15)));
+    } catch {
+      // ProctoringEvidence model might not have matching data
+    }
+
+    // --- Revenus ---
+    const revenue = tournament.registrationFee * paid;
+    const prizeTotal = tournament.prizes.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+    res.json({
+      tournament: {
+        title: tournament.title,
+        status: tournament.status,
+        currentRound: tournament.currentRound,
+        totalRounds: tournament.rounds.length,
+      },
+      participation: {
+        total: totalParticipants,
+        paid,
+        qualified,
+        eliminated,
+        winners,
+        paymentRate: totalParticipants > 0 ? Math.round((paid / totalParticipants) * 100) : 0,
+      },
+      completionByDistrict,
+      speedByRound,
+      fraudIndex,
+      financial: {
+        registrationFee: tournament.registrationFee,
+        currency: tournament.currency,
+        totalRevenue: revenue,
+        totalPrizes: prizeTotal,
+        netRevenue: revenue - prizeTotal,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;

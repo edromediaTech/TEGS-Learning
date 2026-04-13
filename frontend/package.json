@@ -6,9 +6,13 @@
     "build": "nuxt build",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
-    "preview": "nuxt preview"
+    "preview": "nuxt preview",
+    "mobile:build": "nuxt generate && npx cap sync",
+    "mobile:android": "nuxt generate && npx cap sync android && npx cap open android",
+    "mobile:ios": "nuxt generate && npx cap sync ios && npx cap open ios"
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.0",
     "@capacitor/app": "^8.1.0",
     "@capacitor/browser": "^8.0.3",
     "@capacitor/camera": "^8.1.0",
@@ -20,12 +24,14 @@
     "@capacitor/status-bar": "^8.0.2",
     "@pinia/nuxt": "^0.9.0",
     "chart.js": "^4.5.1",
+    "html5-qrcode": "^2.3.8",
     "nuxt": "^3.15.0",
     "pinia": "^2.3.0",
     "socket.io-client": "^4.8.3",
     "vue-chartjs": "^5.3.3"
   },
   "devDependencies": {
-    "@nuxtjs/tailwindcss": "^6.13.0"
+    "@nuxtjs/tailwindcss": "^6.13.0",
+    "typescript": "^6.0.2"
   }
 }
