@@ -77,6 +77,14 @@ const userSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    contractAcceptedAt: {
+      type: Date,
+      default: null,
+    },
+    contractVersion: {
+      type: String,
+      default: '',
+    },
     tenant_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Tenant',

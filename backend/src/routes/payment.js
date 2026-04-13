@@ -410,6 +410,14 @@ router.post(
         return res.status(403).json({ error: 'Votre compte agent n\'est pas encore vérifié par l\'administrateur' });
       }
 
+      // === CHECK 0b : Contrat accepté ===
+      if (agent.role === 'authorized_agent' && !agent.contractAcceptedAt) {
+        return res.status(403).json({
+          error: 'Vous devez accepter le contrat de partenariat avant de pouvoir encaisser.',
+          code: 'CONTRACT_NOT_ACCEPTED',
+        });
+      }
+
       // SuperAdmin / Admin bypass toutes les contraintes agent
       const isBypass = req.isSuperAdmin || agent.role === 'admin_ddene';
 
@@ -906,6 +914,183 @@ router.put(
         message: `Agent ${user.firstName} ${user.lastName} vérifié`,
         agent: { _id: user._id, isAgentVerified: true },
       });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ═══════════════════════════════════════════════════════════════
+// CONTRAT AGENT
+// ═══════════════════════════════════════════════════════════════
+
+const CONTRACT_VERSION = '2026-04-v1';
+
+// ---------------------------------------------------------------------------
+// POST /api/payment/agent/accept-contract
+// Agent accepte les termes du contrat de partenariat
+// ---------------------------------------------------------------------------
+router.post(
+  '/agent/accept-contract',
+  authenticate,
+  authorize('authorized_agent'),
+  async (req, res, next) => {
+    try {
+      const user = await User.findById(req.user.id);
+      if (!user) return res.status(404).json({ error: 'Agent non trouvé' });
+
+      user.contractAcceptedAt = new Date();
+      user.contractVersion = CONTRACT_VERSION;
+      await user.save();
+
+      res.json({
+        message: 'Contrat accepté',
+        contractAcceptedAt: user.contractAcceptedAt,
+        contractVersion: CONTRACT_VERSION,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// GET /api/payment/agent/contract-pdf
+// Génère le contrat de partenariat PDF officiel
+// ---------------------------------------------------------------------------
+router.get(
+  '/agent/contract-pdf',
+  authenticate,
+  authorize('authorized_agent', 'admin_ddene'),
+  async (req, res, next) => {
+    try {
+      const agentId = req.query.agent_id || req.user.id;
+      const agent = await User.findById(agentId)
+        .select('firstName lastName email organizationName commissionRate guaranteeBalance contractAcceptedAt contractVersion tenant_id')
+        .lean();
+
+      if (!agent) return res.status(404).json({ error: 'Agent non trouvé' });
+
+      const Tenant = require('../models/Tenant');
+      const tenant = agent.tenant_id ? await Tenant.findById(agent.tenant_id).select('name').lean() : null;
+
+      const { jsPDF } = require('jspdf');
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const w = doc.internal.pageSize.getWidth();
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+
+      // --- Fonctions helper ---
+      let curY = 15;
+      function title(text, size = 14) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(size);
+        doc.setTextColor(15, 23, 42);
+        doc.text(text, w / 2, curY, { align: 'center' });
+        curY += size * 0.5 + 2;
+      }
+      function subtitle(text) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(11);
+        doc.setTextColor(30, 58, 95);
+        doc.text(text, 15, curY);
+        curY += 7;
+      }
+      function para(text) {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(51, 65, 85);
+        const lines = doc.splitTextToSize(text, w - 30);
+        doc.text(lines, 15, curY);
+        curY += lines.length * 5 + 3;
+      }
+
+      // --- En-tête ---
+      doc.setFillColor(15, 23, 42);
+      doc.rect(0, 0, w, 8, 'F');
+      doc.setDrawColor(245, 158, 11);
+      doc.setLineWidth(0.5);
+      doc.line(0, 8, w, 8);
+
+      curY = 20;
+      title('CONTRAT DE PARTENARIAT', 16);
+      title('AGENT DE COLLECTE AUTORISÉ TEGS-ARENA', 12);
+
+      curY += 5;
+
+      // --- ENTRE ---
+      subtitle('ENTRE :');
+      para('TEGS-Learning / Plateforme TEGS-Arena, représentée par M. Ronel Similien, ci-après dénommée "La Plateforme".');
+      curY += 2;
+      subtitle('ET :');
+      para(`${agent.organizationName || 'N/A'}, représenté(e) par ${agent.firstName} ${agent.lastName} (${agent.email}), ci-après dénommé(e) "L'Agent".`);
+
+      curY += 3;
+
+      // --- Articles ---
+      subtitle('ARTICLE 1 : OBJET DU CONTRAT');
+      para('Le présent contrat définit les conditions dans lesquelles l\'Agent est autorisé à collecter les frais d\'inscription en espèces (Cash) pour les concours organisés sur la plateforme TEGS-Arena.');
+
+      subtitle('ARTICLE 2 : SYSTÈME DE CAUTION ET QUOTA');
+      para(`2.1. Caution de Garantie : L'Agent s'engage à déposer une caution de ${(agent.guaranteeBalance || 0).toLocaleString()} HTG. Ce montant définit la limite maximale de collecte autorisée (Quota).`);
+      para('2.2. Blocage Automatique : Dès que le montant total collecté atteint la valeur de la caution, l\'accès de l\'Agent sera automatiquement suspendu par le système jusqu\'à régularisation.');
+
+      subtitle('ARTICLE 3 : COMMISSIONS');
+      para(`L'Agent perçoit une commission de ${agent.commissionRate || 5}% sur chaque transaction validée avec succès. Cette commission est calculée automatiquement par le système et déduite du montant à reverser à la Plateforme.`);
+
+      subtitle('ARTICLE 4 : OBLIGATIONS DE L\'AGENT');
+      para('4.1. Vérification : L\'Agent doit vérifier l\'identité du participant avant de valider le paiement.');
+      para('4.2. Versement des Fonds : L\'Agent s\'engage à reverser les fonds collectés (nets de commission) à la Plateforme dès que son quota arrive à épuisement ou selon une fréquence hebdomadaire.');
+      para('4.3. Bordereau : Chaque versement doit être accompagné du Bordereau de Versement PDF généré par l\'application.');
+
+      subtitle('ARTICLE 5 : SÉCURITÉ ET FRAUDE');
+      para('Toute tentative de manipulation du système, de surfacturation des participants ou de non-reversement des fonds entraînera la désactivation immédiate du compte de l\'Agent et des poursuites légales conformément aux lois haïtiennes en vigueur.');
+
+      subtitle('ARTICLE 6 : DURÉE ET RÉSILIATION');
+      para('Ce contrat est conclu pour une durée de 12 mois renouvelable. La Plateforme se réserve le droit de désactiver l\'Agent à tout moment en cas de non-respect des procédures techniques ou financières.');
+
+      // Check page overflow
+      if (curY > 250) {
+        doc.addPage();
+        curY = 20;
+      }
+
+      // --- Signatures ---
+      curY += 10;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.setTextColor(51, 65, 85);
+      doc.text(`Fait à Port-au-Prince, Haïti, le ${dateStr}`, w / 2, curY, { align: 'center' });
+
+      curY += 15;
+      doc.setDrawColor(200, 200, 200);
+      doc.line(15, curY + 12, 80, curY + 12);
+      doc.line(w - 80, curY + 12, w - 15, curY + 12);
+
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text('La Plateforme', 47, curY + 18, { align: 'center' });
+      doc.text('L\'Agent', w - 47, curY + 18, { align: 'center' });
+
+      // Signature numérique si contrat accepté
+      if (agent.contractAcceptedAt) {
+        doc.setFontSize(8);
+        doc.setTextColor(34, 197, 94);
+        doc.text(`Accepté numériquement le ${new Date(agent.contractAcceptedAt).toLocaleDateString('fr-FR')}`, w - 47, curY + 24, { align: 'center' });
+        doc.text(`Version: ${agent.contractVersion}`, w - 47, curY + 28, { align: 'center' });
+      }
+
+      // Pied de page
+      const footY = doc.internal.pageSize.getHeight() - 10;
+      doc.setFontSize(7);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`TEGS-Arena — Contrat Agent v${CONTRACT_VERSION}`, w / 2, footY, { align: 'center' });
+
+      const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition',
+        `inline; filename="contrat-agent-${agent.firstName}-${agent.lastName}.pdf"`);
+      res.send(pdfBuffer);
     } catch (err) {
       next(err);
     }
