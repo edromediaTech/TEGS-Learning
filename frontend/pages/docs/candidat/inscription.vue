@@ -9,14 +9,54 @@
 
     <h2 class="text-xl font-bold text-gray-900 mt-8 mb-4">Etapes d'inscription</h2>
 
-    <StepByStep :steps="[
-      { title: 'Acceder au Lobby', description: 'Rendez-vous sur la page d\'accueil TEGS-Arena. Les concours ouverts aux inscriptions sont affiches avec un badge bleu.' },
-      { title: 'Choisir un concours', description: 'Cliquez sur la carte du concours qui vous interesse. Verifiez les rounds, les primes et les frais d\'inscription.' },
-      { title: 'Remplir le formulaire', description: 'Saisissez votre prenom, nom, email, telephone et etablissement. Tous les champs marques * sont obligatoires.' },
-      { title: 'Code de parrainage (optionnel)', description: 'Si un sponsor a paye vos frais, entrez le code BOURSE-XXX fourni. Votre inscription sera automatiquement validee.' },
-      { title: 'Paiement', description: 'Choisissez MonCash ou Natcash. Vous serez redirige vers l\'application de paiement. Completez la transaction.' },
-      { title: 'Recevoir votre badge', description: 'Apres paiement confirme, vous recevez votre code TKT-XXX et un QR code. Conservez-les precieusement !' },
-    ]" />
+    <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">1. Acceder au Lobby</h3>
+    <p class="text-gray-600 text-sm mb-3">Rendez-vous sur la page d'accueil TEGS-Arena. Les concours ouverts aux inscriptions sont affiches avec un badge bleu <strong>"Inscriptions"</strong>.</p>
+    <DocImage
+      src="/screenshots/lobby-grid.png"
+      alt="Page d'accueil Lobby — grille des concours"
+      caption="Le Lobby affiche tous les concours avec leur statut, nombre d'inscrits et frais."
+      placeholder="Capture de la page d'accueil avec les cartes de concours" />
+
+    <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">2. Choisir un concours</h3>
+    <p class="text-gray-600 text-sm mb-3">Cliquez sur la carte du concours qui vous interesse. Le modal d'inscription s'ouvre avec 3 onglets.</p>
+    <DocImage
+      src="/screenshots/registration-modal.png"
+      alt="Modal d'inscription avec les 3 onglets"
+      caption="Le modal propose 3 portails : Candidat, Sponsor, et Offrir des places."
+      placeholder="Capture du modal d'inscription ouvert sur l'onglet Candidat" />
+
+    <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">3. Remplir le formulaire</h3>
+    <p class="text-gray-600 text-sm mb-3">Saisissez votre prenom, nom, email, telephone et etablissement. Tous les champs marques * sont obligatoires.</p>
+    <DocImage
+      src="/screenshots/registration-form.png"
+      alt="Formulaire d'inscription candidat"
+      caption="Remplissez tous les champs obligatoires. Le code de parrainage est optionnel."
+      placeholder="Capture du formulaire avec les champs nom, email, telephone" />
+
+    <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">4. Code de parrainage (optionnel)</h3>
+    <p class="text-gray-600 text-sm mb-3">Si un sponsor a paye vos frais, entrez le code <strong>BOURSE-XXX</strong> fourni. Le systeme valide instantanement et affiche le nom du sponsor.</p>
+    <DocImage
+      src="/screenshots/sponsor-code.png"
+      alt="Validation du code de parrainage"
+      caption="Le code BOURSE est valide en temps reel. Le nom du sponsor et les places restantes s'affichent."
+      placeholder="Capture du champ code BOURSE avec message de validation vert"
+      icon="&#127915;" />
+
+    <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">5. Paiement</h3>
+    <p class="text-gray-600 text-sm mb-3">Choisissez MonCash ou Natcash. Vous serez redirige vers l'application de paiement.</p>
+    <DocImage
+      src="/screenshots/payment-selection.png"
+      alt="Selection de la methode de paiement"
+      caption="MonCash (Digicel) ou Natcash (Natcom) — le montant est affiche clairement."
+      placeholder="Capture des boutons MonCash et Natcash avec le montant" />
+
+    <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">6. Recevoir votre badge</h3>
+    <p class="text-gray-600 text-sm mb-3">Apres confirmation du paiement, vous recevez votre code <strong>TKT-XXX</strong> et un QR code.</p>
+    <DocImage
+      src="/screenshots/ticket-received.png"
+      alt="Badge de competition recu — TKT et QR code"
+      caption="Conservez precieusement ce code ! Il sera demande pour acceder au quiz."
+      placeholder="Capture de l'ecran de confirmation avec QR code et code TKT-XXX" />
 
     <Callout type="warning" title="Important">
       Votre code TKT-XXX est votre billet d'entree au concours. Sans lui, vous ne pourrez pas acceder au quiz le jour J.
@@ -49,6 +89,6 @@
 <script setup lang="ts">
 import DocsLayout from '~/components/docs/DocsLayout.vue';
 import Callout from '~/components/docs/Callout.vue';
-import StepByStep from '~/components/docs/StepByStep.vue';
+import DocImage from '~/components/docs/DocImage.vue';
 useHead({ title: 'Comment s\'inscrire | Guide Candidat | TEGS-Arena' });
 </script>

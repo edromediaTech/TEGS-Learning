@@ -8,14 +8,46 @@
     </Callout>
 
     <h2 class="text-xl font-bold text-gray-900 mt-8 mb-4">Acceder au quiz</h2>
-    <StepByStep :steps="[
-      { title: 'Ouvrir la page du concours', description: 'Allez sur la page du tournoi. Si le concours est en cours (badge rouge LIVE), le bouton Acceder au Quiz apparait.' },
-      { title: 'Entrer votre code TKT-XXX', description: 'Saisissez le code de competition recu lors de votre inscription.' },
-      { title: 'Lire le briefing', description: 'L\'ecran de briefing affiche : votre nom, le round actuel, la duree du quiz, et les instructions.' },
-      { title: 'Lancer le quiz', description: 'Cliquez sur Commencer le Quiz. Le chronometre demarre immediatement.' },
-      { title: 'Repondre aux questions', description: 'Parcourez les questions une par une. Le temps restant est affiche en haut.' },
-      { title: 'Soumettre', description: 'Cliquez sur Soumettre mes reponses. Vos resultats sont enregistres et lies a votre profil candidat.' },
-    ]" />
+
+    <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">1. Ouvrir la page du concours</h3>
+    <p class="text-gray-600 text-sm mb-3">Allez sur la page du tournoi. Quand le concours est en cours, le bouton <strong>"Acceder au Quiz"</strong> apparait en vert.</p>
+    <DocImage
+      src="/screenshots/quiz-access-button.png"
+      alt="Bouton Acceder au Quiz sur la page du tournoi"
+      caption="Le bouton vert apparait uniquement quand le tournoi est en statut LIVE."
+      placeholder="Capture de la page tournoi avec le bouton vert Acceder au Quiz" />
+
+    <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">2. Entrer votre code TKT-XXX</h3>
+    <p class="text-gray-600 text-sm mb-3">Saisissez le code de competition recu lors de votre inscription.</p>
+    <DocImage
+      src="/screenshots/quiz-token-input.png"
+      alt="Ecran de saisie du code de competition"
+      caption="Entrez votre code TKT-XXX. Le systeme verifie votre identite et votre eligibilite."
+      placeholder="Capture de l'ecran de saisie du token avec le champ TKT-XXX" />
+
+    <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">3. Lire le briefing</h3>
+    <p class="text-gray-600 text-sm mb-3">L'ecran de briefing affiche votre nom, le round actuel, la duree du quiz et les instructions.</p>
+    <DocImage
+      src="/screenshots/quiz-briefing.png"
+      alt="Ecran de briefing avant le quiz"
+      caption="Verifiez vos informations et la duree du quiz avant de commencer."
+      placeholder="Capture du briefing avec nom du candidat, round et duree" />
+
+    <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">4. Repondre aux questions</h3>
+    <p class="text-gray-600 text-sm mb-3">Parcourez les questions une par une. Le temps restant est affiche en haut de l'ecran.</p>
+    <DocImage
+      src="/screenshots/quiz-questions.png"
+      alt="Interface du quiz avec questions et timer"
+      caption="Repondez a chaque question. La barre de progression et le timer sont visibles en permanence."
+      placeholder="Capture de l'interface quiz avec une question QCM et le chronometre" />
+
+    <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">5. Soumettre vos reponses</h3>
+    <p class="text-gray-600 text-sm mb-3">Cliquez sur <strong>"Soumettre mes reponses"</strong>. Votre score est enregistre instantanement.</p>
+    <DocImage
+      src="/screenshots/quiz-submitted.png"
+      alt="Ecran de confirmation apres soumission"
+      caption="Votre score est affiche immediatement. Le classement sera annonce a la cloture du round."
+      placeholder="Capture de l'ecran de confirmation avec le score en pourcentage" />
 
     <h2 class="text-xl font-bold text-gray-900 mt-8 mb-4">Types de questions</h2>
     <div class="space-y-3 mb-6">
@@ -46,6 +78,6 @@
 <script setup lang="ts">
 import DocsLayout from '~/components/docs/DocsLayout.vue';
 import Callout from '~/components/docs/Callout.vue';
-import StepByStep from '~/components/docs/StepByStep.vue';
+import DocImage from '~/components/docs/DocImage.vue';
 useHead({ title: 'Passer le quiz | Guide Candidat | TEGS-Arena' });
 </script>
