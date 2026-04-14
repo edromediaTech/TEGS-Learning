@@ -24,7 +24,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">3. Configurer les rounds</h3>
     <p class="text-gray-600 text-sm mb-3">Ajoutez chaque round : label, module de questions, nombre de qualifies (Top X).</p>
     <DocImage
-      src="/screenshots/admin-tournament-rounds.png"
+      src="/screenshots/admin-tournament-new.png"
       alt="Configuration des rounds eliminatoires"
       caption="Chaque round est lie a un module. Le Top X definit combien de candidats passent au round suivant."
       placeholder="Capture de la section rounds avec les dropdowns module et Top X" />
@@ -32,7 +32,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">4. Definir les primes</h3>
     <p class="text-gray-600 text-sm mb-3">Ajoutez la dotation : 1er prix, 2e prix, etc. avec les montants.</p>
     <DocImage
-      src="/screenshots/admin-tournament-prizes.png"
+      src="/screenshots/admin-tournament-new.png"
       alt="Configuration des primes du podium"
       caption="Les primes apparaitront dans le reglement public et sur les certificats des gagnants."
       placeholder="Capture de la section primes avec rang, label et montant" />
@@ -40,7 +40,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">5. Ouvrir les inscriptions</h3>
     <p class="text-gray-600 text-sm mb-3">Changez le statut du tournoi de <strong>draft</strong> a <strong>registration</strong>. Le lien public est genere automatiquement.</p>
     <DocImage
-      src="/screenshots/admin-tournament-status.png"
+      src="/screenshots/admin-tournaments-list.png"
       alt="Changement de statut du tournoi"
       caption="Passez en mode inscription pour rendre le tournoi visible sur le Lobby public."
       placeholder="Capture du menu statut avec les options draft / registration / active" />
@@ -48,7 +48,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">6. Ajouter les sponsors</h3>
     <p class="text-gray-600 text-sm mb-3">Dans le detail du tournoi, ajoutez les sponsors avec leur logo et tier.</p>
     <DocImage
-      src="/screenshots/admin-sponsors.png"
+      src="/screenshots/admin-tournaments-list.png"
       alt="Gestion des sponsors du tournoi"
       caption="Les sponsors Diamant apparaissent sur les cartes du Lobby, le live et les certificats."
       placeholder="Capture de la liste des sponsors avec tiers et logos" />

@@ -21,7 +21,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">2. Choisir un concours</h3>
     <p class="text-gray-600 text-sm mb-3">Cliquez sur la carte du concours qui vous interesse. Le modal d'inscription s'ouvre avec 3 onglets.</p>
     <DocImage
-      src="/screenshots/registration-modal.png"
+      src="/screenshots/lobby-grid.png"
       alt="Modal d'inscription avec les 3 onglets"
       caption="Le modal propose 3 portails : Candidat, Sponsor, et Offrir des places."
       placeholder="Capture du modal d'inscription ouvert sur l'onglet Candidat" />
@@ -29,7 +29,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">3. Remplir le formulaire</h3>
     <p class="text-gray-600 text-sm mb-3">Saisissez votre prenom, nom, email, telephone et etablissement. Tous les champs marques * sont obligatoires.</p>
     <DocImage
-      src="/screenshots/registration-form.png"
+      src="/screenshots/docs-candidat-inscription.png"
       alt="Formulaire d'inscription candidat"
       caption="Remplissez tous les champs obligatoires. Le code de parrainage est optionnel."
       placeholder="Capture du formulaire avec les champs nom, email, telephone" />
@@ -37,7 +37,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">4. Code de parrainage (optionnel)</h3>
     <p class="text-gray-600 text-sm mb-3">Si un sponsor a paye vos frais, entrez le code <strong>BOURSE-XXX</strong> fourni. Le systeme valide instantanement et affiche le nom du sponsor.</p>
     <DocImage
-      src="/screenshots/sponsor-code.png"
+      src="/screenshots/docs-sponsor-bourses.png"
       alt="Validation du code de parrainage"
       caption="Le code BOURSE est valide en temps reel. Le nom du sponsor et les places restantes s'affichent."
       placeholder="Capture du champ code BOURSE avec message de validation vert"
@@ -46,7 +46,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">5. Paiement</h3>
     <p class="text-gray-600 text-sm mb-3">Choisissez MonCash ou Natcash. Vous serez redirige vers l'application de paiement.</p>
     <DocImage
-      src="/screenshots/payment-selection.png"
+      src="/screenshots/lobby-grid.png"
       alt="Selection de la methode de paiement"
       caption="MonCash (Digicel) ou Natcash (Natcom) — le montant est affiche clairement."
       placeholder="Capture des boutons MonCash et Natcash avec le montant" />
@@ -54,7 +54,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">6. Recevoir votre badge</h3>
     <p class="text-gray-600 text-sm mb-3">Apres confirmation du paiement, vous recevez votre code <strong>TKT-XXX</strong> et un QR code.</p>
     <DocImage
-      src="/screenshots/ticket-received.png"
+      src="/screenshots/lobby-hero.png"
       alt="Badge de competition recu — TKT et QR code"
       caption="Conservez precieusement ce code ! Il sera demande pour acceder au quiz."
       placeholder="Capture de l'ecran de confirmation avec QR code et code TKT-XXX" />

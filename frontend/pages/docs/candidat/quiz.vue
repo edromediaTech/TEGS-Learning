@@ -12,7 +12,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">1. Ouvrir la page du concours</h3>
     <p class="text-gray-600 text-sm mb-3">Allez sur la page du tournoi. Quand le concours est en cours, le bouton <strong>"Acceder au Quiz"</strong> apparait en vert.</p>
     <DocImage
-      src="/screenshots/quiz-access-button.png"
+      src="/screenshots/lobby-grid.png"
       alt="Bouton Acceder au Quiz sur la page du tournoi"
       caption="Le bouton vert apparait uniquement quand le tournoi est en statut LIVE."
       placeholder="Capture de la page tournoi avec le bouton vert Acceder au Quiz" />
@@ -20,7 +20,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">2. Entrer votre code TKT-XXX</h3>
     <p class="text-gray-600 text-sm mb-3">Saisissez le code de competition recu lors de votre inscription.</p>
     <DocImage
-      src="/screenshots/quiz-token-input.png"
+      src="/screenshots/login-page.png"
       alt="Ecran de saisie du code de competition"
       caption="Entrez votre code TKT-XXX. Le systeme verifie votre identite et votre eligibilite."
       placeholder="Capture de l'ecran de saisie du token avec le champ TKT-XXX" />
@@ -28,7 +28,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">3. Lire le briefing</h3>
     <p class="text-gray-600 text-sm mb-3">L'ecran de briefing affiche votre nom, le round actuel, la duree du quiz et les instructions.</p>
     <DocImage
-      src="/screenshots/quiz-briefing.png"
+      src="/screenshots/docs-candidat-quiz.png"
       alt="Ecran de briefing avant le quiz"
       caption="Verifiez vos informations et la duree du quiz avant de commencer."
       placeholder="Capture du briefing avec nom du candidat, round et duree" />
@@ -36,7 +36,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">4. Repondre aux questions</h3>
     <p class="text-gray-600 text-sm mb-3">Parcourez les questions une par une. Le temps restant est affiche en haut de l'ecran.</p>
     <DocImage
-      src="/screenshots/quiz-questions.png"
+      src="/screenshots/docs-candidat-quiz.png"
       alt="Interface du quiz avec questions et timer"
       caption="Repondez a chaque question. La barre de progression et le timer sont visibles en permanence."
       placeholder="Capture de l'interface quiz avec une question QCM et le chronometre" />
@@ -44,7 +44,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">5. Soumettre vos reponses</h3>
     <p class="text-gray-600 text-sm mb-3">Cliquez sur <strong>"Soumettre mes reponses"</strong>. Votre score est enregistre instantanement.</p>
     <DocImage
-      src="/screenshots/quiz-submitted.png"
+      src="/screenshots/docs-candidat-resultats.png"
       alt="Ecran de confirmation apres soumission"
       caption="Votre score est affiche immediatement. Le classement sera annonce a la cloture du round."
       placeholder="Capture de l'ecran de confirmation avec le score en pourcentage" />
