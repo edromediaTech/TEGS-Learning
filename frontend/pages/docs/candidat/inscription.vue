@@ -13,6 +13,7 @@
     <p class="text-gray-600 text-sm mb-3">Rendez-vous sur la page d'accueil TEGS-Arena. Les concours ouverts aux inscriptions sont affiches avec un badge bleu <strong>"Inscriptions"</strong>.</p>
     <DocImage
       src="/screenshots/lobby-grid.png"
+      zoomable
       alt="Page d'accueil Lobby — grille des concours"
       caption="Le Lobby affiche tous les concours avec leur statut, nombre d'inscrits et frais."
       placeholder="Capture de la page d'accueil avec les cartes de concours" />
