@@ -105,7 +105,7 @@ const initials = computed(() => {
 const navItems = computed(() => {
   const items = [];
   if (auth.isSuperAdmin) {
-    items.push({ to: '/admin/tenants', label: 'Ecoles', icon: '\uD83C\uDFEB' });
+    items.push({ to: '/admin/tenants', label: 'Organisations', icon: '\uD83C\uDFEB' });
   }
   if (auth.isSuperAdmin || auth.isAdmin) {
     items.push({ to: '/admin/users', label: 'Utilisateurs', icon: '\uD83D\uDC65' });
@@ -122,6 +122,7 @@ const navItems = computed(() => {
   if (auth.user?.role === 'authorized_agent' || auth.isSuperAdmin || auth.isAdmin) {
     items.push({ to: '/agent/collection', label: 'Caisse Agent', icon: '\uD83D\uDCB5' });
   }
+  items.push({ to: '/docs', label: 'Centre d\'Aide', icon: '\uD83D\uDCD6' });
   return items;
 });
 
