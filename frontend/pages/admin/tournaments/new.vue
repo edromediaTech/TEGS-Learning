@@ -176,10 +176,12 @@
 
 <script setup lang="ts">
 import { useTournamentStore } from '~/stores/tournaments';
-import { useModuleStore } from '~/stores/modules';
+import { useModulesStore } from '~/stores/modules';
+
+definePageMeta({ middleware: 'auth' });
 
 const store = useTournamentStore();
-const moduleStore = useModuleStore();
+const moduleStore = useModulesStore();
 const router = useRouter();
 const submitting = ref(false);
 

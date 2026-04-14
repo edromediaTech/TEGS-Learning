@@ -1,7 +1,6 @@
 <template>
-  <div v-if="sponsors.length > 0" class="sponsor-carousel overflow-hidden"
-    :class="dark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'"
-    class="border rounded-xl px-4 py-2">
+  <div v-if="sponsors.length > 0" class="sponsor-carousel overflow-hidden border rounded-xl px-4 py-2"
+    :class="dark ? 'bg-white/5 border-white/10' : 'bg-gray-50 border-gray-200'">
     <div class="flex items-center space-x-2 mb-1" v-if="label">
       <span class="text-[10px] uppercase font-bold" :class="dark ? 'text-gray-500' : 'text-gray-400'">{{ label }}</span>
     </div>

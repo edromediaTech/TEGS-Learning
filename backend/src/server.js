@@ -44,6 +44,10 @@ app.use(cors({
     // Firebase Hosting alt domains
     'https://luminous-mesh-459718-p4.web.app',
     'https://luminous-mesh-459718-p4.firebaseapp.com',
+    'https://tegs-learning.web.app',
+    'https://tegs-learning.firebaseapp.com',
+    'https://tegslearning.com',
+    'https://www.tegslearning.com',
   ].filter(Boolean),
   credentials: true,
 }));

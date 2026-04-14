@@ -139,6 +139,8 @@
 <script setup lang="ts">
 import { useTournamentStore } from '~/stores/tournaments';
 
+definePageMeta({ middleware: 'auth' });
+
 const store = useTournamentStore();
 const activeFilter = ref('all');
 
