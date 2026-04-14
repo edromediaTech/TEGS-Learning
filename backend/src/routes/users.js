@@ -65,7 +65,7 @@ router.post(
     body('password').isLength({ min: 6 }).withMessage('Mot de passe : 6 caracteres minimum'),
     body('firstName').notEmpty().withMessage('Prenom requis'),
     body('lastName').notEmpty().withMessage('Nom requis'),
-    body('role').isIn(['admin_ddene', 'teacher', 'student']).withMessage('Role invalide'),
+    body('role').isIn(['superadmin', 'admin_ddene', 'teacher', 'student']).withMessage('Role invalide'),
   ],
   async (req, res, next) => {
     try {
@@ -75,6 +75,27 @@ router.post(
       }
 
       const { email, password, firstName, lastName, role, tenant_id } = req.body;
+
+      // Seul un superadmin peut creer un autre superadmin
+      if (role === 'superadmin' && !req.isSuperAdmin) {
+        return res.status(403).json({ error: 'Seul un superadmin peut creer un superadmin' });
+      }
+
+      // Superadmin sans tenant (compte global)
+      if (role === 'superadmin') {
+        const existing = await User.findOne({ email, role: 'superadmin' });
+        if (existing) {
+          return res.status(409).json({ error: 'Email deja utilise pour un superadmin' });
+        }
+        const user = await User.create({
+          email, password, firstName, lastName, role: 'superadmin',
+          tenant_id: tenant_id || null,
+        });
+        return res.status(201).json({
+          message: 'Superadmin cree',
+          user: { id: user._id, email: user.email, firstName: user.firstName, lastName: user.lastName, role: user.role, tenant_id: user.tenant_id },
+        });
+      }
 
       // Determine tenant: superadmin must specify, admin_ddene uses their own
       const targetTenant = req.isSuperAdmin ? tenant_id : req.tenantId;
@@ -125,12 +146,31 @@ router.put(
   authorize('admin_ddene'),
   async (req, res, next) => {
     try {
-      const { firstName, lastName, role, isActive } = req.body;
+      const { firstName, lastName, role, isActive, password, tenant_id } = req.body;
       const update = {};
       if (firstName !== undefined) update.firstName = firstName;
       if (lastName !== undefined) update.lastName = lastName;
-      if (role !== undefined) update.role = role;
+      if (role !== undefined) {
+        // Seul superadmin peut promouvoir en superadmin
+        if (role === 'superadmin' && !req.isSuperAdmin) {
+          return res.status(403).json({ error: 'Seul un superadmin peut assigner le role superadmin' });
+        }
+        update.role = role;
+      }
       if (isActive !== undefined) update.isActive = isActive;
+      // Superadmin peut reassigner le tenant
+      if (tenant_id !== undefined && req.isSuperAdmin) {
+        update.tenant_id = tenant_id || null;
+      }
+      // Superadmin peut reset le mot de passe
+      if (password && req.isSuperAdmin) {
+        // On passe par le model pour hasher
+        const targetUser = await User.findById(req.params.id);
+        if (targetUser) {
+          targetUser.password = password;
+          await targetUser.save();
+        }
+      }
 
       const filter = { _id: req.params.id, ...req.tenantFilter() };
       const user = await User.findOneAndUpdate(filter, { $set: update }, { new: true });

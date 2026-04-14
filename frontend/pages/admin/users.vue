@@ -91,17 +91,22 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
               <select v-model="userForm.role" required class="w-full px-3 py-2 border rounded-lg">
+                <option v-if="auth.isSuperAdmin" value="superadmin">SuperAdmin</option>
                 <option value="admin_ddene">Admin DDENE</option>
                 <option value="teacher">Enseignant</option>
                 <option value="student">Eleve</option>
               </select>
             </div>
-            <div v-if="auth.isSuperAdmin && !editingUser">
+            <div v-if="auth.isSuperAdmin && userForm.role !== 'superadmin'">
               <label class="block text-sm font-medium text-gray-700 mb-1">Ecole</label>
               <select v-model="userForm.tenant_id" required class="w-full px-3 py-2 border rounded-lg">
                 <option value="" disabled>Choisir une ecole</option>
                 <option v-for="t in tenantsList" :key="t._id" :value="t._id">{{ t.name }} ({{ t.code }})</option>
               </select>
+            </div>
+            <div v-if="auth.isSuperAdmin && editingUser">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe (optionnel)</label>
+              <input v-model="userForm.password" type="password" minlength="6" class="w-full px-3 py-2 border rounded-lg" placeholder="Laisser vide pour ne pas changer" />
             </div>
             <div v-if="formError" class="p-2 bg-red-50 text-red-600 rounded text-sm">{{ formError }}</div>
             <div class="flex justify-end gap-3">
@@ -203,13 +208,20 @@ async function saveUser() {
   formError.value = ''
   try {
     if (editingUser.value) {
+      const updateBody: any = {
+        firstName: userForm.firstName,
+        lastName: userForm.lastName,
+        role: userForm.role,
+      }
+      if (auth.isSuperAdmin && userForm.tenant_id) {
+        updateBody.tenant_id = userForm.tenant_id
+      }
+      if (auth.isSuperAdmin && userForm.password) {
+        updateBody.password = userForm.password
+      }
       await apiFetch(`/users/${editingUser.value._id}`, {
         method: 'PUT',
-        body: JSON.stringify({
-          firstName: userForm.firstName,
-          lastName: userForm.lastName,
-          role: userForm.role,
-        }),
+        body: JSON.stringify(updateBody),
       })
     } else {
       const body: any = {

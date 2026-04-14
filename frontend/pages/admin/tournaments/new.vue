@@ -34,6 +34,19 @@
             </div>
           </section>
 
+          <!-- Tenant (superadmin only) -->
+          <section v-if="authStore.isSuperAdmin" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 class="text-lg font-bold text-gray-900 mb-4">Assigner a une ecole</h2>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Ecole (Tenant) *</label>
+              <select v-model="selectedTenantId" required
+                class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none">
+                <option value="" disabled>Choisir une ecole</option>
+                <option v-for="t in tenantsList" :key="t._id" :value="t._id">{{ t.name }} ({{ t.code }})</option>
+              </select>
+            </div>
+          </section>
+
           <!-- Inscription & Paiement -->
           <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
             <h2 class="text-lg font-bold text-gray-900 mb-4">Inscription &amp; Paiement</h2>
@@ -186,12 +199,15 @@ import { useAuthStore } from '~/stores/auth';
 
 definePageMeta({ middleware: 'auth' });
 
+const { apiFetch } = useApi();
 const store = useTournamentStore();
 const moduleStore = useModulesStore();
 const authStore = useAuthStore();
 const router = useRouter();
 const submitting = ref(false);
 const errorMsg = ref('');
+const tenantsList = ref<any[]>([]);
+const selectedTenantId = ref('');
 
 const form = reactive({
   title: '',
@@ -205,8 +221,14 @@ const form = reactive({
 
 const modules = computed(() => moduleStore.modules);
 
-onMounted(() => {
+onMounted(async () => {
   moduleStore.fetchModules();
+  if (authStore.isSuperAdmin) {
+    try {
+      const res = await apiFetch('/tenants');
+      tenantsList.value = (res.data as any).tenants || [];
+    } catch {}
+  }
 });
 
 function addRound() {
@@ -249,7 +271,7 @@ async function handleCreate() {
       maxParticipants: form.maxParticipants || 0,
       rounds: cleanRounds,
       prizes: form.prizes.map((p) => ({ ...p, currency: form.currency })),
-      tenant_id: authStore.tenant_id,
+      tenant_id: authStore.isSuperAdmin ? selectedTenantId.value : authStore.tenant_id,
     } as any);
     if (tournament) {
       router.push(`/admin/tournaments/${tournament._id}`);
