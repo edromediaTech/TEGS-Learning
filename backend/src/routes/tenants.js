@@ -8,14 +8,14 @@ const router = express.Router();
 
 // ---------------------------------------------------------------------------
 // POST /api/tenants
-// Cree une nouvelle ecole (tenant). Superadmin uniquement.
+// Cree une nouvelle organisation (tenant). Superadmin uniquement.
 // ---------------------------------------------------------------------------
 router.post(
   '/',
   authenticate,
   authorize('superadmin'),
   [
-    body('name').notEmpty().withMessage('Nom de l\'ecole requis'),
+    body('name').notEmpty().withMessage('Nom de l\'organisation requis'),
     body('code').notEmpty().withMessage('Code unique requis'),
   ],
   async (req, res, next) => {
@@ -29,13 +29,13 @@ router.post(
 
       const existing = await Tenant.findOne({ code: code.toUpperCase() });
       if (existing) {
-        return res.status(409).json({ error: 'Une ecole avec ce code existe deja' });
+        return res.status(409).json({ error: 'Une organisation avec ce code existe deja' });
       }
 
       const tenant = await Tenant.create({ name, code, address, contactEmail, config });
 
       res.status(201).json({
-        message: 'Ecole creee avec succes',
+        message: 'Organisation creee avec succes',
         tenant,
       });
     } catch (err) {
@@ -46,7 +46,7 @@ router.post(
 
 // ---------------------------------------------------------------------------
 // GET /api/tenants/public
-// Liste publique des ecoles (nom + id uniquement, pour le login)
+// Liste publique des organisations (nom + id uniquement, pour le login)
 // ---------------------------------------------------------------------------
 router.get('/public', async (_req, res, next) => {
   try {
@@ -59,7 +59,7 @@ router.get('/public', async (_req, res, next) => {
 
 // ---------------------------------------------------------------------------
 // GET /api/tenants
-// Liste toutes les ecoles. Superadmin et admin_ddene.
+// Liste toutes les organisations. Superadmin et admin_ddene.
 // ---------------------------------------------------------------------------
 router.get(
   '/',
@@ -94,7 +94,7 @@ router.get(
     try {
       const tenant = await Tenant.findById(req.params.id);
       if (!tenant) {
-        return res.status(404).json({ error: 'Ecole introuvable' });
+        return res.status(404).json({ error: 'Organisation introuvable' });
       }
       const userCount = await User.countDocuments({ tenant_id: tenant._id });
       res.json({ tenant: { ...tenant.toObject(), userCount } });
@@ -130,10 +130,10 @@ router.put(
       );
 
       if (!tenant) {
-        return res.status(404).json({ error: 'Ecole introuvable' });
+        return res.status(404).json({ error: 'Organisation introuvable' });
       }
 
-      res.json({ message: 'Ecole mise a jour', tenant });
+      res.json({ message: 'Organisation mise a jour', tenant });
     } catch (err) {
       next(err);
     }
@@ -157,10 +157,10 @@ router.delete(
       );
 
       if (!tenant) {
-        return res.status(404).json({ error: 'Ecole introuvable' });
+        return res.status(404).json({ error: 'Organisation introuvable' });
       }
 
-      res.json({ message: 'Ecole desactivee', tenant });
+      res.json({ message: 'Organisation desactivee', tenant });
     } catch (err) {
       next(err);
     }

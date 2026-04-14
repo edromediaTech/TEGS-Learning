@@ -14,7 +14,7 @@
       <!-- Filters -->
       <div class="flex gap-3 mb-6">
         <select v-if="auth.isSuperAdmin" v-model="filterTenant" @change="loadUsers" class="border rounded-lg px-3 py-2 text-sm">
-          <option value="">Toutes les ecoles</option>
+          <option value="">Toutes les organisations</option>
           <option v-for="t in tenantsList" :key="t._id" :value="t._id">{{ t.name }} ({{ t.code }})</option>
         </select>
         <select v-model="filterRole" @change="loadUsers" class="border rounded-lg px-3 py-2 text-sm">
@@ -33,7 +33,7 @@
               <th class="text-left p-4">Nom</th>
               <th class="text-left p-4">Email</th>
               <th class="text-left p-4">Role</th>
-              <th v-if="auth.isSuperAdmin" class="text-left p-4">Ecole</th>
+              <th v-if="auth.isSuperAdmin" class="text-left p-4">Organisation</th>
               <th class="text-center p-4">Statut</th>
               <th class="text-right p-4">Actions</th>
             </tr>
@@ -98,9 +98,9 @@
               </select>
             </div>
             <div v-if="auth.isSuperAdmin && userForm.role !== 'superadmin'">
-              <label class="block text-sm font-medium text-gray-700 mb-1">Ecole</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Organisation</label>
               <select v-model="userForm.tenant_id" required class="w-full px-3 py-2 border rounded-lg">
-                <option value="" disabled>Choisir une ecole</option>
+                <option value="" disabled>Choisir une organisation</option>
                 <option v-for="t in tenantsList" :key="t._id" :value="t._id">{{ t.name }} ({{ t.code }})</option>
               </select>
             </div>

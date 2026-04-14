@@ -105,12 +105,12 @@ router.post(
 
       const tenant = await Tenant.findById(targetTenant);
       if (!tenant || !tenant.isActive) {
-        return res.status(404).json({ error: 'Ecole introuvable ou inactive' });
+        return res.status(404).json({ error: 'Organisation introuvable ou inactive' });
       }
 
       const existing = await User.findOne({ email, tenant_id: targetTenant });
       if (existing) {
-        return res.status(409).json({ error: 'Email deja utilise dans cette ecole' });
+        return res.status(409).json({ error: 'Email deja utilise dans cette organisation' });
       }
 
       const user = await User.create({

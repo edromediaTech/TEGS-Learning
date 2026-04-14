@@ -3,22 +3,22 @@
     <NuxtLayout name="admin">
       <div class="flex items-center justify-between mb-8">
         <div>
-          <h1 class="text-2xl font-bold text-gray-900">Gestion des Ecoles</h1>
-          <p class="text-gray-500 mt-1">Creer et gerer les tenants</p>
+          <h1 class="text-2xl font-bold text-gray-900">Gestion des Organisations</h1>
+          <p class="text-gray-500 mt-1">Creer et gerer les organisations</p>
         </div>
         <button @click="showCreateModal = true" class="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 text-sm">
-          + Nouvelle Ecole
+          + Nouvelle Organisation
         </button>
       </div>
 
       <!-- Stats -->
       <div class="grid grid-cols-3 gap-4 mb-6">
         <div class="bg-white rounded-xl shadow p-5">
-          <p class="text-sm text-gray-500">Total Ecoles</p>
+          <p class="text-sm text-gray-500">Total Organisations</p>
           <p class="text-3xl font-bold text-primary-700">{{ tenants.length }}</p>
         </div>
         <div class="bg-white rounded-xl shadow p-5">
-          <p class="text-sm text-gray-500">Ecoles Actives</p>
+          <p class="text-sm text-gray-500">Organisations Actives</p>
           <p class="text-3xl font-bold text-green-600">{{ tenants.filter(t => t.isActive).length }}</p>
         </div>
         <div class="bg-white rounded-xl shadow p-5">
@@ -60,13 +60,13 @@
             </tr>
           </tbody>
         </table>
-        <p v-if="tenants.length === 0" class="text-center text-gray-400 py-8">Aucune ecole</p>
+        <p v-if="tenants.length === 0" class="text-center text-gray-400 py-8">Aucune organisation</p>
       </div>
 
       <!-- Create/Edit Modal -->
       <div v-if="showCreateModal || editingTenant" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md">
-          <h2 class="text-lg font-bold mb-4">{{ editingTenant ? 'Modifier l\'Ecole' : 'Nouvelle Ecole' }}</h2>
+          <h2 class="text-lg font-bold mb-4">{{ editingTenant ? 'Modifier l\'Organisation' : 'Nouvelle Organisation' }}</h2>
           <form @submit.prevent="saveTenant" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>

@@ -36,12 +36,12 @@
 
           <!-- Tenant (superadmin only) -->
           <section v-if="authStore.isSuperAdmin" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-            <h2 class="text-lg font-bold text-gray-900 mb-4">Assigner a une ecole</h2>
+            <h2 class="text-lg font-bold text-gray-900 mb-4">Assigner a une organisation</h2>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Ecole (Tenant) *</label>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Organisation *</label>
               <select v-model="selectedTenantId" required
                 class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-400 focus:border-transparent outline-none">
-                <option value="" disabled>Choisir une ecole</option>
+                <option value="" disabled>Choisir une organisation</option>
                 <option v-for="t in tenantsList" :key="t._id" :value="t._id">{{ t.name }} ({{ t.code }})</option>
               </select>
             </div>
