@@ -63,11 +63,11 @@ const query = ref('');
 const inputRef = ref<HTMLInputElement | null>(null);
 
 const quickLinks = [
-  { path: '/docs/candidat/inscription', label: 'Comment s\'inscrire', icon: '&#128221;' },
-  { path: '/docs/candidat/quiz', label: 'Passer le quiz', icon: '&#9997;' },
-  { path: '/docs/agent/collecte', label: 'Guide agent collecteur', icon: '&#128188;' },
-  { path: '/docs/sponsor/packs', label: 'Devenir sponsor', icon: '&#127942;' },
-  { path: '/docs/faq', label: 'Questions frequentes', icon: '&#10067;' },
+  { path: '/docs/candidat/inscription', label: 'Comment s\'inscrire', icon: '\uD83D\uDCDD' },
+  { path: '/docs/candidat/quiz', label: 'Passer le quiz', icon: '\u270D\uFE0F' },
+  { path: '/docs/agent/collecte', label: 'Guide agent collecteur', icon: '\uD83D\uDCBC' },
+  { path: '/docs/sponsor/packs', label: 'Devenir sponsor', icon: '\uD83C\uDFC6' },
+  { path: '/docs/faq', label: 'Questions frequentes', icon: '\u2753' },
 ];
 
 // All guide articles for search
