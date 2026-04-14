@@ -16,6 +16,78 @@ const router = express.Router();
 // ===========================================================================
 
 // ---------------------------------------------------------------------------
+// GET /api/tournaments/public/list
+// Liste publique des tournois (registration, active, completed)
+// ---------------------------------------------------------------------------
+router.get('/public/list', async (req, res, next) => {
+  try {
+    const { status, search } = req.query;
+    const filter = {
+      status: { $in: ['registration', 'active', 'completed'] },
+    };
+
+    if (status && ['registration', 'active', 'completed'].includes(status)) {
+      filter.status = status;
+    }
+
+    if (search) {
+      filter.title = { $regex: search, $options: 'i' };
+    }
+
+    const tournaments = await Tournament.find(filter)
+      .select('title description coverImage status registrationFee currency maxParticipants registrationOpen registrationClose rounds prizes currentRound shareToken createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Ajouter participantCount + spotsLeft pour chaque tournoi
+    const Sponsor = require('../models/Sponsor');
+    const enriched = await Promise.all(
+      tournaments.map(async (t) => {
+        const participantCount = await Participant.countDocuments({ tournament_id: t._id });
+        const spotsLeft = t.maxParticipants > 0
+          ? Math.max(0, t.maxParticipants - participantCount)
+          : null;
+
+        // Sponsor diamant (pour la carte)
+        const diamondSponsor = await Sponsor.findOne({
+          tournament_id: t._id,
+          tier: 'diamond',
+          isActive: true,
+        }).select('name logoUrl').lean();
+
+        const totalPrize = (t.prizes || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+
+        return {
+          _id: t._id,
+          title: t.title,
+          description: t.description,
+          coverImage: t.coverImage,
+          status: t.status,
+          registrationFee: t.registrationFee,
+          currency: t.currency,
+          maxParticipants: t.maxParticipants,
+          registrationOpen: t.registrationOpen,
+          registrationClose: t.registrationClose,
+          roundCount: t.rounds.length,
+          currentRound: t.currentRound,
+          prizes: t.prizes,
+          totalPrize,
+          shareToken: t.shareToken,
+          participantCount,
+          spotsLeft,
+          diamondSponsor,
+          createdAt: t.createdAt,
+        };
+      })
+    );
+
+    res.json({ tournaments: enriched, count: enriched.length });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------------------------------------------------------------------------
 // GET /api/tournaments/public/:shareToken
 // Détails publics d'un tournoi (pour la page d'inscription)
 // ---------------------------------------------------------------------------

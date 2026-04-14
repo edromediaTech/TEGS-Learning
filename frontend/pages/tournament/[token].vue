@@ -92,6 +92,14 @@
         </div>
       </div>
 
+      <!-- Link to rules -->
+      <div class="text-center mb-6">
+        <NuxtLink :to="`/tournament/${token}/rules`"
+          class="inline-flex items-center text-sm text-amber-400 hover:text-amber-300 font-medium">
+          Voir le reglement complet et les modalites &#8594;
+        </NuxtLink>
+      </div>
+
       <!-- Spots left -->
       <div v-if="spotsLeft !== null && spotsLeft <= 20" class="bg-red-500/20 border border-red-500/30 rounded-xl p-3 mb-6 text-center">
         <span class="text-red-300 font-bold text-sm">
@@ -433,4 +441,16 @@ async function checkPayment() {
     checkError.value = 'Impossible de verifier le paiement';
   }
 }
+
+// SEO / OpenGraph
+useHead(() => ({
+  title: tournament.value ? `${tournament.value.title} | TEGS-Arena` : 'TEGS-Arena',
+  meta: [
+    { name: 'description', content: tournament.value ? `Inscrivez-vous au concours ${tournament.value.title}. ${tournament.value.rounds?.length || 0} rounds eliminatoires.` : '' },
+    { property: 'og:title', content: tournament.value?.title || 'TEGS-Arena' },
+    { property: 'og:description', content: tournament.value ? `${tournament.value.registrationFee > 0 ? tournament.value.registrationFee + ' ' + tournament.value.currency : 'Gratuit'} — ${participantCount.value} participants` : '' },
+    { property: 'og:image', content: tournament.value?.coverImage || '' },
+    { property: 'og:type', content: 'website' },
+  ],
+}));
 </script>
