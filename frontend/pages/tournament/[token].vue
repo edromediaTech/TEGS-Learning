@@ -92,12 +92,20 @@
         </div>
       </div>
 
-      <!-- Link to rules -->
-      <div class="text-center mb-6">
-        <NuxtLink :to="`/tournament/${token}/rules`"
-          class="inline-flex items-center text-sm text-amber-400 hover:text-amber-300 font-medium">
-          Voir le reglement complet et les modalites &#8594;
-        </NuxtLink>
+      <!-- Links -->
+      <div class="text-center mb-6 space-y-2">
+        <div v-if="tournament.status === 'active'">
+          <NuxtLink :to="`/tournament/${token}/play`"
+            class="inline-flex items-center px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold transition-all shadow-lg">
+            Acceder au Quiz &#8594;
+          </NuxtLink>
+        </div>
+        <div>
+          <NuxtLink :to="`/tournament/${token}/rules`"
+            class="inline-flex items-center text-sm text-amber-400 hover:text-amber-300 font-medium">
+            Voir le reglement complet et les modalites &#8594;
+          </NuxtLink>
+        </div>
       </div>
 
       <!-- Spots left -->

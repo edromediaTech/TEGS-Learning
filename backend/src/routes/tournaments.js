@@ -304,6 +304,233 @@ router.get('/verify-token/:competitionToken', async (req, res, next) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// GET /api/tournaments/play/:competitionToken
+// Pont quiz : résout competitionToken → module du round actif
+// Retourne le shareToken du module pour lancer le quiz player
+// ---------------------------------------------------------------------------
+router.get('/play/:competitionToken', async (req, res, next) => {
+  try {
+    const participant = await Participant.findOne({
+      competitionToken: req.params.competitionToken,
+    });
+
+    if (!participant) {
+      return res.status(404).json({ error: 'Token invalide — aucun participant trouve' });
+    }
+
+    if (!participant.paid) {
+      return res.status(403).json({ error: 'Inscription non payee. Completez le paiement d\'abord.' });
+    }
+
+    if (['eliminated', 'disqualified'].includes(participant.status)) {
+      return res.status(403).json({ error: `Vous avez ete ${participant.status === 'eliminated' ? 'elimine(e)' : 'disqualifie(e)'} du tournoi.` });
+    }
+
+    const tournament = await Tournament.findById(participant.tournament_id);
+    if (!tournament) {
+      return res.status(404).json({ error: 'Tournoi introuvable' });
+    }
+
+    if (tournament.status !== 'active') {
+      return res.status(400).json({
+        error: tournament.status === 'completed'
+          ? 'Ce tournoi est termine.'
+          : 'Ce tournoi n\'a pas encore demarre. Patientez.',
+        tournamentStatus: tournament.status,
+      });
+    }
+
+    // Trouver le round actif
+    const activeRound = tournament.rounds.find(r => r.status === 'active');
+    if (!activeRound) {
+      return res.status(400).json({ error: 'Aucun round n\'est actif pour le moment. Patientez.' });
+    }
+
+    if (!activeRound.module_id) {
+      return res.status(400).json({ error: 'Ce round n\'a pas de module de questions configure.' });
+    }
+
+    // Verifier si le candidat a deja soumis pour ce round
+    const alreadyDone = participant.roundResults.find(
+      rr => rr.round === activeRound.order && rr.status !== 'pending'
+    );
+    if (alreadyDone) {
+      return res.status(400).json({
+        error: 'Vous avez deja soumis vos reponses pour ce round.',
+        result: {
+          score: alreadyDone.score,
+          maxScore: alreadyDone.maxScore,
+          percentage: alreadyDone.percentage,
+        },
+      });
+    }
+
+    // Recuperer le module et son shareToken
+    const Module = require('../models/Module');
+    const mod = await Module.findById(activeRound.module_id)
+      .select('title shareToken shareEnabled globalTimeLimit evaluationType liveStartTime liveEndTime')
+      .lean();
+
+    if (!mod) {
+      return res.status(404).json({ error: 'Module de questions introuvable.' });
+    }
+
+    // Activer le partage si pas deja fait
+    if (!mod.shareEnabled || !mod.shareToken) {
+      const crypto2 = require('crypto');
+      const token = crypto2.randomBytes(16).toString('hex');
+      await Module.findByIdAndUpdate(mod._id, {
+        $set: { shareEnabled: true, shareToken: token },
+      });
+      mod.shareToken = token;
+    }
+
+    res.json({
+      participant: {
+        firstName: participant.firstName,
+        lastName: participant.lastName,
+        email: participant.email,
+        establishment: participant.establishment,
+        competitionToken: participant.competitionToken,
+        status: participant.status,
+      },
+      tournament: {
+        _id: tournament._id,
+        title: tournament.title,
+        status: tournament.status,
+      },
+      round: {
+        order: activeRound.order,
+        label: activeRound.label,
+        startTime: activeRound.startTime,
+      },
+      module: {
+        title: mod.title,
+        shareToken: mod.shareToken,
+        globalTimeLimit: mod.globalTimeLimit,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/tournaments/play/:competitionToken/submit
+// Enregistre le resultat quiz ET le lie au participant + tournoi
+// ---------------------------------------------------------------------------
+router.post('/play/:competitionToken/submit', async (req, res, next) => {
+  try {
+    const participant = await Participant.findOne({
+      competitionToken: req.params.competitionToken,
+    });
+
+    if (!participant) {
+      return res.status(404).json({ error: 'Token invalide' });
+    }
+
+    const tournament = await Tournament.findById(participant.tournament_id);
+    if (!tournament || tournament.status !== 'active') {
+      return res.status(400).json({ error: 'Tournoi non actif' });
+    }
+
+    const activeRound = tournament.rounds.find(r => r.status === 'active');
+    if (!activeRound || !activeRound.module_id) {
+      return res.status(400).json({ error: 'Aucun round actif' });
+    }
+
+    // Verifier doublon
+    const alreadyDone = participant.roundResults.find(
+      rr => rr.round === activeRound.order && rr.quizResult_id
+    );
+    if (alreadyDone) {
+      return res.status(409).json({ error: 'Resultat deja soumis pour ce round' });
+    }
+
+    const { answers, duration } = req.body;
+    if (!answers || !Array.isArray(answers)) {
+      return res.status(400).json({ error: 'answers[] requis' });
+    }
+
+    // Calculer le score
+    let totalScore = 0;
+    let maxScore = 0;
+    const numberedAnswers = answers.map((a, i) => {
+      const pts = Number(a.pointsEarned) || 0;
+      const max = Number(a.maxPoints) || 0;
+      totalScore += pts;
+      maxScore += max;
+      return {
+        blockId: a.blockId || `q${i}`,
+        questionNumber: i + 1,
+        questionType: a.questionType || 'quiz',
+        questionText: a.questionText || '',
+        choices: a.choices || null,
+        studentAnswer: a.studentAnswer,
+        correctAnswer: a.correctAnswer,
+        isCorrect: !!a.isCorrect,
+        pointsEarned: pts,
+        maxPoints: max,
+        feedback: a.feedback || '',
+      };
+    });
+
+    const percentage = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+
+    // Creer le QuizResult
+    const quizResult = await QuizResult.create({
+      module_id: activeRound.module_id,
+      tenant_id: tournament.tenant_id,
+      studentName: `${participant.firstName} ${participant.lastName}`,
+      studentEmail: participant.email,
+      moduleTitle: req.body.moduleTitle || '',
+      totalScore,
+      maxScore,
+      percentage,
+      duration: duration || '',
+      completedAt: new Date(),
+      answers: numberedAnswers,
+      evaluationType: 'live',
+      autoSubmitted: !!req.body.autoSubmitted,
+    });
+
+    // Lier le resultat au participant
+    const existingRR = participant.roundResults.find(rr => rr.round === activeRound.order);
+    if (existingRR) {
+      existingRR.quizResult_id = quizResult._id;
+      existingRR.module_id = activeRound.module_id;
+      existingRR.score = totalScore;
+      existingRR.maxScore = maxScore;
+      existingRR.percentage = percentage;
+      existingRR.duration = duration || '';
+      existingRR.completedAt = new Date();
+    } else {
+      participant.roundResults.push({
+        round: activeRound.order,
+        module_id: activeRound.module_id,
+        quizResult_id: quizResult._id,
+        score: totalScore,
+        maxScore: maxScore,
+        percentage,
+        duration: duration || '',
+        status: 'pending',
+        completedAt: new Date(),
+      });
+    }
+    await participant.save();
+
+    res.status(201).json({
+      message: 'Resultat enregistre',
+      score: `${totalScore}/${maxScore}`,
+      percentage,
+      rank: '—', // sera calcule a la cloture
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ===========================================================================
 // ROUTES AUTHENTIFIÉES
 // ===========================================================================

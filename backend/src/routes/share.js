@@ -1113,6 +1113,18 @@ router.get('/public/:shareToken', async (req, res, next) => {
           + '<p style="font-size:16px">Score: ' + (data.score || '0/0') + '</p>'
           + '<p style="margin-top:8px;font-size:14px">Resultats enregistres avec succes !</p>';
         if (submitBtn) submitBtn.style.display = 'none';
+        // Notify parent window (tournament play page) via postMessage
+        if (window.parent !== window) {
+          window.parent.postMessage({
+            type: 'TEGS_QUIZ_SUBMITTED',
+            answers: answersArr,
+            duration: durationISO,
+            moduleTitle: document.title || '',
+            autoSubmitted: window._autoSubmitted || false,
+            percentage: data.percentage || 0,
+            score: data.score || '0/0',
+          }, '*');
+        }
         // Emit exam_submitted via socket
         if (window._liveSock && window._liveSock.connected) {
           window._liveSock.emit('exam_submitted', {
