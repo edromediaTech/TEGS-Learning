@@ -155,6 +155,11 @@
             </div>
           </section>
 
+          <!-- Error -->
+          <div v-if="errorMsg" class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
+            {{ errorMsg }}
+          </div>
+
           <!-- Submit -->
           <div class="flex items-center justify-end space-x-4">
             <NuxtLink to="/admin/tournaments" class="px-6 py-3 text-gray-500 hover:text-gray-700 font-medium">
@@ -184,6 +189,7 @@ const store = useTournamentStore();
 const moduleStore = useModulesStore();
 const router = useRouter();
 const submitting = ref(false);
+const errorMsg = ref('');
 
 const form = reactive({
   title: '',
@@ -202,8 +208,9 @@ onMounted(() => {
 });
 
 function addRound() {
+  const n = form.rounds.length + 1;
   form.rounds.push({
-    label: '',
+    label: `Round ${n}`,
     module_id: null,
     promoteTopX: 10,
   });
@@ -226,15 +233,31 @@ async function handleCreate() {
   }
   submitting.value = true;
   try {
+    // Nettoyer les rounds : retirer module_id null, forcer promoteTopX en int
+    const cleanRounds = form.rounds.map((r) => ({
+      label: r.label || `Round`,
+      promoteTopX: Math.max(1, r.promoteTopX || 1),
+      ...(r.module_id ? { module_id: r.module_id } : {}),
+    }));
     const tournament = await store.createTournament({
-      ...form,
+      title: form.title,
+      description: form.description,
+      registrationFee: form.registrationFee || 0,
+      currency: form.currency,
+      maxParticipants: form.maxParticipants || 0,
+      rounds: cleanRounds,
       prizes: form.prizes.map((p) => ({ ...p, currency: form.currency })),
     } as any);
     if (tournament) {
       router.push(`/admin/tournaments/${tournament._id}`);
     }
-  } catch (e) {
-    // error handled in store
+  } catch (e: any) {
+    const data = e?.data || e?.response?._data;
+    if (data?.errors) {
+      errorMsg.value = data.errors.map((err: any) => err.msg).join(', ');
+    } else {
+      errorMsg.value = data?.error || store.error || 'Erreur lors de la creation';
+    }
   } finally {
     submitting.value = false;
   }
