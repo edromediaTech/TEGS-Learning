@@ -4,6 +4,24 @@
     <!-- Hero -->
     <header class="relative overflow-hidden">
       <!-- Animated background particles -->
+      <!-- Top nav bar -->
+      <div class="relative z-20 border-b border-white/10 bg-black/20 backdrop-blur-sm">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <span class="text-white font-black text-lg">TEGS-Arena</span>
+          <div class="flex items-center space-x-6">
+            <NuxtLink to="/docs" class="text-sm text-gray-300 hover:text-white transition-colors">
+              Centre d'Aide
+            </NuxtLink>
+            <NuxtLink to="/docs/faq" class="text-sm text-gray-300 hover:text-white transition-colors">
+              FAQ
+            </NuxtLink>
+            <NuxtLink to="/login" class="text-sm text-amber-400 hover:text-amber-300 font-medium transition-colors">
+              Connexion
+            </NuxtLink>
+          </div>
+        </div>
+      </div>
+
       <div class="absolute inset-0">
         <div class="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-transparent to-orange-500/10"></div>
         <div class="particle particle-1"></div>
