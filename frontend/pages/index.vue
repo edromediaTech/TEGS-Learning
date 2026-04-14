@@ -219,9 +219,14 @@
         <div class="text-sm text-gray-500">
           TEGS-Arena &mdash; Plateforme de concours academiques
         </div>
-        <NuxtLink to="/login" class="text-sm text-amber-400 hover:text-amber-300 font-medium transition-colors">
-          Connexion Administrateur
-        </NuxtLink>
+        <div class="flex items-center space-x-6">
+          <NuxtLink to="/docs" class="text-sm text-gray-400 hover:text-white font-medium transition-colors">
+            Centre d'Aide
+          </NuxtLink>
+          <NuxtLink to="/login" class="text-sm text-amber-400 hover:text-amber-300 font-medium transition-colors">
+            Connexion Administrateur
+          </NuxtLink>
+        </div>
       </div>
     </footer>
   </div>
