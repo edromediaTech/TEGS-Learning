@@ -182,11 +182,13 @@
 <script setup lang="ts">
 import { useTournamentStore } from '~/stores/tournaments';
 import { useModulesStore } from '~/stores/modules';
+import { useAuthStore } from '~/stores/auth';
 
 definePageMeta({ middleware: 'auth' });
 
 const store = useTournamentStore();
 const moduleStore = useModulesStore();
+const authStore = useAuthStore();
 const router = useRouter();
 const submitting = ref(false);
 const errorMsg = ref('');
@@ -247,6 +249,7 @@ async function handleCreate() {
       maxParticipants: form.maxParticipants || 0,
       rounds: cleanRounds,
       prizes: form.prizes.map((p) => ({ ...p, currency: form.currency })),
+      tenant_id: authStore.tenant_id,
     } as any);
     if (tournament) {
       router.push(`/admin/tournaments/${tournament._id}`);
