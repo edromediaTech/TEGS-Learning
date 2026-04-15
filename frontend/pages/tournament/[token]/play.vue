@@ -64,15 +64,60 @@
             </div>
           </div>
 
-          <!-- Instructions -->
-          <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 mb-6 text-left text-sm text-amber-200">
-            <p class="font-bold mb-2">Instructions :</p>
-            <ul class="space-y-1 list-disc list-inside text-xs">
-              <li>Repondez a toutes les questions</li>
-              <li>Le classement est base sur le score puis la duree</li>
-              <li v-if="moduleInfo.globalTimeLimit">Temps limite : {{ Math.floor(moduleInfo.globalTimeLimit / 60) }} minutes</li>
-              <li>Une fois soumis, vous ne pouvez pas modifier vos reponses</li>
-            </ul>
+          <!-- Regles de passation -->
+          <div class="space-y-3 mb-6 text-left">
+
+            <!-- Instructions generales -->
+            <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-sm text-amber-200">
+              <p class="font-bold mb-2 flex items-center"><span class="mr-2">&#128221;</span> Instructions</p>
+              <ul class="space-y-1.5 text-xs">
+                <li class="flex items-start"><span class="mr-2 shrink-0">&#9679;</span> Repondez a toutes les questions dans le temps imparti</li>
+                <li class="flex items-start"><span class="mr-2 shrink-0">&#9679;</span> Le classement est base sur le <strong>score (%)</strong> puis le <strong>temps de reponse</strong></li>
+                <li v-if="moduleInfo.globalTimeLimit" class="flex items-start"><span class="mr-2 shrink-0">&#9200;</span> <strong>Temps limite : {{ Math.floor(moduleInfo.globalTimeLimit / 60) }} minutes</strong> — le quiz est soumis automatiquement a l'expiration</li>
+                <li class="flex items-start"><span class="mr-2 shrink-0">&#9679;</span> Une fois soumis, vous <strong>ne pouvez pas</strong> modifier vos reponses</li>
+              </ul>
+            </div>
+
+            <!-- Materiel requis -->
+            <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 text-sm text-blue-200">
+              <p class="font-bold mb-2 flex items-center"><span class="mr-2">&#128247;</span> Materiel requis</p>
+              <ul class="space-y-1.5 text-xs">
+                <li class="flex items-center"><span class="text-green-400 mr-2">&#10003;</span> Connexion internet stable (Wi-Fi ou 4G)</li>
+                <li class="flex items-center"><span class="text-green-400 mr-2">&#10003;</span> Navigateur a jour (Chrome, Firefox, Safari)</li>
+                <li v-if="moduleInfo.proctoring !== 'none'" class="flex items-center">
+                  <span class="text-green-400 mr-2">&#10003;</span> <strong>Camera fonctionnelle</strong> — surveillance active
+                </li>
+                <li v-if="moduleInfo.proctoring === 'video'" class="flex items-center">
+                  <span class="text-green-400 mr-2">&#10003;</span> <strong>Microphone</strong> — enregistrement audio actif
+                </li>
+                <li class="flex items-center"><span class="text-green-400 mr-2">&#10003;</span> Votre code TKT-XXX (deja saisi)</li>
+              </ul>
+            </div>
+
+            <!-- Surveillance -->
+            <div v-if="moduleInfo.surveillanceMode === 'strict'" class="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-sm text-red-200">
+              <p class="font-bold mb-2 flex items-center"><span class="mr-2">&#128680;</span> Mode surveillance STRICT</p>
+              <ul class="space-y-1.5 text-xs">
+                <li class="flex items-start"><span class="mr-2 shrink-0">&#9888;</span> Le quiz s'affiche en <strong>plein ecran obligatoire</strong></li>
+                <li class="flex items-start"><span class="mr-2 shrink-0">&#9888;</span> <strong>Copier-coller desactive</strong> pendant l'examen</li>
+                <li class="flex items-start"><span class="mr-2 shrink-0">&#9888;</span> <strong>Changement d'onglet detecte</strong> — chaque sortie est comptabilisee</li>
+                <li v-if="moduleInfo.proctoring !== 'none'" class="flex items-start"><span class="mr-2 shrink-0">&#9888;</span> Des <strong>captures photo</strong> sont prises aleatoirement pendant l'examen</li>
+              </ul>
+            </div>
+
+            <!-- Cas d'elimination -->
+            <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-4 text-sm text-red-300">
+              <p class="font-bold mb-2 flex items-center"><span class="mr-2">&#128683;</span> Cas d'elimination</p>
+              <ul class="space-y-1.5 text-xs">
+                <li class="flex items-start"><span class="text-red-400 mr-2">&#10005;</span> Score insuffisant — seuls les <strong>Top {{ roundInfo.promoteTopX || 'X' }}</strong> sont qualifies</li>
+                <li class="flex items-start"><span class="text-red-400 mr-2">&#10005;</span> Non-soumission — si vous ne soumettez pas vos reponses avant la fin du timer</li>
+                <li v-if="moduleInfo.surveillanceMode === 'strict'" class="flex items-start"><span class="text-red-400 mr-2">&#10005;</span> Trop de sorties d'onglet (max 3) — <strong>soumission automatique forcee</strong></li>
+                <li class="flex items-start"><span class="text-red-400 mr-2">&#10005;</span> Fraude detectee — tentative de copie, aide externe ou usurpation d'identite</li>
+                <li class="flex items-start"><span class="text-red-400 mr-2">&#10005;</span> Deconnexion prolongee — si votre connexion est perdue trop longtemps</li>
+                <li v-if="moduleInfo.proctoring !== 'none'" class="flex items-start"><span class="text-red-400 mr-2">&#10005;</span> Camera desactivee ou obstruee pendant l'examen</li>
+              </ul>
+            </div>
+
           </div>
 
           <button @click="launchQuiz"
@@ -189,6 +234,7 @@ async function verifyToken() {
     participantInfo.value = res.participant;
     tournamentTitle.value = res.tournament.title;
     roundInfo.value = res.round;
+    totalRounds.value = res.totalRounds || 0;
     moduleInfo.value = res.module;
     step.value = 'briefing';
   } catch (e: any) {

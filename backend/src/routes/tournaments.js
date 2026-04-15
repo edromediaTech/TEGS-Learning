@@ -369,7 +369,7 @@ router.get('/play/:competitionToken', async (req, res, next) => {
     // Recuperer le module et son shareToken
     const Module = require('../models/Module');
     const mod = await Module.findById(activeRound.module_id)
-      .select('title shareToken shareEnabled globalTimeLimit evaluationType liveStartTime liveEndTime')
+      .select('title shareToken shareEnabled globalTimeLimit evaluationType liveStartTime liveEndTime surveillanceMode proctoring contestMode')
       .lean();
 
     if (!mod) {
@@ -404,11 +404,16 @@ router.get('/play/:competitionToken', async (req, res, next) => {
         order: activeRound.order,
         label: activeRound.label,
         startTime: activeRound.startTime,
+        promoteTopX: activeRound.promoteTopX,
       },
+      totalRounds: tournament.rounds.length,
       module: {
         title: mod.title,
         shareToken: mod.shareToken,
         globalTimeLimit: mod.globalTimeLimit,
+        surveillanceMode: mod.surveillanceMode || 'light',
+        proctoring: mod.proctoring || 'none',
+        contestMode: mod.contestMode || false,
       },
     });
   } catch (err) {
