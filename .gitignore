@@ -34,8 +34,8 @@ npm-debug.log*
 # Firebase
 frontend/.firebase/
 
-# Captures / screenshots
-captures/
+# Captures / screenshots (PNG tracked for docs)
+captures/.gitkeep
 
 # Test scripts (manual)
 backend/test-*.js

@@ -37,6 +37,10 @@ La plateforme a ete construite en 10 sprints (Auth, xAPI, Modules, Block Builder
 | **Admin DDENE** | Gere les tournois, les agents, les finances | Admin dashboard complet |
 | **SuperAdmin** | Configuration globale, bypass toutes contraintes | Acces total |
 
+### Apercu de la page de connexion
+
+![Page de connexion TEGS-Arena](../captures/01-login-page.png)
+
 ---
 
 # II. Architecture Technique (The Stack)
@@ -102,6 +106,10 @@ Origins autorisees:
 
 ## 2.3. Frontend & Mobile
 
+### Apercu du Dashboard Administrateur
+
+![Dashboard administrateur TEGS-Arena](../captures/02-admin-dashboard.png)
+
 **Stack:** Nuxt 3.15 (SSR off/SPA) + Pinia + Tailwind CSS + Socket.io-client + Chart.js
 
 | Composant | Nombre |
@@ -142,6 +150,10 @@ Plugins: core, cli, android, app, camera, push-notifications,
 # III. Modules Fonctionnels (Core Features)
 
 ## 3.1. Moteur de Tournoi
+
+### Apercu de la gestion des tournois
+
+![Interface de gestion des tournois](../captures/03-tournament-management.png)
 
 ### Pipeline eliminatoire
 
@@ -191,6 +203,10 @@ Tournament {
 }
 ```
 
+### Apercu de l'arbre de progression (Bracket)
+
+![Arbre de progression du tournoi](../captures/04-tournament-bracket.png)
+
 ### Endpoints tournoi
 
 | Route | Methode | Description |
@@ -214,6 +230,14 @@ Tournament {
 ---
 
 ## 3.2. Fintech & POS (Paiement Multi-Canal)
+
+### Apercu du Terminal POS Agent
+
+![Terminal POS de collecte agent](../captures/06-agent-pos-terminal.png)
+
+### Apercu de l'inscription publique
+
+![Page d'inscription publique au tournoi](../captures/09-public-registration.png)
 
 ### 3 canaux de paiement
 
@@ -323,6 +347,9 @@ capacitor.config.ts
 ### 3 modes adaptatifs
 
 **Mode Candidat** (`/mobile/warroom/[id]`):
+
+![Interface War Room mobile](../captures/08-mobile-warroom.png)
+
 ```
 Lobby (attente) → Countdown (10s) → Lockdown (fullscreen) → Results
 - Fullscreen force
@@ -332,6 +359,9 @@ Lobby (attente) → Countdown (10s) → Lockdown (fullscreen) → Results
 ```
 
 **Mode Superviseur** (`/mobile/supervisor`):
+
+![Scanner QR superviseur](../captures/15-supervisor-scanner.png)
+
 ```
 - Scanner QR continu (html5-qrcode)
 - Verification badge → vibration OK/erreur
@@ -361,6 +391,10 @@ Lobby (attente) → Countdown (10s) → Lockdown (fullscreen) → Results
 ---
 
 ## 3.4. Module Sponsoring
+
+### Apercu de la gestion des sponsors
+
+![Interface de gestion des sponsors](../captures/13-sponsor-management.png)
 
 ### Types de sponsors
 
@@ -414,6 +448,10 @@ Eleve s'inscrit:
 
 ## 3.5. Broadcasting & Engagement
 
+### Apercu Arena TV Live
+
+![Overlay de diffusion Arena TV Live](../captures/07-live-arena-tv.png)
+
 ### Live Arena TV
 
 **Page standard** (`/live-tournament/[token]`):
@@ -452,6 +490,8 @@ Raccourcis clavier:
 
 ### Fan Vote
 
+![Page de vote du public](../captures/14-fan-vote-page.png)
+
 ```
 Page: /tournament/[token]/vote (publique, pas d'inscription)
 Rate Limit: 1 vote par IP par heure
@@ -476,6 +516,10 @@ Double podium:
 # IV. Robustesse et Performance
 
 ## 4.1. Waiting Room
+
+### Apercu de la salle d'attente
+
+![Salle d'attente (Waiting Room)](../captures/12-waiting-room.png)
 
 ### TrafficController (singleton Node.js)
 
@@ -556,6 +600,10 @@ Tenant ──1:N──> User
 
 User ──1:N──> DeviceToken (FCM)
 ```
+
+### Apercu de l'editeur de modules (LCMS)
+
+![Editeur de blocs de contenu](../captures/05-module-editor.png)
 
 ### Detail des champs par modele
 
@@ -799,6 +847,10 @@ echo -n 'MONCASH_ID' | gcloud secrets versions add tegs-moncash-client-id --data
 
 ## 6.2. Monitoring
 
+### Apercu du dashboard Analytics
+
+![Dashboard Analytics et Reporting](../captures/10-analytics-dashboard.png)
+
 | Outil | Usage |
 |-------|-------|
 | Cloud Run logs | CLOUD_LOGGING_ONLY dans cloudbuild |
@@ -808,6 +860,10 @@ echo -n 'MONCASH_ID' | gcloud secrets versions add tegs-moncash-client-id --data
 | `/api/analytics/tournament-kpis/:id` | KPIs tournoi |
 
 ## 6.3. Documents PDF generes
+
+### Apercu du Podium Final
+
+![Podium final avec classement et prix](../captures/11-podium-reveal.png)
 
 | Document | Route | Contenu |
 |----------|-------|---------|

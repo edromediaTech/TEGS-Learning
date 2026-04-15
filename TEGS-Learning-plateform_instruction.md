@@ -18,6 +18,8 @@ L’architecture fonctionnelle de la plateforme peut être découpée en cinq gr
 - Utilisation de gabarits graphiques (templates) pour structurer les pages.
 - Prévisualisation des contenus dans le navigateur.
 
+![Aperçu de l'éditeur de modules](captures/05-module-editor.png)
+
 ### 2.2 Gestion des ressources pédagogiques
 
 - Insertion de textes, images, sons, vidéos et autres médias.
@@ -131,6 +133,8 @@ La structure d’un module dans OpenCrea Learning peut se décrire comme suit :
   - Conditions d’utilisation,
   - Formulaire de contact,
   - Inscription / connexion.
+
+![Page de connexion](captures/01-login-page.png)
 
 ### 5.2 Back-end (serveur et logique métier)
 

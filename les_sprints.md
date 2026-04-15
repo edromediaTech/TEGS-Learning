@@ -9,6 +9,8 @@ Responsabilité de l'Agent : Setup Node.js/Express, MongoDB, JWT et logique de f
 
 Critère de succès : Un utilisateur peut se connecter et ne voir que les données de son école.
 
+![Page de connexion multi-tenant](captures/01-login-page.png)
+
 Sprint 2 : Moteur xAPI & Validation
 Objectif : Transformer le backend en un réceptacle de données d'apprentissage.
 
@@ -23,6 +25,8 @@ Objectif : Créer l'interface de gestion des contenus.
 Responsabilité de l'Agent : CRUD des modules (Nuxt 3) et définition de l'arborescence (Sections/Écrans).
 
 Critère de succès : Pouvoir créer un nouveau cours "Mathématiques" et y ajouter des chapitres.
+
+![Éditeur de modules LCMS](captures/05-module-editor.png)
 
 Sprint 4 : Builder de Blocs & Preview
 Objectif : Permettre l'édition visuelle du contenu.
@@ -61,6 +65,8 @@ Responsabilité de l'Agent : Dockerisation, Cloud Run et configuration du CDN po
 
 Critère de succès : La plateforme est accessible via une URL publique avec un temps de chargement < 2s.
 
+![Dashboard administrateur](captures/02-admin-dashboard.png)
+
 📱 PHASE 5 : CONVERGENCE & ANALYTICS (L'INTELLIGENCE)
 Sprint 9 : Bridge Mobile & Desktop
 Objectif : Unifier l'écosystème DDENE.
@@ -75,3 +81,5 @@ Objectif : Fournir des outils de décision à la DDENE.
 Responsabilité de l'Agent : Tableaux de bord visuels (KPIs, graphiques de réussite par école).
 
 Critère de succès : L'inspecteur peut voir en un coup d'œil quelles écoles ont les meilleurs taux de réussite.
+
+![Dashboard Analytics et Reporting](captures/10-analytics-dashboard.png)
