@@ -292,6 +292,8 @@ Agent verse 4000 HTG a la DDENE
 - Bordereau de versement (en-tete DDENE, tableau transactions, QR scan, signatures)
 - Certificat champion (rang, prime, sponsors)
 
+![Reporting — resultats des participants avec export Excel et IA](../captures/16-reporting.png)
+
 ### Endpoints paiement
 
 | Route | Description |
@@ -378,6 +380,8 @@ Lobby (attente) → Countdown (10s) → Lockdown (fullscreen) → Results
 - Arena TV mobile
 - Vote public
 ```
+
+![Live Classroom — surveillance en temps reel des participants](../captures/17-live-classroom.png)
 
 ### Push Notifications (FCM)
 
@@ -818,7 +822,9 @@ amount, balanceBefore, balanceAfter, note, tenant_id
 
 # VI. Guide de Deploiement et Maintenance
 
-![Dashboard d'administration de la plateforme](../captures/02-admin-dashboard.png)
+![Gestion des organisations (75 ecoles, 136 utilisateurs)](../captures/22-tenants.png)
+
+![Gestion des utilisateurs par role](../captures/21-users-management.png)
 
 ## 6.1. Procedures de mise a jour (CI/CD)
 

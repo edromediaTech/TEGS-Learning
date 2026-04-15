@@ -11,7 +11,7 @@ Sprint 2 : "Fais un test POST sur l'endpoint xAPI et montre-moi que le JSON est 
 Phase 2 : La Création
 Sprint 3 : "Montre-moi la structure du JSON généré pour un module. Est-il assez flexible pour ajouter de nouveaux types d'activités plus tard ?"
 
-![Structure de modules dans le gestionnaire](captures/03-tournament-management.png)
+![Structure de modules dans le gestionnaire](captures/02-admin-dashboard.png)
 
 Sprint 4 : "En mode Preview, est-ce que les composants sont responsives pour les tablettes utilisées par les inspecteurs de la DDENE ?"
 
@@ -20,7 +20,7 @@ Sprint 4 : "En mode Preview, est-ce que les composants sont responsives pour les
 Phase 3 : Le Standard
 Sprint 5 : "Passe le fichier cmi5.xml généré dans un validateur officiel. Est-ce qu'il y a des erreurs de schéma ?"
 
-![Gestion des modules et export cmi5](captures/05-module-editor.png)
+![Configuration du module et export cmi5](captures/20-settings.png)
 
 Sprint 6 : "Si je ferme le navigateur brusquement au milieu d'un quiz, est-ce que le verbe Terminated est bien envoyé au LRS ?"
 
@@ -29,11 +29,11 @@ Sprint 6 : "Si je ferme le navigateur brusquement au milieu d'un quiz, est-ce qu
 Phase 4 : Le Cloud
 Sprint 7 : "Génère une URL signée pour une vidéo. Est-ce qu'elle expire bien après 1 heure ? Est-ce que le bucket est bien protégé contre l'accès public ?"
 
-![Gestion des médias cloud et URLs signées](captures/02-admin-dashboard.png)
+![Mediatheque — gestion des medias cloud et URLs signees](captures/19-mediatheque.png)
 
 Sprint 8 : "Quel est le score de performance (Lighthouse) de la page de cours sur une connexion 3G/4G simulée ?"
 
-![Dashboard admin déployé](captures/02-admin-dashboard.png)
+![Plateforme deployee — Lobby Arena public](captures/24-lobby-arena.png)
 
 Phase 5 : L'Intelligence
 Sprint 9 : "Comment gères-tu les doublons si deux tablettes synchronisent la même activité d'un élève en même temps ?"

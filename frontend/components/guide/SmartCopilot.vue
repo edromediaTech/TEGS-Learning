@@ -1,18 +1,17 @@
 <template>
   <!-- ═══════════════════════════════════════════ -->
-  <!-- FLOATING BUBBLE                              -->
+  <!-- FLOATING BUBBLE (draggable)                  -->
   <!-- ═══════════════════════════════════════════ -->
   <div
+    v-if="!copilot.panelOpen"
     ref="bubbleRef"
-    class="fixed z-50 select-none"
+    class="fixed z-50 select-none cursor-grab active:cursor-grabbing"
     :style="bubbleStyle"
     @mousedown.prevent="startDrag"
     @touchstart.prevent="startDrag"
   >
-    <!-- Bubble button -->
     <button
-      v-if="!copilot.panelOpen"
-      @click.stop="copilot.togglePanel()"
+      @click.stop="openPanel()"
       class="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-2xl flex items-center justify-center hover:scale-110 transition-transform duration-200 ring-4 ring-white/20 cursor-pointer"
       :class="{ 'animate-bounce': showPulse }"
       title="TEGS Copilot"
@@ -21,17 +20,16 @@
         <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
       </svg>
     </button>
+  </div>
 
-    <!-- ═══════════════════════════════════════════ -->
-    <!-- PANEL                                        -->
-    <!-- ═══════════════════════════════════════════ -->
-    <Transition name="copilot-panel">
-      <div
-        v-if="copilot.panelOpen"
-        class="w-[380px] max-h-[560px] bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col"
-        @mousedown.stop
-        @touchstart.stop
-      >
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- PANEL (fixed bottom-right, above bubble)     -->
+  <!-- ═══════════════════════════════════════════ -->
+  <Transition name="copilot-panel">
+    <div
+      v-if="copilot.panelOpen"
+      class="fixed z-50 right-4 bottom-4 w-[380px] max-h-[calc(100vh-100px)] bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden flex flex-col"
+    >
         <!-- Header -->
         <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-5 py-4 flex items-center justify-between flex-shrink-0">
           <div class="flex items-center gap-2.5">
@@ -265,8 +263,8 @@
           </button>
         </div>
       </div>
-    </Transition>
-  </div>
+  </Transition>
+
 </template>
 
 <script setup lang="ts">
@@ -313,6 +311,7 @@ const filteredMissions = computed(() => {
 
 // ─── Bubble position (draggable) ───
 const isDragging = ref(false);
+const hasDragged = ref(false);
 const dragOffset = ref({ x: 0, y: 0 });
 
 const bubbleStyle = computed(() => {
@@ -323,10 +322,18 @@ const bubbleStyle = computed(() => {
   return { right: '24px', bottom: '24px' };
 });
 
+/** Open panel only if user didn't drag */
+function openPanel() {
+  if (!hasDragged.value) {
+    copilot.togglePanel();
+  }
+  hasDragged.value = false;
+}
+
 function startDrag(e: MouseEvent | TouchEvent) {
-  if (copilot.panelOpen) return;
   const el = bubbleRef.value;
   if (!el) return;
+  hasDragged.value = false;
   const rect = el.getBoundingClientRect();
   const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
   const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
@@ -334,12 +341,14 @@ function startDrag(e: MouseEvent | TouchEvent) {
   isDragging.value = true;
   document.addEventListener('mousemove', onDrag);
   document.addEventListener('mouseup', stopDrag);
-  document.addEventListener('touchmove', onDrag);
+  document.addEventListener('touchmove', onDrag, { passive: false });
   document.addEventListener('touchend', stopDrag);
 }
 
 function onDrag(e: MouseEvent | TouchEvent) {
   if (!isDragging.value) return;
+  e.preventDefault();
+  hasDragged.value = true;
   const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
   const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
   const x = Math.max(0, Math.min(window.innerWidth - 60, clientX - dragOffset.value.x));

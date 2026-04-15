@@ -37,7 +37,7 @@ Responsabilité de l'Agent : Création des composants UI (Texte, Vidéo, Quiz) e
 
 Critère de succès : Un enseignant peut glisser une vidéo et un quiz dans un écran et voir le rendu final.
 
-![Aperçu du builder de blocs et mode preview](captures/05-module-editor.png)
+![Aperçu du builder de blocs et mode preview](captures/25-studio-ia.png)
 
 📡 PHASE 3 : MOTEUR CMI5 (LE STANDARD)
 Sprint 5 : Launch Service & Manifest XML
@@ -47,7 +47,7 @@ Responsabilité de l'Agent : Générateur de fichier cmi5.xml et protocole de la
 
 Critère de succès : Le système génère un package que n'importe quel LMS cmi5 pourrait identifier.
 
-![Module de formation avec structure cmi5](captures/03-tournament-management.png)
+![Configuration et export cmi5 du module](captures/20-settings.png)
 
 Sprint 6 : Runtime Tracking JS
 Objectif : Connecter le comportement de l'élève au LRS.
@@ -66,7 +66,7 @@ Responsabilité de l'Agent : Intégration Google Cloud Storage et génération d
 
 Critère de succès : Les vidéos sont stockées sur GCP et ne sont accessibles qu'aux élèves connectés.
 
-![Gestion des médias sur le cloud](captures/02-admin-dashboard.png)
+![Mediatheque — gestion des medias sur le cloud GCS](captures/19-mediatheque.png)
 
 Sprint 8 : Déploiement & Optimisation
 Objectif : Mettre la plateforme en ligne pour le Nord-Est.
@@ -75,7 +75,7 @@ Responsabilité de l'Agent : Dockerisation, Cloud Run et configuration du CDN po
 
 Critère de succès : La plateforme est accessible via une URL publique avec un temps de chargement < 2s.
 
-![Dashboard administrateur](captures/02-admin-dashboard.png)
+![Lobby Arena — plateforme deployee et accessible](captures/24-lobby-arena.png)
 
 📱 PHASE 5 : CONVERGENCE & ANALYTICS (L'INTELLIGENCE)
 Sprint 9 : Bridge Mobile & Desktop

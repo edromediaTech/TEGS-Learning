@@ -27,7 +27,7 @@ Lâ€™architecture fonctionnelle de la plateforme peut Ãªtre dÃ©coupÃ©e
 - RÃ©utilisation de ressources dans plusieurs modules (logique LCMS).
 - Gestion centralisÃ©e des mÃ©dias (bibliothÃ¨que de ressources).
 
-![Gestion des mÃ©dias et ressources pÃ©dagogiques](captures/02-admin-dashboard.png)
+![Mediatheque — gestion des medias et ressources pedagogiques](captures/19-mediatheque.png)
 
 ### 2.3 Moteur SCORM / exportation vers LMS
 
@@ -35,6 +35,8 @@ Lâ€™architecture fonctionnelle de la plateforme peut Ãªtre dÃ©coupÃ©e
 - Production du manifest SCORM et des fichiers associÃ©s.
 - CompatibilitÃ© avec les principaux LMS supportant SCORM 1.2.
 - Fonctions avancÃ©es de partage vers un LMS disponibles dans les offres payantes.
+
+![Configuration du module — onglets Proprietes, Exporter, Partager](captures/20-settings.png)
 
 ### 2.4 Couche prÃ©sentation / diffusion directe
 
@@ -54,6 +56,8 @@ Lâ€™architecture fonctionnelle de la plateforme peut Ãªtre dÃ©coupÃ©e
 - Mise Ã  disposition dâ€™une version gratuite, limitÃ©e sur certaines fonctionnalitÃ©s.
 - Support via formulaire de contact / canaux dÃ©diÃ©s.
 
+![Plans d'abonnement et facturation](captures/18-facturation.png)
+
 ---
 
 ## 3. ModÃ¨le dâ€™usage pÃ©dagogique
@@ -68,7 +72,7 @@ Plusieurs scÃ©narios dâ€™usage typiques sont supportÃ©s par la structur
 
 Chaque scÃ©nario repose sur la mÃªme logique : un module structurÃ© en Ã©crans, chaque Ã©cran utilisant un template et intÃ©grant des blocs de contenu et dâ€™interactivitÃ©.
 
-![Structure de modules dans le gestionnaire](captures/03-tournament-management.png)
+![Structure de modules dans le gestionnaire](captures/02-admin-dashboard.png)
 
 ---
 
@@ -168,13 +172,15 @@ La structure dâ€™un module dans OpenCrea Learning peut se dÃ©crire comme 
   - Audios,
   - Ressources statiques.
 
-![Architecture cloud et stockage GCP](captures/02-admin-dashboard.png)
+![Mediatheque — stockage cloud GCS](captures/19-mediatheque.png)
 
 ### 5.4 IntÃ©gration avec des LMS externes
 
 - Export des modules au format SCORM 1.2.
 - Import manuel du paquet SCORM dans un LMS (Moodle, etc.).
 - Pour certaines offres : mÃ©canisme de partage / publication plus automatisÃ©.
+
+![Configuration du module — onglet Exporter (SCORM/cmi5)](captures/20-settings.png)
 
 ---
 
@@ -207,7 +213,7 @@ La structure dâ€™un module dans OpenCrea Learning peut se dÃ©crire comme 
    - QCM avec plusieurs questions.
    - Score calculÃ© et renvoyÃ© via SCORM au LMS.
 
-![Exemple de quiz final avec suivi des scores](captures/08-mobile-warroom.png)
+![Reporting — resultats du quiz avec scores par participant](captures/16-reporting.png)
 
 ---
 
