@@ -102,8 +102,11 @@ const sidebarSections = [
     role: 'admin', label: 'Administrateur',
     items: [
       { label: 'Creer un tournoi', path: '/docs/admin/tournois' },
-      { label: 'Gerer les utilisateurs', path: '/docs/admin/users' },
+      { label: 'Modules & Studio', path: '/docs/admin/modules' },
+      { label: 'Calibrage duree quiz', path: '/docs/admin/calibrage' },
+      { label: 'Generation quiz par IA', path: '/docs/admin/ia-quiz' },
       { label: 'Piloter le live', path: '/docs/admin/live' },
+      { label: 'Gerer les utilisateurs', path: '/docs/admin/users' },
     ],
   },
 ];

@@ -78,11 +78,13 @@
           class="group bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:border-purple-200 transition-all">
           <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">&#9881;&#65039;</div>
           <h3 class="font-bold text-gray-900 mb-2">Guide Admin</h3>
-          <p class="text-sm text-gray-500 mb-3">Creer un tournoi, gerer les modules, piloter le live.</p>
+          <p class="text-sm text-gray-500 mb-3">Tournois, modules, calibrage quiz, generation IA, live et diffusion.</p>
           <ul class="space-y-1 text-xs text-gray-400">
             <li>&#8594; Creer un tournoi</li>
-            <li>&#8594; Gerer les utilisateurs</li>
-            <li>&#8594; Piloter le live</li>
+            <li>&#8594; Modules & Studio</li>
+            <li>&#8594; Calibrage duree quiz</li>
+            <li>&#8594; Generation quiz par IA</li>
+            <li>&#8594; Piloter le live & diffusion</li>
           </ul>
         </NuxtLink>
 
