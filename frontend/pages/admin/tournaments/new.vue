@@ -99,15 +99,25 @@
                 <div class="w-8 h-8 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center font-bold text-sm shrink-0">
                   {{ i + 1 }}
                 </div>
-                <div class="flex-1 grid grid-cols-3 gap-3">
+                <div class="flex-1 grid grid-cols-2 md:grid-cols-4 gap-3">
                   <input v-model="round.label" type="text" required
                     class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none"
                     :placeholder="`Round ${i + 1}`"
                   />
-                  <select v-model="round.module_id"
+                  <select v-model="round.module_id" @change="round.section_index = null"
                     class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none">
                     <option :value="null">Module (optionnel)</option>
                     <option v-for="m in modules" :key="m._id" :value="m._id">{{ m.title }}</option>
+                  </select>
+                  <select v-model="round.section_index"
+                    :disabled="!round.module_id"
+                    class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none disabled:opacity-50 disabled:bg-gray-100">
+                    <option :value="null">Tout le module</option>
+                    <option
+                      v-for="(sec, idx) in getModuleSections(round.module_id)"
+                      :key="idx"
+                      :value="idx"
+                    >{{ sec.title || `Chapitre ${idx + 1}` }}</option>
                   </select>
                   <input v-model.number="round.promoteTopX" type="number" min="1" required
                     class="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-amber-400 outline-none"
@@ -215,7 +225,7 @@ const form = reactive({
   registrationFee: 0,
   currency: 'HTG' as 'HTG' | 'USD',
   maxParticipants: 0,
-  rounds: [] as { label: string; module_id: string | null; promoteTopX: number }[],
+  rounds: [] as { label: string; module_id: string | null; section_index: number | null; promoteTopX: number }[],
   prizes: [] as { rank: number; label: string; amount: number; currency: 'HTG' | 'USD' }[],
 });
 
@@ -236,8 +246,15 @@ function addRound() {
   form.rounds.push({
     label: `Round ${n}`,
     module_id: null,
+    section_index: null,
     promoteTopX: 10,
   });
+}
+
+function getModuleSections(moduleId: string | null) {
+  if (!moduleId) return [];
+  const mod = modules.value.find((m: any) => m._id === moduleId);
+  return mod?.sections || [];
 }
 
 function addPrize() {

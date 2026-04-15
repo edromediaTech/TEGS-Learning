@@ -145,7 +145,7 @@
       <!-- Quiz iframe -->
       <iframe
         ref="quizFrame"
-        :src="`${baseURL}/modules/public/${moduleInfo.shareToken}`"
+        :src="quizIframeUrl"
         class="flex-1 w-full border-none"
         allow="camera;microphone"
         @load="onQuizLoaded">
@@ -220,6 +220,14 @@ const participantInfo = ref<any>({});
 const roundInfo = ref<any>({});
 const moduleInfo = ref<any>({});
 const submittedResult = ref<any>(null);
+
+const quizIframeUrl = computed(() => {
+  const base = `${baseURL}/modules/public/${moduleInfo.value.shareToken}`;
+  if (moduleInfo.value.section_index !== null && moduleInfo.value.section_index !== undefined) {
+    return `${base}?section=${moduleInfo.value.section_index}`;
+  }
+  return base;
+});
 
 async function verifyToken() {
   if (!competitionToken.value.trim()) return;

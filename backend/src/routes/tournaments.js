@@ -410,6 +410,7 @@ router.get('/play/:competitionToken', async (req, res, next) => {
       module: {
         title: mod.title,
         shareToken: mod.shareToken,
+        section_index: activeRound.section_index ?? null,
         globalTimeLimit: mod.globalTimeLimit,
         surveillanceMode: mod.surveillanceMode || 'light',
         proctoring: mod.proctoring || 'none',
@@ -486,6 +487,7 @@ router.post('/play/:competitionToken/submit', async (req, res, next) => {
     // Creer le QuizResult
     const quizResult = await QuizResult.create({
       module_id: activeRound.module_id,
+      section_index: activeRound.section_index ?? null,
       tenant_id: tournament.tenant_id,
       studentName: `${participant.firstName} ${participant.lastName}`,
       studentEmail: participant.email,

@@ -436,7 +436,16 @@ router.get('/public/:shareToken', async (req, res, next) => {
     }
 
     // Generer le HTML du lecteur avec le theme
-    const sections = mod.sections || [];
+    // Si ?section=N est passe, ne rendre que ce chapitre
+    const allSections = mod.sections || [];
+    let sections = allSections;
+    const sectionParam = req.query.section;
+    if (sectionParam !== undefined && sectionParam !== '') {
+      const idx = parseInt(sectionParam, 10);
+      if (!isNaN(idx) && idx >= 0 && idx < allSections.length) {
+        sections = [allSections[idx]];
+      }
+    }
     let nav = '';
     let content = '';
 

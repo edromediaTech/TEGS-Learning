@@ -19,6 +19,10 @@ const roundSchema = new mongoose.Schema({
     ref: 'Module',
     default: null,
   },
+  section_index: {
+    type: Number,
+    default: null,
+  },
   promoteTopX: {
     type: Number,
     required: true,
