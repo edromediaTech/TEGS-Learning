@@ -370,6 +370,9 @@ Lobby (attente) → Countdown (10s) → Lockdown (fullscreen) → Results
 ```
 
 **Mode Spectateur** (`/mobile` → `/live-tournament/[token]`):
+
+![Interface Arena TV Live pour spectateurs](../captures/07-live-arena-tv.png)
+
 ```
 - Liste tournois live
 - Arena TV mobile
@@ -551,6 +554,8 @@ Admin controls:
 ```
 
 ## 4.2. Proctoring
+
+![War Room avec proctoring actif](../captures/08-mobile-warroom.png)
 
 | Niveau | Mecanismes |
 |--------|-----------|
@@ -773,6 +778,8 @@ amount, balanceBefore, balanceAfter, note, tenant_id
 
 ## 5.3. Flux de paiements et regularisation
 
+![Inscription publique avec choix de paiement](../captures/09-public-registration.png)
+
 ### Flow inscription payante
 
 ```
@@ -810,6 +817,8 @@ amount, balanceBefore, balanceAfter, note, tenant_id
 ---
 
 # VI. Guide de Deploiement et Maintenance
+
+![Dashboard d'administration de la plateforme](../captures/02-admin-dashboard.png)
 
 ## 6.1. Procedures de mise a jour (CI/CD)
 
@@ -907,6 +916,8 @@ GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account.json
 ```
 
 ## 7.2. Resultats de certification
+
+![Podium final et resultats de certification](../captures/11-podium-reveal.png)
 
 ### Test Tournaments (110/110 PASS)
 ```

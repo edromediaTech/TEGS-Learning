@@ -1,123 +1,133 @@
-# Structure détaillée de la plateforme de formation OpenCrea Learning
+# Structure dÃ©taillÃ©e de la plateforme de formation OpenCrea Learning
 
-## 1. Vue d’ensemble
+## 1. Vue dâ€™ensemble
 
-OpenCrea Learning est une plateforme en ligne de type outil auteur (LCMS) permettant de créer des modules de formation multimédias exportables en SCORM 1.2.  
-Elle s’adresse aux formateurs, concepteurs pédagogiques et créateurs de contenus qui souhaitent produire rapidement des modules e‑learning et les intégrer ensuite dans un LMS compatible SCORM.
+OpenCrea Learning est une plateforme en ligne de type outil auteur (LCMS) permettant de crÃ©er des modules de formation multimÃ©dias exportables en SCORM 1.2.  
+Elle sâ€™adresse aux formateurs, concepteurs pÃ©dagogiques et crÃ©ateurs de contenus qui souhaitent produire rapidement des modules eâ€‘learning et les intÃ©grer ensuite dans un LMS compatible SCORM.
 
 ---
 
 ## 2. Architecture fonctionnelle
 
-L’architecture fonctionnelle de la plateforme peut être découpée en cinq grands blocs :
+Lâ€™architecture fonctionnelle de la plateforme peut Ãªtre dÃ©coupÃ©e en cinq grands blocs :
 
-### 2.1 Couche auteur / édition de contenus
+### 2.1 Couche auteur / Ã©dition de contenus
 
-- Création de modules ou “documents” de formation.
-- Interface d’édition web avec organisation des écrans et des sections.
+- CrÃ©ation de modules ou â€œdocumentsâ€ de formation.
+- Interface dâ€™Ã©dition web avec organisation des Ã©crans et des sections.
 - Utilisation de gabarits graphiques (templates) pour structurer les pages.
-- Prévisualisation des contenus dans le navigateur.
+- PrÃ©visualisation des contenus dans le navigateur.
 
-![Aperçu de l'éditeur de modules](captures/05-module-editor.png)
+![AperÃ§u de l'Ã©diteur de modules](captures/05-module-editor.png)
 
-### 2.2 Gestion des ressources pédagogiques
+### 2.2 Gestion des ressources pÃ©dagogiques
 
-- Insertion de textes, images, sons, vidéos et autres médias.
-- Création d’activités interactives (notamment quiz).
-- Réutilisation de ressources dans plusieurs modules (logique LCMS).
-- Gestion centralisée des médias (bibliothèque de ressources).
+- Insertion de textes, images, sons, vidÃ©os et autres mÃ©dias.
+- CrÃ©ation dâ€™activitÃ©s interactives (notamment quiz).
+- RÃ©utilisation de ressources dans plusieurs modules (logique LCMS).
+- Gestion centralisÃ©e des mÃ©dias (bibliothÃ¨que de ressources).
+
+![Gestion des mÃ©dias et ressources pÃ©dagogiques](captures/02-admin-dashboard.png)
 
 ### 2.3 Moteur SCORM / exportation vers LMS
 
-- Génération automatique de paquets SCORM 1.2 à partir des modules créés.
-- Production du manifest SCORM et des fichiers associés.
-- Compatibilité avec les principaux LMS supportant SCORM 1.2.
-- Fonctions avancées de partage vers un LMS disponibles dans les offres payantes.
+- GÃ©nÃ©ration automatique de paquets SCORM 1.2 Ã  partir des modules crÃ©Ã©s.
+- Production du manifest SCORM et des fichiers associÃ©s.
+- CompatibilitÃ© avec les principaux LMS supportant SCORM 1.2.
+- Fonctions avancÃ©es de partage vers un LMS disponibles dans les offres payantes.
 
-### 2.4 Couche présentation / diffusion directe
+### 2.4 Couche prÃ©sentation / diffusion directe
 
 - Consultation directe des contenus dans OpenCrea Learning (lecture en ligne).
-- Possibilité d’utiliser les modules comme :
+- PossibilitÃ© dâ€™utiliser les modules comme :
   - Tutoriels interactifs,
-  - CV créatifs,
+  - CV crÃ©atifs,
   - Supports de formation,
-  - Plaquettes de présentation,
+  - Plaquettes de prÃ©sentation,
   - Albums de souvenirs.
+
+![Diffusion directe via la plateforme Arena](captures/07-live-arena-tv.png)
 
 ### 2.5 Services commerciaux et support
 
-- Offre d’abonnement mensuel (formule payante à partir d’un certain montant).
-- Mise à disposition d’une version gratuite, limitée sur certaines fonctionnalités.
-- Support via formulaire de contact / canaux dédiés.
+- Offre dâ€™abonnement mensuel (formule payante Ã  partir dâ€™un certain montant).
+- Mise Ã  disposition dâ€™une version gratuite, limitÃ©e sur certaines fonctionnalitÃ©s.
+- Support via formulaire de contact / canaux dÃ©diÃ©s.
 
 ---
 
-## 3. Modèle d’usage pédagogique
+## 3. ModÃ¨le dâ€™usage pÃ©dagogique
 
-Plusieurs scénarios d’usage typiques sont supportés par la structure de la plateforme :
+Plusieurs scÃ©narios dâ€™usage typiques sont supportÃ©s par la structure de la plateforme :
 
-- Tutoriels pas à pas illustrés.
-- CV interactifs avec navigation et médias.
-- Modules de formation structurés (chapitres, sections, quiz).
-- Supports visuels enrichis (plaquettes, présentations).
-- Récits multimédias ou albums de souvenirs.
+- Tutoriels pas Ã  pas illustrÃ©s.
+- CV interactifs avec navigation et mÃ©dias.
+- Modules de formation structurÃ©s (chapitres, sections, quiz).
+- Supports visuels enrichis (plaquettes, prÃ©sentations).
+- RÃ©cits multimÃ©dias ou albums de souvenirs.
 
-Chaque scénario repose sur la même logique : un module structuré en écrans, chaque écran utilisant un template et intégrant des blocs de contenu et d’interactivité.
+Chaque scÃ©nario repose sur la mÃªme logique : un module structurÃ© en Ã©crans, chaque Ã©cran utilisant un template et intÃ©grant des blocs de contenu et dâ€™interactivitÃ©.
+
+![Structure de modules dans le gestionnaire](captures/03-tournament-management.png)
 
 ---
 
-## 4. Structure interne d’un module
+## 4. Structure interne dâ€™un module
 
-La structure d’un module dans OpenCrea Learning peut se décrire comme suit :
+La structure dâ€™un module dans OpenCrea Learning peut se dÃ©crire comme suit :
 
 ### 4.1 Niveau module
 
-- Métadonnées :
+- MÃ©tadonnÃ©es :
   - Titre et sous-titre,
   - Langue,
   - Description,
   - Auteur.
-- Paramètres de navigation :
-  - Navigation linéaire ou libre,
+- ParamÃ¨tres de navigation :
+  - Navigation linÃ©aire ou libre,
   - Affichage de la progression,
-  - Retour arrière autorisé ou non.
-- Paramètres SCORM :
-  - Mode de complétion,
+  - Retour arriÃ¨re autorisÃ© ou non.
+- ParamÃ¨tres SCORM :
+  - Mode de complÃ©tion,
   - Gestion du score,
-  - Règles de tentative et de suivi.
+  - RÃ¨gles de tentative et de suivi.
 
 ### 4.2 Niveau sections / chapitres
 
-- Découpage du module en parties logiques (chapitres, séquences).
-- Possibilité de regrouper plusieurs écrans sous une même section.
-- Organisation hiérarchique (ordre des sections, prérequis éventuels).
+- DÃ©coupage du module en parties logiques (chapitres, sÃ©quences).
+- PossibilitÃ© de regrouper plusieurs Ã©crans sous une mÃªme section.
+- Organisation hiÃ©rarchique (ordre des sections, prÃ©requis Ã©ventuels).
 
-### 4.3 Niveau écrans / pages
+### 4.3 Niveau Ã©crans / pages
 
-- Chaque écran correspond à une page affichée à l’apprenant.
-- Structure définie par un template (mise en page prédéfinie).
+- Chaque Ã©cran correspond Ã  une page affichÃ©e Ã  lâ€™apprenant.
+- Structure dÃ©finie par un template (mise en page prÃ©dÃ©finie).
 - Zones de contenu typiques :
   - Zone de titre,
   - Zones de texte,
-  - Zone d’image,
-  - Zone vidéo,
-  - Zone pour une activité (quiz, interaction, etc.).
+  - Zone dâ€™image,
+  - Zone vidÃ©o,
+  - Zone pour une activitÃ© (quiz, interaction, etc.).
 
-### 4.4 Niveaux contenus et activités
+![AperÃ§u d'un Ã©cran avec blocs de contenu](captures/05-module-editor.png)
+
+### 4.4 Niveaux contenus et activitÃ©s
 
 - Contenus :
   - Texte riche (titres, listes, paragraphes),
-  - Images fixes (illustrations, schémas),
-  - Vidéos (démonstrations, tutoriels),
+  - Images fixes (illustrations, schÃ©mas),
+  - VidÃ©os (dÃ©monstrations, tutoriels),
   - Audio (commentaires, narrations).
-- Activités :
-  - Questions à choix multiples (QCM),
+- ActivitÃ©s :
+  - Questions Ã  choix multiples (QCM),
   - Vrai / Faux,
-  - Possibles autres types selon le moteur d’activité.
-- Paramètres d’activité :
+  - Possibles autres types selon le moteur dâ€™activitÃ©.
+- ParamÃ¨tres dâ€™activitÃ© :
   - Score,
   - Feedback,
-  - Critères de réussite.
+  - CritÃ¨res de rÃ©ussite.
+
+![Interface de quiz interactif dans le War Room](captures/08-mobile-warroom.png)
 
 ---
 
@@ -126,88 +136,96 @@ La structure d’un module dans OpenCrea Learning peut se décrire comme suit :
 ### 5.1 Front-end (interface utilisateur)
 
 - Application web accessible via un navigateur.
-- Éditeur de contenus (drag & drop ou formulaires de configuration).
-- Écran de gestion des modules (listing, duplication, suppression).
+- Ã‰diteur de contenus (drag & drop ou formulaires de configuration).
+- Ã‰cran de gestion des modules (listing, duplication, suppression).
 - Pages publiques :
-  - Page d’accueil,
-  - Conditions d’utilisation,
+  - Page dâ€™accueil,
+  - Conditions dâ€™utilisation,
   - Formulaire de contact,
   - Inscription / connexion.
 
 ![Page de connexion](captures/01-login-page.png)
 
-### 5.2 Back-end (serveur et logique métier)
+### 5.2 Back-end (serveur et logique mÃ©tier)
 
 - Gestion des utilisateurs et des droits.
-- Stockage des modules, écrans, sections et contenus.
-- Génération des paquets SCORM (archive + manifest + ressources).
-- Gestion des plans d’abonnement et de la facturation (côté offres payantes).
+- Stockage des modules, Ã©crans, sections et contenus.
+- GÃ©nÃ©ration des paquets SCORM (archive + manifest + ressources).
+- Gestion des plans d'abonnement et de la facturation (cÃ´tÃ© offres payantes).
 
-### 5.3 Stockage des données
+![Terminal de paiement POS Agent](captures/06-agent-pos-terminal.png)
 
-- Base de données :
+### 5.3 Stockage des donnÃ©es
+
+- Base de donnÃ©es :
   - Utilisateurs,
   - Modules,
   - Structures de pages,
-  - Activités et paramètres.
+  - ActivitÃ©s et paramÃ¨tres.
 - Stockage de fichiers :
   - Images,
-  - Vidéos,
+  - VidÃ©os,
   - Audios,
   - Ressources statiques.
 
-### 5.4 Intégration avec des LMS externes
+![Architecture cloud et stockage GCP](captures/02-admin-dashboard.png)
+
+### 5.4 IntÃ©gration avec des LMS externes
 
 - Export des modules au format SCORM 1.2.
 - Import manuel du paquet SCORM dans un LMS (Moodle, etc.).
-- Pour certaines offres : mécanisme de partage / publication plus automatisé.
+- Pour certaines offres : mÃ©canisme de partage / publication plus automatisÃ©.
 
 ---
 
-## 6. Exemple de module structuré
+## 6. Exemple de module structurÃ©
 
 ### 6.1 Description du module
 
-- Titre : *Initiation à la cybersécurité*
-- Public cible : débutants.
+- Titre : *Initiation Ã  la cybersÃ©curitÃ©*
+- Public cible : dÃ©butants.
 - Objectif : sensibiliser aux notions de base et aux bonnes pratiques.
 
-### 6.2 Structure des écrans
+### 6.2 Structure des Ã©crans
 
-1. **Écran 1 – Accueil**
-   - Titre du module, image d’illustration, court texte d’introduction.
+1. **Ã‰cran 1 â€“ Accueil**
+   - Titre du module, image dâ€™illustration, court texte dâ€™introduction.
 
-2. **Écran 2 – Objectifs de la formation**
-   - Liste des objectifs pédagogiques.
-   - Vidéo courte présentant le contenu du module.
+2. **Ã‰cran 2 â€“ Objectifs de la formation**
+   - Liste des objectifs pÃ©dagogiques.
+   - VidÃ©o courte prÃ©sentant le contenu du module.
 
-3. **Écran 3 – Concepts clés**
-   - Texte structuré en sections (mots de passe, phishing, mises à jour).
-   - Schémas / infographies.
+3. **Ã‰cran 3 â€“ Concepts clÃ©s**
+   - Texte structurÃ© en sections (mots de passe, phishing, mises Ã  jour).
+   - SchÃ©mas / infographies.
 
-4. **Écran 4 – Cas pratiques**
+4. **Ã‰cran 4 â€“ Cas pratiques**
    - Mise en situation avec exemples.
-   - Questions intermédiaires pour impliquer l’apprenant.
+   - Questions intermÃ©diaires pour impliquer lâ€™apprenant.
 
-5. **Écran 5 – Quiz final**
+5. **Ã‰cran 5 â€“ Quiz final**
    - QCM avec plusieurs questions.
-   - Score calculé et renvoyé via SCORM au LMS.
+   - Score calculÃ© et renvoyÃ© via SCORM au LMS.
+
+![Exemple de quiz final avec suivi des scores](captures/08-mobile-warroom.png)
 
 ---
 
-## 7. Idées de documentation complémentaire
+## 7. IdÃ©es de documentation complÃ©mentaire
 
-Pour aller plus loin, la documentation détaillée d’OpenCrea Learning pourrait inclure :
+Pour aller plus loin, la documentation dÃ©taillÃ©e dâ€™OpenCrea Learning pourrait inclure :
 
 - Un guide de prise en main pour les auteurs :
-  - Création d’un premier module,
+  - CrÃ©ation dâ€™un premier module,
   - Utilisation des templates,
-  - Ajout de médias et d’activités.
-- Un guide d’intégration SCORM pour les administrateurs de LMS :
-  - Export d’un module,
-  - Import dans différents LMS,
-  - Vérification du suivi et des scores.
-- Des modèles de bonnes pratiques pédagogiques :
-  - Structuration d’un module,
-  - Utilisation équilibrée des médias,
+  - Ajout de mÃ©dias et dâ€™activitÃ©s.
+- Un guide dâ€™intÃ©gration SCORM pour les administrateurs de LMS :
+  - Export dâ€™un module,
+  - Import dans diffÃ©rents LMS,
+  - VÃ©rification du suivi et des scores.
+- Des modÃ¨les de bonnes pratiques pÃ©dagogiques :
+  - Structuration dâ€™un module,
+  - Utilisation Ã©quilibrÃ©e des mÃ©dias,
   - Conception de quiz efficaces.
+
+![Dashboard analytique pour le suivi des rÃ©sultats](captures/10-analytics-dashboard.png)

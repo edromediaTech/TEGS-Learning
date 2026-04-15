@@ -1,10 +1,10 @@
 # 📸 TEGS-Arena — Guide Visuel de la Plateforme
 
-**Version:** 2.0 — Avril 2026  
+**Version:** 3.0 — Avril 2026  
 **Auteur:** edromediaTech  
 **Projet:** TEGS-Learning / TEGS-Arena
 
-> Ce document présente les captures d'écran de toutes les interfaces principales de la plateforme TEGS-Arena, plateforme nationale de compétitions éducatives pour Haïti / DDENE.
+> Ce document présente les captures d'écran de toutes les interfaces de la plateforme TEGS-Arena (25 écrans), plateforme nationale de compétitions éducatives pour Haïti / DDENE. Toutes les captures sont des screenshots réels de l'application.
 
 ---
 
@@ -25,6 +25,16 @@
 13. [Gestion des Sponsors](#13--gestion-des-sponsors)
 14. [Vote du Public](#14-️-vote-du-public)
 15. [Scanner Superviseur](#15--scanner-superviseur)
+16. [Reporting & Résultats](#16-reporting--résultats)
+17. [Live Classroom](#17-live-classroom-surveillance)
+18. [Abonnement & Facturation](#18-abonnement--facturation)
+19. [Médiathèque](#19-médiathèque)
+20. [Configuration du Module](#20-configuration-du-module)
+21. [Gestion des Utilisateurs](#21-gestion-des-utilisateurs)
+22. [Gestion des Organisations](#22-gestion-des-organisations)
+23. [Centre d'Aide](#23-centre-daide)
+24. [Lobby Arena](#24-lobby-arena-accueil)
+25. [Studio IA](#25-studio-ia-génération-de-quiz)
 
 ---
 
@@ -277,6 +287,161 @@ Interface mobile pour scanner et vérifier les badges QR des participants.
 - Vérification instantanée du badge (vibration OK/erreur via Capacitor Haptics)
 - Historique des scans avec horodatage
 - Alertes fraude en temps réel
+
+---
+
+## 16. Reporting & Résultats
+
+Tableau de bord de résultats avec export Excel et commentaires IA.
+
+![Reporting et résultats](../captures/16-reporting.png)
+
+**Chemin :** `/admin/modules/[id]/reporting`  
+**Fonctionnalités :**
+- KPIs : participants, score moyen, taux de réussite
+- Tableau des résultats par élève (score, %, statut)
+- Export Excel et commentaires IA (remédiation)
+- Durée totale du module configurable
+
+---
+
+## 17. Live Classroom (Surveillance)
+
+Interface de surveillance en temps réel des participants connectés.
+
+![Live Classroom monitoring](../captures/17-live-classroom.png)
+
+**Chemin :** `/admin/modules/[id]/live`  
+**Fonctionnalités :**
+- Monitoring : connectés, soumis, déconnectés, éliminés
+- Score moyen en temps réel
+- Onglet Proctoring (caméra de surveillance)
+- Alertes de perte de focus
+
+---
+
+## 18. Abonnement & Facturation
+
+Page de gestion des plans d'abonnement et licences.
+
+![Facturation et plans](../captures/18-facturation.png)
+
+**Chemin :** `/admin/billing`  
+**Plans disponibles :**
+- Gratuit (5 modules, 1 salle, 30 élèves)
+- Individuel ($10/mois, modules illimités)
+- Établissement ($15/siège, 30 salles)
+- Pro / Scolaire ($14.40/siège, illimité)
+
+---
+
+## 19. Médiathèque
+
+Gestionnaire de fichiers médias avec stockage cloud GCS.
+
+![Médiathèque](../captures/19-mediatheque.png)
+
+**Chemin :** `/admin/media`  
+**Fonctionnalités :**
+- Import de fichiers (images, vidéos, audio, PDF)
+- Stockage Google Cloud Storage
+- URLs signées sécurisées
+- Isolation par tenant
+
+---
+
+## 20. Configuration du Module
+
+Page de paramétrage avancé d'un module de formation.
+
+![Configuration module](../captures/20-settings.png)
+
+**Chemin :** `/admin/modules/[id]/settings`  
+**Onglets :**
+- Propriétés (titre, description, langue, statut)
+- Thème visuel
+- Mode évaluation
+- Chronomètre global
+- Partage (lien public)
+- Surveillance (proctoring)
+- Exporter (SCORM/cmi5)
+- Supprimer
+
+---
+
+## 21. Gestion des Utilisateurs
+
+Administration des comptes utilisateurs par rôle.
+
+![Gestion des utilisateurs](../captures/21-users-management.png)
+
+**Chemin :** `/admin/users`  
+**Fonctionnalités :**
+- CRUD utilisateurs avec filtre par rôle
+- Assignation de rôles (admin, teacher, student, agent)
+- Activation / désactivation de comptes
+- Isolation par tenant
+
+---
+
+## 22. Gestion des Organisations
+
+Administration multi-tenant des écoles et organisations.
+
+![Gestion des organisations](../captures/22-tenants.png)
+
+**Chemin :** `/admin/tenants`  
+**Fonctionnalités :**
+- Vue globale : total organisations, actives, utilisateurs
+- CRUD organisations avec code unique
+- Email de contact par organisation
+- Activation / désactivation
+
+---
+
+## 23. Centre d'Aide
+
+Hub de documentation interactive avec guides par rôle.
+
+![Centre d'aide](../captures/23-docs-hub.png)
+
+**Chemin :** `/docs`  
+**Sections :**
+- Guide Candidat (inscription, quiz, résultats, badge)
+- Guide Agent (collecte, quota)
+- Guide Sponsor (packs, bourses)
+- Guide Admin (tournois, modules, calibrage, IA, live)
+- FAQ interactive
+
+---
+
+## 24. Lobby Arena (Accueil)
+
+Page d'accueil publique avec grille des concours nationaux.
+
+![Lobby Arena](../captures/24-lobby-arena.png)
+
+**Chemin :** `/`  
+**Fonctionnalités :**
+- Compteurs animés (concours, inscriptions, primes)
+- Onglets : Inscriptions, Live, Terminés
+- Recherche de concours
+- Liens vers Centre d'Aide et Connexion
+
+---
+
+## 25. Studio IA (Génération de Quiz)
+
+Éditeur de blocs avec génération de questions par intelligence artificielle.
+
+![Studio IA](../captures/25-studio-ia.png)
+
+**Chemin :** `/admin/modules/[id]/screens/[screenId]`  
+**Fonctionnalités :**
+- Palette de blocs (contenu + questions)
+- Génération automatique de quiz par IA
+- 18 types de blocs disponibles
+- Prévisualisation en temps réel
 
 ---
 
