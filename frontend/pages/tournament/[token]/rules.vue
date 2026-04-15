@@ -257,6 +257,175 @@
         </div>
       </section>
 
+      <!-- ================================ -->
+      <!-- Section 7: Regles de passation -->
+      <!-- ================================ -->
+      <section class="bg-white/5 backdrop-blur rounded-2xl p-6 mb-6">
+        <h2 class="text-lg font-bold mb-4 flex items-center">
+          <span class="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center text-red-400 text-sm mr-3">7</span>
+          Regles de Passation du Quiz
+        </h2>
+
+        <!-- Deroulement -->
+        <div class="mb-5">
+          <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wide">Deroulement de l'examen</h3>
+          <div class="space-y-2">
+            <div class="flex items-start space-x-3 bg-white/5 rounded-xl p-4">
+              <span class="text-blue-400 text-lg shrink-0">&#128221;</span>
+              <div>
+                <div class="font-bold text-sm">Acces au quiz</div>
+                <div class="text-xs text-gray-500">Entrez votre code <strong class="text-white">TKT-XXX</strong> sur la page du concours quand le round est actif (badge LIVE).</div>
+              </div>
+            </div>
+            <div class="flex items-start space-x-3 bg-white/5 rounded-xl p-4">
+              <span class="text-amber-400 text-lg shrink-0">&#9200;</span>
+              <div>
+                <div class="font-bold text-sm">Temps limite</div>
+                <div class="text-xs text-gray-500">Chaque round a un chronometre. A l'expiration, vos reponses sont <strong class="text-white">soumises automatiquement</strong>.</div>
+              </div>
+            </div>
+            <div class="flex items-start space-x-3 bg-white/5 rounded-xl p-4">
+              <span class="text-green-400 text-lg shrink-0">&#127942;</span>
+              <div>
+                <div class="font-bold text-sm">Classement</div>
+                <div class="text-xs text-gray-500">Base sur le <strong class="text-white">score (%)</strong> puis le <strong class="text-white">temps de reponse</strong> en cas d'egalite. Plus vous etes rapide, mieux c'est.</div>
+              </div>
+            </div>
+            <div class="flex items-start space-x-3 bg-white/5 rounded-xl p-4">
+              <span class="text-purple-400 text-lg shrink-0">&#128274;</span>
+              <div>
+                <div class="font-bold text-sm">Soumission unique</div>
+                <div class="text-xs text-gray-500">Une fois soumis, vous <strong class="text-red-400">ne pouvez pas</strong> modifier vos reponses. Verifiez bien avant de valider.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Surveillance -->
+        <div class="mb-5">
+          <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wide">Surveillance & Integrite</h3>
+          <div class="space-y-2">
+            <div class="flex items-start space-x-3 bg-white/5 rounded-xl p-4">
+              <span class="text-red-400 text-lg shrink-0">&#128247;</span>
+              <div>
+                <div class="font-bold text-sm">Camera obligatoire</div>
+                <div class="text-xs text-gray-500">Votre camera doit rester <strong class="text-white">active et non obstruee</strong> pendant toute la duree de l'examen. Des captures sont prises aleatoirement.</div>
+              </div>
+            </div>
+            <div class="flex items-start space-x-3 bg-white/5 rounded-xl p-4">
+              <span class="text-red-400 text-lg shrink-0">&#128187;</span>
+              <div>
+                <div class="font-bold text-sm">Plein ecran obligatoire</div>
+                <div class="text-xs text-gray-500">En mode strict, le quiz s'affiche en plein ecran. Le <strong class="text-white">copier-coller est desactive</strong> et les changements d'onglet sont detectes.</div>
+              </div>
+            </div>
+            <div class="flex items-start space-x-3 bg-white/5 rounded-xl p-4">
+              <span class="text-red-400 text-lg shrink-0">&#128064;</span>
+              <div>
+                <div class="font-bold text-sm">Detection de sortie</div>
+                <div class="text-xs text-gray-500">Chaque fois que vous quittez l'onglet du quiz, c'est enregistre. Au-dela de <strong class="text-white">3 sorties</strong>, vos reponses sont soumises automatiquement.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Materiel requis -->
+        <div class="mb-5">
+          <h3 class="text-sm font-bold text-gray-300 mb-3 uppercase tracking-wide">Materiel requis le jour J</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div class="flex items-center space-x-3 bg-white/5 rounded-xl p-3">
+              <span class="text-green-400">&#10003;</span>
+              <span class="text-sm">Smartphone, tablette ou ordinateur</span>
+            </div>
+            <div class="flex items-center space-x-3 bg-white/5 rounded-xl p-3">
+              <span class="text-green-400">&#10003;</span>
+              <span class="text-sm">Connexion internet stable (Wi-Fi/4G)</span>
+            </div>
+            <div class="flex items-center space-x-3 bg-white/5 rounded-xl p-3">
+              <span class="text-green-400">&#10003;</span>
+              <span class="text-sm">Camera fonctionnelle</span>
+            </div>
+            <div class="flex items-center space-x-3 bg-white/5 rounded-xl p-3">
+              <span class="text-green-400">&#10003;</span>
+              <span class="text-sm">Navigateur a jour (Chrome/Firefox/Safari)</span>
+            </div>
+            <div class="flex items-center space-x-3 bg-white/5 rounded-xl p-3">
+              <span class="text-green-400">&#10003;</span>
+              <span class="text-sm">Badge TKT-XXX (recu a l'inscription)</span>
+            </div>
+            <div class="flex items-center space-x-3 bg-white/5 rounded-xl p-3">
+              <span class="text-green-400">&#10003;</span>
+              <span class="text-sm">Environnement calme et bien eclaire</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================ -->
+      <!-- Section 8: Cas d'elimination -->
+      <!-- ================================ -->
+      <section class="bg-red-500/5 backdrop-blur rounded-2xl p-6 mb-6 border border-red-500/10">
+        <h2 class="text-lg font-bold mb-4 flex items-center">
+          <span class="w-8 h-8 bg-red-500/20 rounded-lg flex items-center justify-center text-red-400 text-sm mr-3">8</span>
+          Cas d'Elimination
+        </h2>
+        <p class="text-sm text-gray-400 mb-4">Un candidat peut etre elimine dans les situations suivantes :</p>
+        <div class="space-y-2">
+          <div class="flex items-start space-x-3 bg-red-500/5 rounded-xl p-4 border border-red-500/10">
+            <span class="text-red-400 font-bold shrink-0">&#10005;</span>
+            <div>
+              <div class="font-bold text-sm text-red-300">Score insuffisant</div>
+              <div class="text-xs text-gray-500">Seuls les meilleurs candidats (Top X) de chaque round sont qualifies. Les autres sont elimines.</div>
+            </div>
+          </div>
+          <div class="flex items-start space-x-3 bg-red-500/5 rounded-xl p-4 border border-red-500/10">
+            <span class="text-red-400 font-bold shrink-0">&#10005;</span>
+            <div>
+              <div class="font-bold text-sm text-red-300">Non-soumission</div>
+              <div class="text-xs text-gray-500">Si vous ne soumettez pas vos reponses et que le timer expire, vos reponses partielles sont enregistrees mais peuvent etre incompletes.</div>
+            </div>
+          </div>
+          <div class="flex items-start space-x-3 bg-red-500/5 rounded-xl p-4 border border-red-500/10">
+            <span class="text-red-400 font-bold shrink-0">&#10005;</span>
+            <div>
+              <div class="font-bold text-sm text-red-300">Fraude ou tricherie</div>
+              <div class="text-xs text-gray-500">Utilisation d'aide externe, communication avec d'autres candidats, ou tentative de contourner le systeme de surveillance.</div>
+            </div>
+          </div>
+          <div class="flex items-start space-x-3 bg-red-500/5 rounded-xl p-4 border border-red-500/10">
+            <span class="text-red-400 font-bold shrink-0">&#10005;</span>
+            <div>
+              <div class="font-bold text-sm text-red-300">Sorties d'onglet repetees</div>
+              <div class="text-xs text-gray-500">Plus de 3 changements d'onglet ou fermetures de fenetre entrainent la soumission automatique forcee.</div>
+            </div>
+          </div>
+          <div class="flex items-start space-x-3 bg-red-500/5 rounded-xl p-4 border border-red-500/10">
+            <span class="text-red-400 font-bold shrink-0">&#10005;</span>
+            <div>
+              <div class="font-bold text-sm text-red-300">Camera desactivee ou obstruee</div>
+              <div class="text-xs text-gray-500">Si la camera est coupee, couverte ou non fonctionnelle pendant l'examen, le candidat peut etre disqualifie.</div>
+            </div>
+          </div>
+          <div class="flex items-start space-x-3 bg-red-500/5 rounded-xl p-4 border border-red-500/10">
+            <span class="text-red-400 font-bold shrink-0">&#10005;</span>
+            <div>
+              <div class="font-bold text-sm text-red-300">Usurpation d'identite</div>
+              <div class="text-xs text-gray-500">Utiliser le badge TKT-XXX d'un autre candidat ou se faire remplacer par une autre personne.</div>
+            </div>
+          </div>
+          <div class="flex items-start space-x-3 bg-red-500/5 rounded-xl p-4 border border-red-500/10">
+            <span class="text-red-400 font-bold shrink-0">&#10005;</span>
+            <div>
+              <div class="font-bold text-sm text-red-300">Deconnexion prolongee</div>
+              <div class="text-xs text-gray-500">Si votre connexion internet est perdue pendant une duree excessive, le systeme peut considerer l'examen comme non termine.</div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-sm text-amber-200">
+          <strong>Note :</strong> Les decisions d'elimination sont prises par l'administrateur du concours apres examen des preuves de surveillance. Un candidat disqualifie ne peut pas contester le resultat.
+        </div>
+      </section>
+
       <!-- CTA -->
       <div class="text-center py-8">
         <NuxtLink :to="`/tournament/${token}`"
