@@ -679,8 +679,9 @@ async function callAIGateway(prompt, taskType, tenantId) {
     }
 
     const data = await response.json();
-    // Handle various gateway response formats
-    const text = data.response || data.text || data.content || data.result || data.output || '';
+    // Gateway wraps in { success, data: { response: "..." } }
+    const inner = data.data || data;
+    const text = inner.response || inner.text || inner.content || inner.result || inner.output || data.response || '';
     if (typeof text === 'object') return JSON.stringify(text);
     return text;
   } catch (err) {
