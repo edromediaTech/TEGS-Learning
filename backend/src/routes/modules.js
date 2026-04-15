@@ -525,9 +525,10 @@ router.post(
   [
     param('id').isMongoId(),
     body('topic').notEmpty().withMessage('Le sujet est requis'),
-    body('count').optional().isInt({ min: 1, max: 10 }),
+    body('count').optional().isInt({ min: 1, max: 50 }),
     body('types').optional().isArray(),
     body('difficulty').optional().isIn(['facile', 'moyen', 'difficile']),
+    body('language').optional().isIn(['francais', 'creole', 'anglais', 'espagnol']),
   ],
   async (req, res, next) => {
     try {
@@ -537,7 +538,10 @@ router.post(
       const mod = await Module.findOne({ _id: req.params.id, ...req.tenantFilter() });
       if (!mod) return res.status(404).json({ error: 'Module introuvable' });
 
-      const { topic, count = 5, types = ['quiz', 'true_false', 'fill_blank'], difficulty = 'moyen' } = req.body;
+      const { topic, count = 5, types = ['quiz', 'true_false', 'fill_blank'], difficulty = 'moyen', language = 'francais' } = req.body;
+
+      const langLabels = { francais: 'français', creole: 'créole haïtien', anglais: 'anglais', espagnol: 'espagnol' };
+      const langName = langLabels[language] || 'français';
 
       const typesDesc = types.map(t => {
         const labels = {
@@ -551,9 +555,11 @@ router.post(
         return labels[t] || t;
       }).join(', ');
 
-      const prompt = `Tu es un expert pédagogique haïtien. Génère exactement ${count} questions de quiz sur le sujet : "${topic}".
+      const prompt = `Tu es un expert pédagogique. Génère exactement ${count} questions de quiz sur le sujet : "${topic}".
 
-Contexte : Module "${mod.title}" pour des élèves haïtiens.
+LANGUE OBLIGATOIRE : Toutes les questions, options, explications et textes doivent être rédigés en ${langName}. NE PAS utiliser une autre langue.
+
+Contexte : Module "${mod.title}"
 Difficulté : ${difficulty}
 Types de questions à utiliser : ${typesDesc}
 
@@ -577,9 +583,31 @@ Pour type "matching" :
 Pour type "sequence" :
 {"type":"sequence","data":{"instruction":"...","items":["premier","deuxieme","troisieme"],"explanation":"...","points":5,"duration":1}}
 
-Varie les types parmi ceux demandés. Les questions doivent être pertinentes, éducatives et adaptées au niveau ${difficulty}.`;
+Varie les types parmi ceux demandés. Les questions doivent être pertinentes, éducatives et adaptées au niveau ${difficulty}.
+RAPPEL : TOUT doit être en ${langName}. Pas de mélange de langues.`;
 
-      const aiText = await callAIGateway(prompt, 'generate', req.tenantId);
+      // For large counts, generate in batches of 15 to avoid truncation
+      const BATCH_SIZE = 15;
+      let allAiText = '';
+      if (count <= BATCH_SIZE) {
+        allAiText = await callAIGateway(prompt, 'generate', req.tenantId);
+      } else {
+        const batches = Math.ceil(count / BATCH_SIZE);
+        const allQuestions = [];
+        for (let b = 0; b < batches; b++) {
+          const batchCount = Math.min(BATCH_SIZE, count - b * BATCH_SIZE);
+          const batchPrompt = prompt.replace(`exactement ${count} questions`, `exactement ${batchCount} questions`);
+          const batchText = await callAIGateway(batchPrompt, 'generate', req.tenantId);
+          try {
+            const cleaned = batchText.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+            const parsed = JSON.parse(cleaned.match(/\[[\s\S]*\]/)?.[0] || cleaned);
+            if (Array.isArray(parsed)) allQuestions.push(...parsed);
+          } catch {}
+        }
+        allAiText = JSON.stringify(allQuestions);
+      }
+
+      const aiText = allAiText;
 
       // Parse JSON from AI response — robust multi-format parsing
       let questions = [];
@@ -622,7 +650,7 @@ Varie les types parmi ceux demandés. Les questions doivent être pertinentes, �
       const validTypes = ['quiz', 'true_false', 'numeric', 'fill_blank', 'matching', 'sequence'];
       const sanitized = questions
         .filter(q => q && q.type && validTypes.includes(q.type) && q.data)
-        .slice(0, 10)
+        .slice(0, 50)
         .map((q, i) => ({
           type: q.type,
           order: i,
@@ -667,7 +695,7 @@ async function callAIGateway(prompt, taskType, tenantId) {
         preferred_model: 'gemini-2.0-flash',
         service_id: 'tegs-learning',
         user_id: String(tenantId),
-        max_tokens: 3000,
+        max_tokens: 4000,
         temperature: 0.7,
         language: 'fr',
       }),

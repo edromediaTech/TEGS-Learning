@@ -559,14 +559,18 @@
                         class="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg text-xs focus:ring-2 focus:ring-violet-400 focus:border-transparent resize-none"
                       ></textarea>
                     </div>
-                    <div class="grid grid-cols-2 gap-2">
+                    <div class="grid grid-cols-3 gap-2">
                       <div>
                         <label class="text-[10px] font-bold text-gray-500 uppercase">Questions</label>
                         <select v-model="aiCount" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs">
                           <option :value="3">3</option>
                           <option :value="5">5</option>
-                          <option :value="7">7</option>
                           <option :value="10">10</option>
+                          <option :value="15">15</option>
+                          <option :value="20">20</option>
+                          <option :value="30">30</option>
+                          <option :value="40">40</option>
+                          <option :value="50">50</option>
                         </select>
                       </div>
                       <div>
@@ -575,6 +579,15 @@
                           <option value="facile">Facile</option>
                           <option value="moyen">Moyen</option>
                           <option value="difficile">Difficile</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="text-[10px] font-bold text-gray-500 uppercase">Langue</label>
+                        <select v-model="aiLanguage" class="w-full px-2 py-1.5 border border-gray-200 rounded-lg text-xs">
+                          <option value="francais">Francais</option>
+                          <option value="creole">Creole</option>
+                          <option value="anglais">Anglais</option>
+                          <option value="espagnol">Espagnol</option>
                         </select>
                       </div>
                     </div>
@@ -879,6 +892,7 @@ const paletteTab = ref<'blocs' | 'questions' | 'ia' | 'aide'>('blocs');
 const aiTopic = ref('');
 const aiCount = ref(5);
 const aiDifficulty = ref('moyen');
+const aiLanguage = ref('francais');
 const aiSelectedTypes = ref(['quiz', 'true_false', 'fill_blank']);
 const aiGenerating = ref(false);
 const aiResults = ref<Array<{ type: string; order: number; data: any }>>([]);
@@ -906,6 +920,7 @@ async function generateAI() {
         count: aiCount.value,
         types: aiSelectedTypes.value,
         difficulty: aiDifficulty.value,
+        language: aiLanguage.value,
       }),
     });
     if (data.blocks && data.blocks.length > 0) {
