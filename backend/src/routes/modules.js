@@ -581,20 +581,40 @@ Varie les types parmi ceux demandés. Les questions doivent être pertinentes, �
 
       const aiText = await callAIGateway(prompt, 'generate', req.tenantId);
 
-      // Parse JSON from AI response
+      // Parse JSON from AI response — robust multi-format parsing
       let questions = [];
       try {
-        // Extract JSON array from response (handle markdown code blocks)
-        const jsonMatch = aiText.match(/\[[\s\S]*\]/);
-        if (jsonMatch) {
-          questions = JSON.parse(jsonMatch[0]);
-        } else {
-          throw new Error('No JSON array found');
+        // 1. Strip markdown code fences (```json ... ``` or ``` ... ```)
+        let cleaned = aiText.replace(/```(?:json)?\s*/gi, '').replace(/```/g, '').trim();
+
+        // 2. Try direct parse (clean JSON array)
+        try {
+          const parsed = JSON.parse(cleaned);
+          questions = Array.isArray(parsed) ? parsed : [parsed];
+        } catch {
+          // 3. Extract JSON array from mixed text
+          const arrayMatch = cleaned.match(/\[[\s\S]*\]/);
+          if (arrayMatch) {
+            questions = JSON.parse(arrayMatch[0]);
+          } else {
+            // 4. Try to find individual JSON objects and collect them
+            const objMatches = cleaned.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
+            if (objMatches && objMatches.length > 0) {
+              for (const m of objMatches) {
+                try { questions.push(JSON.parse(m)); } catch {}
+              }
+            }
+          }
+        }
+
+        if (!questions.length) {
+          throw new Error('No valid JSON found in AI response');
         }
       } catch (parseErr) {
         return res.status(422).json({
           error: 'L\'IA n\'a pas retourné un format valide',
-          raw: aiText.substring(0, 500),
+          raw: aiText.substring(0, 800),
+          hint: 'Reessayez — l\'IA genere parfois du texte au lieu du JSON pur.',
         });
       }
 
@@ -659,7 +679,10 @@ async function callAIGateway(prompt, taskType, tenantId) {
     }
 
     const data = await response.json();
-    return data.response || data.text || data.content || '';
+    // Handle various gateway response formats
+    const text = data.response || data.text || data.content || data.result || data.output || '';
+    if (typeof text === 'object') return JSON.stringify(text);
+    return text;
   } catch (err) {
     console.error('[MODULES] AI Gateway error:', err.message);
     return `[Erreur IA: ${err.message}]`;
