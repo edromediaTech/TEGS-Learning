@@ -80,6 +80,9 @@
         <slot />
       </main>
     </div>
+
+    <!-- TEGS Copilot -->
+    <GuideSmartCopilot v-if="auth.isLoggedIn" />
   </div>
 </template>
 
