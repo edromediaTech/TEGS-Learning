@@ -11,7 +11,7 @@
             IA
           </div>
           <div>
-            <h3 class="font-bold text-sm">TEGS Agent</h3>
+            <h3 class="font-bold text-sm">Assistant TEGS</h3>
             <div class="flex items-center gap-1.5">
               <span
                 class="w-1.5 h-1.5 rounded-full"
@@ -138,7 +138,7 @@ watch(
 
 const welcomeTitle = computed(() => {
   const profile = agentStore.profile;
-  return profile ? `${profile.name}` : 'TEGS Agent IA';
+  return profile ? `${profile.name}` : 'Assistant TEGS';
 });
 
 const welcomeDescription = computed(() => {

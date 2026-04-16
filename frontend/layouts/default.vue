@@ -4,7 +4,7 @@
     <!-- TEGS Copilot on public pages too -->
     <GuideSmartCopilot />
 
-    <!-- TEGS Agent IA -->
+    <!-- Assistant TEGS -->
     <AgentBubble />
     <AgentChatPanel />
   </div>

@@ -89,7 +89,7 @@ export function useAgentSocket() {
     s.on('agent_error', (data: { error: string; panicMode?: boolean }) => {
       agentStore.setTyping(false);
       if (data.panicMode) {
-        agentStore.addAgentMessage('L\'agent IA est temporairement suspendu par l\'administrateur. Veuillez reessayer plus tard.');
+        agentStore.addAgentMessage('L\'assistant est temporairement suspendu par l\'administrateur. Veuillez reessayer plus tard.');
       } else {
         agentStore.addAgentMessage(`Erreur : ${data.error}`);
       }
@@ -97,11 +97,11 @@ export function useAgentSocket() {
 
     // Panic mode broadcast
     s.on('agent_panic_activated', () => {
-      agentStore.addAgentMessage('L\'agent IA a ete suspendu en urgence par l\'administrateur.');
+      agentStore.addAgentMessage('L\'assistant a ete suspendu en urgence par l\'administrateur.');
     });
 
     s.on('agent_panic_deactivated', () => {
-      agentStore.addAgentMessage('L\'agent IA a ete reactive. Vous pouvez reprendre vos demandes.');
+      agentStore.addAgentMessage('L\'assistant a ete reactive. Vous pouvez reprendre vos demandes.');
     });
 
     // Session cleared

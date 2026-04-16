@@ -91,10 +91,10 @@
         <NuxtLink to="/docs/admin/agent-ia"
           class="group bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:border-teal-200 transition-all">
           <div class="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform">&#129302;</div>
-          <h3 class="font-bold text-gray-900 mb-2">Agent IA</h3>
-          <p class="text-sm text-gray-500 mb-3">Assistant intelligent, chat IA, commandes vocales et configuration.</p>
+          <h3 class="font-bold text-gray-900 mb-2">Assistant</h3>
+          <p class="text-sm text-gray-500 mb-3">Assistant intelligent, chat, aide contextuelle et configuration.</p>
           <ul class="space-y-1 text-xs text-gray-400">
-            <li>&#8594; Poser des questions a l'agent</li>
+            <li>&#8594; Poser des questions a l'assistant</li>
             <li>&#8594; Actions automatiques</li>
             <li>&#8594; Configuration admin</li>
           </ul>

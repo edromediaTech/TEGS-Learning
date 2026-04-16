@@ -2,7 +2,7 @@
   <div>
     <div class="flex items-center justify-between mb-6">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">Configuration Agent IA</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Configuration Assistant</h1>
         <p class="text-sm text-gray-500 mt-1">Limites, outils, moteur de reponse et acces public</p>
       </div>
       <button @click="saveSettings" :disabled="saving" class="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 transition disabled:opacity-50">

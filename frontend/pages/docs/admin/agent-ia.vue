@@ -1,22 +1,22 @@
 <template>
   <DocsLayout role="admin">
-    <h1 class="text-3xl font-black text-gray-900 mb-2">Agent IA — Guide Administrateur</h1>
+    <h1 class="text-3xl font-black text-gray-900 mb-2">Assistant — Guide Administrateur</h1>
     <p class="text-gray-500 mb-8">Configurez, surveillez et controlez l'assistant intelligent de TEGS-Arena.</p>
 
     <Callout type="info" title="Prerequis">
-      L'Agent IA doit etre active par le SuperAdmin (variable PROCESS_AGENTIC_ON) et votre organisation doit avoir un plan Individual, Etablissement ou Pro.
+      L'assistant doit etre active par le SuperAdmin et votre organisation doit avoir un plan Individual, Etablissement ou Pro.
     </Callout>
 
     <!-- ═══ Section 1: Presentation ═══ -->
-    <h2 class="text-xl font-bold text-gray-900 mt-8 mb-4">Qu'est-ce que l'Agent IA ?</h2>
+    <h2 class="text-xl font-bold text-gray-900 mt-8 mb-4">Qu'est-ce que l'Assistant TEGS ?</h2>
     <p class="text-gray-600 text-sm mb-3">
-      L'Agent IA est un assistant conversationnel integre a TEGS-Arena. Il permet aux utilisateurs de poser des questions et d'effectuer des actions via un chat en langage naturel.
+      L'Assistant est un aide intelligent integre a TEGS-Arena. Il permet aux utilisateurs de poser des questions et d'effectuer des actions via un chat en langage naturel.
     </p>
     <DocImage
       src="/screenshots/docs-admin-agent-chat.png"
-      alt="Chat panel de l'Agent IA avec bulle verte et conversation"
-      caption="L'agent IA apparait sous forme d'une bulle verte en bas a droite. Le panel s'ouvre au clic."
-      placeholder="Capture du chat Agent IA ouvert avec une conversation exemple" />
+      alt="Chat panel de l'assistant avec bulle verte et conversation"
+      caption="L'assistant apparait sous forme d'une bulle verte en bas a droite. Le panel s'ouvre au clic."
+      placeholder="Capture du chat assistant ouvert avec une conversation exemple" />
 
     <p class="text-gray-600 text-sm mb-6">
       L'agent fonctionne avec <strong>3 profils</strong> selon le role de l'utilisateur :
@@ -40,14 +40,14 @@
     <!-- ═══ Section 2: Panneau de controle ═══ -->
     <h2 class="text-xl font-bold text-gray-900 mt-8 mb-4">Panneau de controle</h2>
 
-    <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">Surveillance (Agent IA)</h3>
+    <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">Surveillance (Assistant)</h3>
     <DocImage
       src="/screenshots/docs-admin-agent-dashboard.png"
-      alt="Dashboard Agent IA avec sessions actives et audit logs"
+      alt="Dashboard Assistant avec sessions actives et audit logs"
       caption="Le dashboard montre les sessions actives, requetes recentes et le bouton Panic Mode."
-      placeholder="Capture du dashboard Agent IA — Administration > Agent IA" />
+      placeholder="Capture du dashboard Assistant — Administration > Assistant" />
     <p class="text-gray-600 text-sm mb-3">
-      Rendez-vous dans <strong>Administration &gt; Agent IA</strong> pour voir :
+      Rendez-vous dans <strong>Administration &gt; Assistant</strong> pour voir :
     </p>
     <ul class="list-disc pl-6 text-sm text-gray-600 space-y-1 mb-6">
       <li>Le nombre de sessions actives en temps reel</li>
@@ -59,7 +59,7 @@
     <h3 class="text-lg font-bold text-gray-800 mt-6 mb-2">Configuration (Config Agent)</h3>
     <DocImage
       src="/screenshots/docs-admin-agent-settings.png"
-      alt="Page de configuration Agent IA avec rate limits et tool toggling"
+      alt="Page de configuration Assistant avec rate limits et tool toggling"
       caption="Reglez les limites par role, activez/desactivez les outils et choisissez le moteur de reponse."
       placeholder="Capture de la page Config Agent — Administration > Config Agent" />
     <p class="text-gray-600 text-sm mb-3">
@@ -84,7 +84,7 @@
       src="/screenshots/docs-admin-agent-panic.png"
       alt="Bouton Panic Mode rouge et indicateur actif"
       caption="Le bouton Panic Mode coupe instantanement toutes les sessions agentiques."
-      placeholder="Capture du bouton Panic Mode (rouge) en haut du dashboard Agent IA" />
+      placeholder="Capture du bouton Panic Mode (rouge) en haut du dashboard Assistant" />
     <p class="text-gray-600 text-sm mb-3">
       Le Panic Mode coupe <strong>immediatement</strong> toutes les sessions agentiques actives. Utilisez-le si :
     </p>
@@ -102,7 +102,7 @@
     <!-- ═══ Section 4: Securite ═══ -->
     <h2 class="text-xl font-bold text-gray-900 mt-8 mb-4">Securite et cloisonnement</h2>
     <p class="text-gray-600 text-sm mb-3">
-      L'Agent IA est protege par <strong>9 couches de securite</strong> :
+      L'Assistant est protege par <strong>9 couches de securite</strong> :
     </p>
     <div class="space-y-2 mb-6">
       <div v-for="layer in securityLayers" :key="layer.name" class="flex items-start gap-3 text-sm">
@@ -122,7 +122,7 @@
     <h2 class="text-xl font-bold text-gray-900 mt-8 mb-4">Liste des outils de l'agent</h2>
     <DocImage
       src="/screenshots/docs-admin-agent-proposal.png"
-      alt="Carte de confirmation d'action dans le chat Agent IA"
+      alt="Carte de confirmation d'action dans le chat Assistant"
       caption="Quand l'agent propose une action (ex: creer un tournoi), une carte de confirmation s'affiche avec les boutons Confirmer/Annuler."
       placeholder="Capture d'une carte de proposition (jaune) avec boutons Confirmer et Annuler" />
     <div class="overflow-x-auto mb-8">
@@ -152,7 +152,7 @@
 
 <script setup lang="ts">
 const panicSteps = [
-  { title: 'Ouvrir le dashboard Agent IA', description: 'Allez dans Administration > Agent IA.' },
+  { title: 'Ouvrir le dashboard Assistant', description: 'Allez dans Administration > Assistant.' },
   { title: 'Cliquer sur "COUPER L\'AGENT"', description: 'Le bouton rouge en haut a droite. Un premier clic demande confirmation.' },
   { title: 'Confirmer', description: 'Cliquez a nouveau dans les 5 secondes pour confirmer. Toutes les sessions seront coupees.' },
   { title: 'Reactiver', description: 'Quand le probleme est resolu, cliquez sur le bouton vert "Reactiver l\'Agent".' },
@@ -187,7 +187,7 @@ const toolList = [
 ];
 
 useHead({
-  title: 'Agent IA — Guide Admin | Centre d\'Aide | TEGS-Arena',
-  meta: [{ name: 'description', content: 'Guide complet pour configurer et surveiller l\'Agent IA TEGS-Arena : panneau de controle, Panic Mode, securite, outils disponibles.' }],
+  title: 'Assistant — Guide Admin | Centre d\'Aide | TEGS-Arena',
+  meta: [{ name: 'description', content: 'Guide complet pour configurer et surveiller l\'Assistant TEGS-Arena : panneau de controle, Panic Mode, securite, outils disponibles.' }],
 });
 </script>

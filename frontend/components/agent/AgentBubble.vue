@@ -9,7 +9,7 @@
         v-if="showTooltip"
         class="absolute bottom-[calc(100%+8px)] right-0 bg-gray-900 text-white text-xs font-medium px-3 py-2 rounded-lg shadow-lg whitespace-nowrap pointer-events-none"
       >
-        Agent IA — Posez vos questions
+        Assistant — Posez vos questions
         <div class="absolute -bottom-1 right-5 w-2 h-2 bg-gray-900 rotate-45"></div>
       </div>
     </Transition>
@@ -18,7 +18,7 @@
     <button
       @click="openAgent"
       class="relative w-14 h-14 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 text-white shadow-2xl flex items-center justify-center hover:scale-110 transition-transform duration-200 cursor-pointer"
-      title="TEGS Agent IA"
+      title="Assistant TEGS"
     >
       <span class="text-xl font-bold">IA</span>
 
