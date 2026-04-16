@@ -60,7 +60,7 @@
     <DocImage
       src="/screenshots/docs-admin-agent-settings.png"
       alt="Page de configuration Agent IA avec rate limits et tool toggling"
-      caption="Reglez les limites par role, activez/desactivez les outils et choisissez le modele LLM."
+      caption="Reglez les limites par role, activez/desactivez les outils et choisissez le moteur de reponse."
       placeholder="Capture de la page Config Agent — Administration > Config Agent" />
     <p class="text-gray-600 text-sm mb-3">
       Rendez-vous dans <strong>Administration &gt; Config Agent</strong> pour regler :
@@ -68,7 +68,7 @@
     <ul class="list-disc pl-6 text-sm text-gray-600 space-y-1 mb-6">
       <li><strong>Activation</strong> — activer/desactiver l'agent pour votre organisation</li>
       <li><strong>Agent public</strong> — autoriser les visiteurs non connectes a utiliser l'agent</li>
-      <li><strong>Modele LLM</strong> — choisir entre Gemini Flash (rapide/economique) et Gemini Pro (plus intelligent)</li>
+      <li><strong>Moteur de reponse</strong> — choisir entre le mode Rapide (economique) et le mode Precision (plus intelligent)</li>
       <li><strong>Limites de debit</strong> — nombre max de messages par heure pour chaque role</li>
       <li><strong>Gestion des outils</strong> — activer/desactiver des fonctions specifiques par role</li>
       <li><strong>Consommation</strong> — voir le nombre de tokens utilises et le cout estime du mois</li>
@@ -164,7 +164,7 @@ const securityLayers = [
   { num: '3', name: 'Tenant Toggle', description: 'Chaque organisation peut activer/desactiver l\'agent independamment.' },
   { num: '4', name: 'Plan requis', description: 'Seuls les plans Individual, Etablissement et Pro ont acces.' },
   { num: '5', name: 'Rate Limiting', description: 'Nombre max de messages par heure par utilisateur.' },
-  { num: '6', name: 'RBAC', description: 'Chaque role n\'a acces qu\'a ses outils autorises.' },
+  { num: '6', name: 'Controle par role', description: 'Chaque role n\'a acces qu\'a ses outils autorises.' },
   { num: '7', name: 'Mutation Lock', description: 'Toute action de modification necessite une confirmation humaine.' },
   { num: '8', name: 'Isolation Tenant', description: 'L\'agent ne peut acceder qu\'aux donnees de l\'organisation de l\'utilisateur.' },
   { num: '9', name: 'Audit Trail', description: 'Chaque interaction est enregistree dans le journal d\'audit.' },

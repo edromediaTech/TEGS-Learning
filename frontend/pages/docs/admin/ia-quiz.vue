@@ -7,7 +7,7 @@
     <h2 class="text-xl font-bold text-gray-900 mt-6 mb-4">Presentation</h2>
     <p class="text-gray-600 text-sm mb-4">
       Le generateur IA de TEGS-Arena permet de creer automatiquement des questions de quiz a partir d'un simple sujet.
-      Il utilise le modele <strong>Gemini 2.0 Flash</strong> via un service cloud dedie.
+      Il utilise un <strong>moteur d'intelligence artificielle</strong> puissant heberge dans le cloud.
       Les questions generees sont directement inserees dans votre module comme des blocs de questions classiques.
     </p>
 

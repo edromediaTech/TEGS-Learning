@@ -8,7 +8,7 @@
     <StepByStep :steps="[
       { title: 'Verifier les inscriptions', description: 'Consultez l\'onglet Participants pour verifier les inscrits et les paiements confirmes.' },
       { title: 'Demarrer le Round 1', description: 'Dans l\'onglet Bracket, cliquez Demarrer Round 1. Le statut passe a LIVE.' },
-      { title: 'Suivre en direct', description: 'Le bracket se met a jour en temps reel via WebSocket. Les scores apparaissent au fur et a mesure.' },
+      { title: 'Suivre en direct', description: 'Le bracket se met a jour en temps reel automatiquement. Les scores apparaissent au fur et a mesure.' },
       { title: 'Attendre les soumissions', description: 'Les candidats passent le quiz avec leur badge TKT-XXX. Suivez l\'avancement dans le bracket.' },
       { title: 'Cloturer et qualifier', description: 'Cliquez Cloturer & Qualifier. Le systeme classe automatiquement et qualifie les Top X.' },
       { title: 'Repeter pour chaque round', description: 'Demarrez le round suivant. Les elimines ne peuvent plus participer.' },

@@ -3,7 +3,7 @@
     <div class="flex items-center justify-between mb-6">
       <div>
         <h1 class="text-2xl font-bold text-gray-900">Configuration Agent IA</h1>
-        <p class="text-sm text-gray-500 mt-1">Limites, outils, modele LLM et acces public</p>
+        <p class="text-sm text-gray-500 mt-1">Limites, outils, moteur de reponse et acces public</p>
       </div>
       <button @click="saveSettings" :disabled="saving" class="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-semibold hover:bg-teal-700 transition disabled:opacity-50">
         {{ saving ? 'Enregistrement...' : 'Enregistrer' }}
@@ -28,9 +28,9 @@
         </div>
       </div>
 
-      <!-- ═══ Section 2: Modele LLM ═══ -->
+      <!-- ═══ Section 2: Moteur de reponse ═══ -->
       <div class="bg-white rounded-xl border p-6">
-        <h2 class="font-semibold text-gray-900 mb-4">Modele LLM</h2>
+        <h2 class="font-semibold text-gray-900 mb-4">Moteur de reponse</h2>
         <div class="flex gap-4">
           <label v-for="model in models" :key="model.id" class="flex-1 relative cursor-pointer">
             <input type="radio" v-model="settings.preferredModel" :value="model.id" class="sr-only peer" />
@@ -119,7 +119,7 @@
           </div>
           <div class="text-center p-4 bg-gray-50 rounded-xl">
             <p class="text-2xl font-bold text-teal-600">{{ formatTokens(tokenUsage?.totalTokens) }}</p>
-            <p class="text-xs text-gray-500 mt-1">Tokens estimes</p>
+            <p class="text-xs text-gray-500 mt-1">Unites consommees</p>
           </div>
           <div class="text-center p-4 bg-gray-50 rounded-xl">
             <p class="text-2xl font-bold text-blue-600">~${{ tokenUsage?.estimatedCostUSD ?? '0.00' }}</p>
@@ -144,8 +144,8 @@ const allTools = ref<any[]>([]);
 const tokenUsage = ref<any>(null);
 
 const models = [
-  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', description: 'Rapide, economique. Ideal pour la plupart des cas.', cost: '~$0.10 / 1M tokens', costClass: 'text-green-600' },
-  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', description: 'Plus intelligent, contexte long. Pour les taches complexes.', cost: '~$3.50 / 1M tokens', costClass: 'text-orange-600' },
+  { id: 'gemini-2.0-flash', name: 'Rapide', description: 'Reponses rapides et economiques. Ideal pour la plupart des cas.', cost: '~$0.10 / 1M unites', costClass: 'text-green-600' },
+  { id: 'gemini-1.5-pro', name: 'Precision', description: 'Reponses plus intelligentes et detaillees. Pour les taches complexes.', cost: '~$3.50 / 1M unites', costClass: 'text-orange-600' },
 ];
 
 const roles = [
