@@ -97,6 +97,13 @@ export const useAgentStore = defineStore('agent', {
 
     // Fetch agent status from backend
     async fetchStatus() {
+      const auth = useAuthStore();
+      if (!auth.token) {
+        // Public visitor — enable with public profile, no socket
+        this.enabled = true;
+        this.profile = { name: 'Assistant TEGS', description: 'Posez vos questions sur les concours et inscriptions.', canMutate: false, toolCount: 2 };
+        return;
+      }
       try {
         const { apiFetch } = useApi();
         const { data } = await apiFetch<any>('/agent/status');
@@ -105,7 +112,8 @@ export const useAgentStore = defineStore('agent', {
         this.profile = data.profile;
         this.remainingRequests = data.remainingRequests;
       } catch {
-        this.enabled = false;
+        // Auth failed but still allow REST fallback
+        this.enabled = true;
       }
     },
 

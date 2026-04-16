@@ -126,16 +126,56 @@ export function useAgentSocket() {
     }, 5000);
   }
 
-  function sendMessage(message: string) {
-    if (!socket.value?.connected) {
-      // Offline fallback
-      agentStore.handleOfflineMessage(message);
+  async function sendMessage(message: string) {
+    // If socket is connected, use real-time channel
+    if (socket.value?.connected) {
+      socket.value.emit('agent_message', {
+        message,
+        sessionId: agentStore.sessionId,
+      });
       return;
     }
-    socket.value.emit('agent_message', {
-      message,
-      sessionId: agentStore.sessionId,
-    });
+
+    // Fallback: REST API (works for both auth and public)
+    agentStore.setTyping(true);
+    try {
+      const config = useRuntimeConfig();
+      const auth = useAuthStore();
+      const isAuth = !!auth.token;
+
+      const endpoint = isAuth
+        ? `${config.public.apiBase}/agent/chat`
+        : `${config.public.apiBase}/agent/public/chat`;
+
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (isAuth) headers['Authorization'] = `Bearer ${auth.token}`;
+
+      const res = await $fetch<any>(endpoint, {
+        method: 'POST',
+        headers,
+        body: { message, sessionId: agentStore.sessionId },
+      });
+
+      agentStore.setTyping(false);
+
+      if (res.sessionId) agentStore.setSessionId(res.sessionId);
+      if (res.response) {
+        const proposal = res.proposal
+          ? {
+              confirmationId: res.proposal.confirmationId,
+              summary: res.proposal.summary,
+              toolId: res.proposal.toolId,
+              details: res.proposal.details,
+              status: 'pending' as const,
+            }
+          : undefined;
+        agentStore.addAgentMessage(res.response, proposal);
+      }
+    } catch {
+      agentStore.setTyping(false);
+      // True offline — no network at all
+      agentStore.handleOfflineMessage(message);
+    }
   }
 
   function confirmAction(confirmationId: string) {
