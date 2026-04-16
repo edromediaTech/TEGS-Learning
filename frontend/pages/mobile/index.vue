@@ -300,15 +300,21 @@ const activeTournaments = computed(() =>
   store.tournaments.filter((t) => t.status === 'active')
 );
 
-// Quick access by competition token
+// Quick access by competition token — verify via API first
 async function joinByToken() {
   tokenError.value = '';
-  if (!quickToken.value.trim()) {
+  const token = quickToken.value.trim();
+  if (!token) {
     tokenError.value = 'Entrez votre code de competition';
     return;
   }
-  // TODO: Verify token via API and redirect to war room
-  navigateTo(`/mobile/warroom?token=${quickToken.value.trim()}`);
+  try {
+    const { apiFetch } = useApi();
+    await apiFetch(`/tournaments/play/${token}`);
+    navigateTo(`/mobile/warroom?token=${token}`);
+  } catch (err: any) {
+    tokenError.value = err?.data?.error || 'Code invalide ou tournoi non actif';
+  }
 }
 
 function joinArena() {
