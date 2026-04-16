@@ -3,5 +3,9 @@
     <slot />
     <!-- TEGS Copilot on public pages too -->
     <GuideSmartCopilot />
+
+    <!-- TEGS Agent IA -->
+    <AgentBubble />
+    <AgentChatPanel />
   </div>
 </template>

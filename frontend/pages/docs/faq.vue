@@ -103,6 +103,18 @@ const sections = [
       { id: 'bourse-suivi', question: 'Comment suivre les utilisations de mon code BOURSE ?', answer: 'L\'administrateur peut vous fournir les statistiques d\'utilisation : nombre de codes utilises, restants, et la liste des candidats parraines.' },
     ],
   },
+  {
+    id: 'agent-ia-faq', title: 'Agent IA', icon: '&#129302;',
+    questions: [
+      { id: 'ia-quest-ce', question: 'Qu\'est-ce que l\'Agent IA TEGS ?', answer: 'L\'Agent IA est un <strong>assistant intelligent</strong> integre a la plateforme. Il repond a vos questions, vous aide a naviguer et peut effectuer certaines actions (comme creer un tournoi pour les admins). Il apparait sous forme d\'une <strong>bulle verte</strong> en bas a droite de l\'ecran.' },
+      { id: 'ia-qui-acces', question: 'Qui a acces a l\'Agent IA ?', answer: 'L\'agent est disponible pour <strong>tous les roles</strong>, mais avec des capacites differentes. Les <strong>visiteurs</strong> peuvent poser des questions generales. Les <strong>candidats</strong> obtiennent de l\'aide sur les inscriptions et quiz. Les <strong>agents POS</strong> peuvent calculer leurs commissions. Les <strong>admins</strong> peuvent creer des tournois et generer des rapports.' },
+      { id: 'ia-donnees', question: 'L\'Agent IA a-t-il acces a mes donnees personnelles ?', answer: 'L\'agent respecte un <strong>cloisonnement strict</strong>. Il n\'accede qu\'aux donnees de votre organisation et selon votre role. Un visiteur public ne voit <strong>aucune donnee interne</strong>. Un candidat ne voit que ses propres informations. Toutes les interactions sont <strong>enregistrees dans un journal d\'audit</strong>.' },
+      { id: 'ia-actions', question: 'L\'agent peut-il modifier mes donnees ou creer des tournois ?', answer: 'Certaines actions (comme creer un tournoi) sont possibles <strong>uniquement pour les admins</strong>. Chaque action de modification necessite une <strong>confirmation manuelle</strong> : l\'agent propose l\'action, et vous devez cliquer sur <strong>Confirmer</strong> pour l\'executer. Aucune mutation n\'est automatique.' },
+      { id: 'ia-hors-ligne', question: 'L\'agent fonctionne-t-il sans Internet ?', answer: 'En cas de <strong>coupure reseau</strong>, l\'agent bascule automatiquement en <strong>mode hors-ligne</strong>. Il peut alors repondre aux questions les plus courantes grace a un cache local (FAQ). Les actions complexes ne sont pas disponibles hors-ligne.' },
+      { id: 'ia-securite', question: 'L\'agent est-il securise contre les abus ?', answer: 'Oui, 9 couches de securite protegent le systeme : <strong>kill switch</strong> (Panic Mode), <strong>limitation de debit</strong> (messages/heure), <strong>controle des roles</strong> (RBAC), <strong>confirmation humaine</strong> pour les mutations, <strong>isolation par organisation</strong>, et <strong>journal d\'audit</strong> complet.' },
+      { id: 'ia-admin-config', question: 'Comment configurer l\'Agent IA en tant qu\'admin ?', answer: 'Allez dans <strong>Administration > Config Agent</strong>. Vous pouvez : activer/desactiver l\'agent, regler les limites de messages par role, activer/desactiver des outils specifiques, choisir le modele IA (Flash ou Pro), et surveiller la consommation de tokens.' },
+    ],
+  },
 ];
 
 const filteredSections = computed(() => {

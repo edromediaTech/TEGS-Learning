@@ -1,0 +1,22 @@
+{
+  "inscription": "Pour vous inscrire a un concours, rendez-vous sur la page du tournoi et cliquez sur 'S'inscrire'. Renseignez votre nom, prenom, etablissement et payez les frais d'inscription via MonCash ou Natcash. Vous recevrez un ticket numerique (TKT-XXX) avec un QR code.",
+  "paiement moncash natcash": "Les paiements sont acceptes via MonCash et Natcash. Vous pouvez aussi utiliser un code BOURSE si un sponsor vous en a fourni un. Apres paiement, vous recevrez un ticket numerique avec QR code.",
+  "regles concours rules": "Chaque concours se deroule en rounds eliminatoires. Repondez aux questions dans le temps imparti. Les meilleurs candidats sont qualifies pour le round suivant. Ne quittez pas le mode plein ecran sous peine d'elimination.",
+  "resultats classement": "Les resultats sont affiches en temps reel sur la page du tournoi. Apres chaque round, un classement est publie. Les certificats PDF sont disponibles a la fin du concours.",
+  "certificat diplome": "Les certificats sont generes automatiquement apres la fin du concours. Vous pouvez les telecharger en PDF depuis la page de resultats.",
+  "bourse code sponsor gratuit": "Les codes BOURSE (BOURSE-XXX) sont fournis par les sponsors. Entrez le code lors de l'inscription pour beneficier d'une place gratuite ou a tarif reduit.",
+  "agent commission caisse": "En tant qu'agent collecteur, vous pouvez collecter les paiements des candidats. Votre commission est calculee automatiquement. Consultez votre quota et garantie depuis la page Caisse Agent.",
+  "quota garantie agent": "Votre quota determine le nombre maximum de paiements que vous pouvez collecter. Votre garantie (caution) est le montant que vous deposez comme assurance. Si votre quota est epuise, contactez votre administrateur.",
+  "bordereau versement": "Le bordereau de versement liste toutes vos transactions collectees. Il montre le montant total, votre commission et le montant net a reverser a la plateforme.",
+  "probleme technique erreur": "En cas de probleme technique pendant un quiz, signalez-le immediatement a l'administrateur. Assurez-vous d'avoir une connexion Internet stable et un navigateur a jour.",
+  "tournoi concours competition": "Les tournois sont des concours academiques avec des rounds eliminatoires. Les candidats s'inscrivent, passent des quiz et les meilleurs avancent a chaque round. Des primes sont distribuees au podium.",
+  "contact aide support": "Pour toute question, consultez le Centre d'Aide dans le menu principal. Vous y trouverez des guides pour candidats, agents et administrateurs.",
+  "mot de passe connexion login": "Connectez-vous avec votre email et le code de votre organisation (tenant). Si vous avez oublie votre mot de passe, contactez l'administrateur de votre organisation.",
+  "qr code ticket": "Votre ticket (TKT-XXX) contient un QR code unique. Presentez-le le jour du concours pour verification. Il prouve que votre inscription et votre paiement sont valides.",
+  "plein ecran fullscreen": "Pendant un quiz en mode concours, vous devez rester en plein ecran. Si vous quittez le mode plein ecran, vous serez automatiquement elimine du concours.",
+  "temps chronometre timer": "Chaque question a un temps limite. Quand le temps est ecoule, votre reponse est automatiquement soumise. Un chronometre est affiche en haut de l'ecran.",
+  "score points note": "Votre score depend du nombre de bonnes reponses et des points attribues a chaque question. Certaines questions valent plus de points que d'autres.",
+  "round elimination qualification": "Apres chaque round, les candidats sont classes par score. Les X meilleurs sont qualifies pour le round suivant. Le nombre de places qualificatives est affiche avant chaque round.",
+  "sponsor partenaire": "Les sponsors sont des organisations qui financent les concours. Ils peuvent offrir des places gratuites via des codes BOURSE et leurs logos apparaissent sur la page du tournoi.",
+  "mobile telephone": "La plateforme est accessible sur mobile. Utilisez un navigateur recent (Chrome, Safari) et assurez-vous d'avoir une connexion stable pour les quiz en temps reel."
+}

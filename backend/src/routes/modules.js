@@ -667,55 +667,7 @@ RAPPEL : TOUT doit être en ${langName}. Pas de mélange de langues.`;
   }
 );
 
-/**
- * Call the dp-ai-gateway-service for AI generation.
- */
-async function callAIGateway(prompt, taskType, tenantId) {
-  const gatewayUrl = process.env.AI_GATEWAY_URL || 'https://dp-ai-gateway-service-746425674533.us-central1.run.app';
-  const gatewayToken = process.env.GATEWAY_AUTH_TOKEN;
-
-  if (!gatewayToken) {
-    console.warn('[MODULES] GATEWAY_AUTH_TOKEN not set — returning placeholder');
-    return '[IA non disponible — configurez GATEWAY_AUTH_TOKEN]';
-  }
-
-  try {
-    const { default: fetch } = await import('node-fetch').catch(() => ({ default: globalThis.fetch }));
-
-    const response = await fetch(`${gatewayUrl}/api/ai-gateway`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${gatewayToken}`,
-      },
-      body: JSON.stringify({
-        prompt,
-        task_type: taskType,
-        preferred_tier: 'auto',
-        preferred_model: 'gemini-2.0-flash',
-        service_id: 'tegs-learning',
-        user_id: String(tenantId),
-        max_tokens: 4000,
-        temperature: 0.7,
-        language: 'fr',
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gateway ${response.status}: ${errText}`);
-    }
-
-    const data = await response.json();
-    // Gateway wraps in { success, data: { response: "..." } }
-    const inner = data.data || data;
-    const text = inner.response || inner.text || inner.content || inner.result || inner.output || data.response || '';
-    if (typeof text === 'object') return JSON.stringify(text);
-    return text;
-  } catch (err) {
-    console.error('[MODULES] AI Gateway error:', err.message);
-    return `[Erreur IA: ${err.message}]`;
-  }
-}
+// AI Gateway — service partage (anciennement duplique ici)
+const { callAIGateway } = require('../services/aiGateway');
 
 module.exports = router;

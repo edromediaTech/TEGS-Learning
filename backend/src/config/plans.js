@@ -35,6 +35,7 @@ const PLANS = {
       prioritySupport: false,
       dedicatedManager: false,
       multiAccountConsolidation: false,
+      agenticAssistant: false,
     },
   },
 
@@ -69,6 +70,7 @@ const PLANS = {
       prioritySupport: false,
       dedicatedManager: false,
       multiAccountConsolidation: false,
+      agenticAssistant: true,
     },
   },
 
@@ -103,6 +105,7 @@ const PLANS = {
       prioritySupport: false,
       dedicatedManager: false,
       multiAccountConsolidation: false,
+      agenticAssistant: true,
     },
   },
 
@@ -137,6 +140,7 @@ const PLANS = {
       prioritySupport: true,
       dedicatedManager: true,
       multiAccountConsolidation: true,
+      agenticAssistant: true,
     },
   },
 };
@@ -161,6 +165,7 @@ const FEATURE_LABELS = {
   prioritySupport: 'Assistance prioritaire',
   dedicatedManager: 'Compte manager dedie',
   multiAccountConsolidation: 'Consolidation multi-comptes',
+  agenticAssistant: 'Assistant IA conversationnel',
 };
 
 /**

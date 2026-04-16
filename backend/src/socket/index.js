@@ -4,6 +4,7 @@ const Module = require('../models/Module');
 const LiveSession = require('../models/LiveSession');
 const ProctoringEvidence = require('../models/ProctoringEvidence');
 const { setupTournamentNamespace } = require('./tournament');
+const { setupAgentNamespace } = require('./agent');
 
 /**
  * TEGS-Learning — National Challenge Engine
@@ -208,8 +209,9 @@ function initSocket(server) {
   setupStudentNamespace();
   setupSpectatorNamespace();
   setupTournamentNamespace(io);
+  setupAgentNamespace(io);
 
-  console.log('[SOCKET] National Challenge Engine + Tournament namespace initialise');
+  console.log('[SOCKET] National Challenge Engine + Tournament + Agent namespaces initialises');
   return io;
 }
 

@@ -1,6 +1,6 @@
 # TEGS-Learning — Instructions Agent
 
-> Dernière mise à jour : 2026-04-14
+> Dernière mise à jour : 2026-04-16
 
 ## 1. Présentation du Projet
 
@@ -24,7 +24,7 @@ Les candidats s'inscrivent, passent des quiz éliminatoires en rounds, et les me
 ### Entrée
 - `src/server.js` — Express app, CORS, compression, Socket.io, montage de toutes les routes
 
-### Routes (21 fichiers — `src/routes/`)
+### Routes (22 fichiers — `src/routes/`)
 | Route | Path | Auth | Description |
 |-------|------|------|-------------|
 | auth | `/api/auth` | Public | Register, login, /me |
@@ -48,21 +48,38 @@ Les candidats s'inscrivent, passent des quiz éliminatoires en rounds, et les me
 | votes | `/api/votes` | Public | Fan vote, jauge popularité |
 | queue | `/api/queue` | Public | File d'attente virtuelle (waiting room) |
 | qrcode | `/api/qr` | Auth | Génération QR codes |
+| agent | `/api/agent` | Mixte | Chat IA, confirmations, panic mode, settings, audit |
 
-### Modèles (16 — `src/models/`)
-`Tenant` `User` `Module` `Tournament` `Participant` `QuizResult` `Sponsor` `SponsorshipPack` `Transaction` `Statement` `LaunchSession` `LiveSession` `Vote` `DeviceToken` `GuaranteeLog` `ProctoringEvidence`
+### Modèles (17 — `src/models/`)
+`Tenant` `User` `Module` `Tournament` `Participant` `QuizResult` `Sponsor` `SponsorshipPack` `Transaction` `Statement` `LaunchSession` `LiveSession` `Vote` `DeviceToken` `GuaranteeLog` `ProctoringEvidence` `AgentAuditLog`
 
 ### Middleware (`src/middleware/`)
 - **auth.js** — JWT verify → `req.user`, `req.tenantId`, `req.isSuperAdmin`
 - **tenantIsolation.js** — `req.tenantFilter()` pour isolation MongoDB
 - **featureGate.js** — `requireFeature()`, `requireLimit()` par plan
+- **agentGate.js** — `requireAgentEnabled`, `requireAgentEnabledForTenant`, `agentRateLimit`
 
 ### Services (`src/services/`)
-`cmi5Xml` `fcm` `moncash` `natcash` `trafficController`
+`cmi5Xml` `fcm` `moncash` `natcash` `trafficController` `aiGateway`
+
+### Module Agentique (`src/agent/`)
+| Fichier | Description |
+|---------|-------------|
+| `orchestrator.js` | Boucle LLM + tool calling (max 3 iterations) |
+| `sessionStore.js` | Sessions conversation en memoire (TTL 2h) |
+| `confirmationStore.js` | Proposals mutations en attente (TTL 5min) |
+| `promptTemplates.js` | System prompts Public/Prive avec contexte dynamique |
+| `panicSwitch.js` | Kill switch runtime + broadcast Socket.io |
+| `tenantSettings.js` | Config agentique par tenant (cache 5min) |
+| `knowledge/docsIndex.js` | Base de connaissances RAG (19 documents, public/interne) |
+| `tools/_baseTool.js` | Factory outil avec RBAC + audit |
+| `tools/index.js` | Registre 13 outils avec filtrage par role |
+| `tools/*.js` | 13 outils : searchDocumentation, faq, tournamentList/Detail/Create, participantSearch, moduleList, analyticsOverview, commissionCalc, quotaStatus, reportGenerate, userSearch, agentAdmin |
 
 ### Socket.io (`src/socket/`)
-- `index.js` — init socket
+- `index.js` — init socket (5 namespaces)
 - `tournament.js` — namespace `/tournament` (join, start_round, advance, leaderboard)
+- `agent.js` — namespace `/agent` (chat IA, confirm, reject, panic broadcast)
 
 ---
 
@@ -85,12 +102,13 @@ Les candidats s'inscrivent, passent des quiz éliminatoires en rounds, et les me
 | `/live-tournament/[token]` | Spectateur live (bracket, podium) |
 | `/live-arena/[token]` | Affichage TV/OBS broadcast |
 | `/share/[token]` | Quiz player public (modules partagés) |
-| `/docs/` | Centre d'Aide (hub, 11 articles, FAQ) |
+| `/docs/` | Centre d'Aide (hub, 12 articles, FAQ) |
 | `/docs/candidat/*` | 4 guides : inscription, quiz, résultats, badge |
 | `/docs/agent/*` | 2 guides : collecte, quota |
 | `/docs/sponsor/*` | 2 guides : packs, bourses |
-| `/docs/admin/*` | 3 guides : tournois, users, live |
-| `/docs/faq` | FAQ interactive (accordions, anchor links) |
+| `/docs/admin/*` | 4 guides : tournois, users, live, **agent-ia** |
+| `/docs/faq` | FAQ interactive (accordions, anchor links, **section Agent IA**) |
+| `/vision` | Page Vision & Impact (plaidoyer institutionnel, agent public) |
 | `/admin/tournaments` | Liste + création + gestion tournois |
 | `/admin/modules` | Studio (bloc builder) |
 | `/admin/users` | CRUD utilisateurs |
@@ -98,6 +116,8 @@ Les candidats s'inscrivent, passent des quiz éliminatoires en rounds, et les me
 | `/admin/analytics` | Dashboard KPIs |
 | `/admin/billing` | Facturation / plans |
 | `/admin/media` | Médiathèque GCS |
+| `/admin/agent` | **Agent IA : surveillance, audit logs, Panic Mode** |
+| `/admin/agent-settings` | **Config Agent : rate limits, tool toggling, modèle LLM, couts** |
 | `/agent/collection` | Caisse agent collecteur |
 | `/mobile/` | Vue mobile + warroom |
 
@@ -105,11 +125,13 @@ Les candidats s'inscrivent, passent des quiz éliminatoires en rounds, et les me
 - `auth.ts` — login, JWT, cookie `__session`, roles
 - `modules.ts` — CRUD modules, 18 types de blocs
 - `tournaments.ts` — CRUD tournois, bracket, podium
+- `agent.ts` — **chat IA, sessions, offline FAQ, proposals, typing states**
 
 ### Composables (`composables/`)
 - `useApi.ts` — fetch avec JWT auto
 - `useTournamentSocket.ts` — WebSocket `/tournament`
 - `useLiveSocket.ts` / `useSpectatorSocket.ts` — WebSocket live
+- `useAgentSocket.ts` — **WebSocket `/agent` (chat IA, reconnexion auto, fallback offline)**
 - `useNativeBridge.ts` — pont mobile Capacitor
 
 ### Layouts (`layouts/`)
@@ -121,6 +143,7 @@ Les candidats s'inscrivent, passent des quiz éliminatoires en rounds, et les me
 - `tournament/` — `TournamentTree`, `SponsorCarousel`, `RegistrationModal`
 - `docs/` — `Callout`, `StepByStep`, `DocVideo`, `DocImage`, `DocsLayout`, `CommandPalette`
 - `share/` — 8 composants quiz interactifs
+- `agent/` — **`AgentChatPanel`, `AgentBubble`, `AgentMessageBubble`, `AgentProposalCard`, `AgentThinkingIndicator`**
 
 ---
 
@@ -232,6 +255,10 @@ MONCASH_MODE=sandbox
 NATCASH_MERCHANT_ID=<id>
 NATCASH_API_KEY=<key>
 NATCASH_MODE=sandbox
+# Agent IA
+PROCESS_AGENTIC_ON=true
+AI_GATEWAY_URL=https://dp-ai-gateway-service-746425674533.us-central1.run.app
+GATEWAY_AUTH_TOKEN=<secret>
 ```
 
 ### Frontend (`.env`)

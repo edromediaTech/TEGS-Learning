@@ -945,52 +945,7 @@ function formatAnswer(answer, type) {
   return String(answer);
 }
 
-/**
- * Call the dp-ai-gateway-service for AI generation.
- * Falls back to a placeholder if gateway is unavailable.
- */
-async function callAIGateway(prompt, taskType, tenantId) {
-  const gatewayUrl = process.env.AI_GATEWAY_URL || 'https://dp-ai-gateway-service-746425674533.us-central1.run.app';
-  const gatewayToken = process.env.GATEWAY_AUTH_TOKEN;
-
-  if (!gatewayToken) {
-    console.warn('[REPORTING] GATEWAY_AUTH_TOKEN not set - returning placeholder');
-    return '[Commentaire IA non disponible - configurez GATEWAY_AUTH_TOKEN]';
-  }
-
-  try {
-    const { default: fetch } = await import('node-fetch').catch(() => ({ default: globalThis.fetch }));
-
-    const response = await fetch(`${gatewayUrl}/api/ai-gateway`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${gatewayToken}`,
-      },
-      body: JSON.stringify({
-        prompt,
-        task_type: taskType,
-        preferred_tier: 'auto',
-        preferred_model: 'gemini-2.0-flash',
-        service_id: 'tegs-learning',
-        user_id: String(tenantId),
-        max_tokens: 1500,
-        temperature: 0.7,
-        language: 'fr',
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gateway ${response.status}: ${errText}`);
-    }
-
-    const data = await response.json();
-    return data.response || data.text || data.content || '';
-  } catch (err) {
-    console.error('[REPORTING] AI Gateway error:', err.message);
-    return `[Erreur IA: ${err.message}]`;
-  }
-}
+// AI Gateway — service partage (anciennement duplique ici)
+const { callAIGateway } = require('../services/aiGateway');
 
 module.exports = router;
