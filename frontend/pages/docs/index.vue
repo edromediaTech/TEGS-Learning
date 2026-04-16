@@ -113,6 +113,18 @@
       </div>
     </div>
 
+    <!-- Vision & Impact -->
+    <div class="max-w-6xl mx-auto px-4 mt-12">
+      <NuxtLink to="/vision"
+        class="block rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-lg transition-all group">
+        <img src="/screenshots/vision-hero.png" alt="TEGS-Arena — Vision & Impact" class="w-full object-cover h-48 md:h-56 group-hover:scale-[1.02] transition-transform" />
+        <div class="p-6 bg-white text-center">
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Vision & Impact</h3>
+          <p class="text-gray-500 text-sm">Decouvrez comment TEGS-Arena transforme l'education dans le Nord-Est d'Haiti.</p>
+        </div>
+      </NuxtLink>
+    </div>
+
     <!-- Footer -->
     <footer class="border-t bg-white py-8 mt-8">
       <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between space-y-4 md:space-y-0">
