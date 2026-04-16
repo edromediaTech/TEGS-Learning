@@ -366,6 +366,137 @@ export const missions: TourMission[] = [
       },
     ],
   },
+  // ─── MISSION AGENT : COLLECTER DES PAIEMENTS ───
+  {
+    id: 'agent-collect',
+    title: 'Collecter mes premiers paiements',
+    description: 'Apprenez a encaisser les frais d\'inscription des candidats en especes.',
+    icon: '\uD83D\uDCB0',
+    roles: ['authorized_agent'],
+    category: 'agents',
+    steps: [
+      {
+        id: 'ac-goto-caisse',
+        title: 'Ouvrir la Caisse Agent',
+        description: 'Cliquez sur "Caisse Agent" dans le menu pour acceder a votre terminal POS.',
+        route: '/agent/collection',
+        selector: 'a[href="/agent/collection"]',
+        popoverSide: 'right',
+      },
+      {
+        id: 'ac-check-wallet',
+        title: 'Verifier votre portefeuille',
+        description: 'Consultez votre caution, quota utilise et disponible en haut de la page.',
+        route: '/agent/collection',
+        selector: '[data-copilot="agent-wallet"], .grid',
+        popoverSide: 'bottom',
+      },
+      {
+        id: 'ac-search',
+        title: 'Rechercher un participant',
+        description: 'Entrez le nom, email ou TKT-XXXXXXXX du candidat dans la barre de recherche.',
+        route: '/agent/collection',
+        selector: 'input[placeholder*="Nom"], input[placeholder*="TKT"]',
+        popoverSide: 'bottom',
+      },
+      {
+        id: 'ac-encaisser',
+        title: 'Encaisser',
+        description: 'Cliquez sur "Encaisser" a cote du participant. Le systeme verifie votre quota et votre contrat automatiquement.',
+        route: '/agent/collection',
+        selector: '[data-copilot="btn-encaisser"], button',
+        popoverSide: 'bottom',
+      },
+    ],
+  },
+
+  // ─── MISSION CANDIDAT : S'INSCRIRE À UN CONCOURS ───
+  {
+    id: 'student-register',
+    title: 'S\'inscrire a un concours',
+    description: 'Inscrivez-vous a un concours, payez les frais et obtenez votre ticket.',
+    icon: '\uD83C\uDF93',
+    roles: ['student'],
+    category: 'getting-started',
+    steps: [
+      {
+        id: 'sr-goto-lobby',
+        title: 'Ouvrir le Lobby',
+        description: 'Rendez-vous sur la page d\'accueil pour voir les concours disponibles.',
+        route: '/',
+        selector: '[data-copilot="lobby-grid"], .grid',
+        popoverSide: 'bottom',
+      },
+      {
+        id: 'sr-choose-tournament',
+        title: 'Choisir un concours',
+        description: 'Cliquez sur le concours auquel vous souhaitez participer pour acceder a la page d\'inscription.',
+        selector: '[data-copilot="tournament-card"], a',
+        popoverSide: 'bottom',
+      },
+      {
+        id: 'sr-fill-form',
+        title: 'Remplir le formulaire',
+        description: 'Entrez votre nom, prenom, email et etablissement. Si vous avez un code bourse (BOURSE-XXXXXXXX), saisissez-le.',
+        selector: 'form, [data-copilot="registration-form"]',
+        popoverSide: 'bottom',
+      },
+      {
+        id: 'sr-pay',
+        title: 'Payer ou utiliser un code bourse',
+        description: 'Choisissez MonCash, Natcash ou un code bourse pour valider votre inscription.',
+        selector: '[data-copilot="payment-options"]',
+        popoverSide: 'bottom',
+      },
+      {
+        id: 'sr-get-ticket',
+        title: 'Recevoir votre ticket',
+        description: 'Apres paiement, vous recevez votre ticket TKT-XXXXXXXX et un QR code. Conservez-les precieusement !',
+        selector: '[data-copilot="ticket-display"]',
+        popoverSide: 'bottom',
+      },
+    ],
+  },
+
+  // ─── MISSION CANDIDAT : PASSER LE QUIZ ───
+  {
+    id: 'student-quiz',
+    title: 'Passer le quiz du concours',
+    description: 'Accedez au quiz, repondez aux questions et soumettez vos reponses.',
+    icon: '\uD83D\uDCDD',
+    roles: ['student'],
+    category: 'getting-started',
+    steps: [
+      {
+        id: 'sq-goto-play',
+        title: 'Acceder a la page du concours',
+        description: 'Ouvrez le lien du concours et cliquez sur "Passer le quiz".',
+        selector: '[data-copilot="play-link"], a',
+        popoverSide: 'bottom',
+      },
+      {
+        id: 'sq-enter-token',
+        title: 'Entrer votre code TKT',
+        description: 'Saisissez votre ticket TKT-XXXXXXXX pour acceder au quiz.',
+        selector: 'input[placeholder*="TKT"], [data-copilot="token-input"]',
+        popoverSide: 'bottom',
+      },
+      {
+        id: 'sq-read-rules',
+        title: 'Lire le reglement',
+        description: 'Lisez attentivement les regles : camera obligatoire, perte de focus = elimination.',
+        selector: '[data-copilot="briefing"]',
+        popoverSide: 'bottom',
+      },
+      {
+        id: 'sq-answer',
+        title: 'Repondre aux questions',
+        description: 'Repondez a toutes les questions dans le temps imparti. Le chronometre est en haut de la page.',
+        selector: '[data-copilot="quiz-frame"], iframe',
+        popoverSide: 'top',
+      },
+    ],
+  },
 ];
 
 /**

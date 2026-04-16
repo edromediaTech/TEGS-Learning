@@ -194,7 +194,7 @@ Tournament {
   registrationFee: Number (HTG)
   maxParticipants: Number (0 = illimite)
   rounds: [{
-    order, label, module_id, promoteTopX, status, startTime, endTime
+    order, label, module_id, section_index, promoteTopX, status, startTime, endTime
   }]
   prizes: [{ rank, label, amount, currency }]
   currentRound: Number
@@ -949,6 +949,7 @@ Infrastructure (secrets+CORS+deploy)
 | Terme | Definition |
 |-------|-----------|
 | **promoteTopX** | Nombre de candidats qualifies pour le round suivant |
+| **section_index** | Index du chapitre dans le module (null = tout le module) |
 | **competitionToken** | Code unique TKT-XXX genere a l'inscription |
 | **shareToken** | Identifiant public d'un tournoi pour les liens partageables |
 | **guaranteeBalance** | Caution deposee par un agent (plafond de collecte) |

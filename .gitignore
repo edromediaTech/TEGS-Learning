@@ -15,6 +15,9 @@ dist/
 .DS_Store
 Thumbs.db
 
+# Raw screenshot archives (source captures, not deployed)
+backend/captures/
+
 # IDE
 .vscode/
 .idea/

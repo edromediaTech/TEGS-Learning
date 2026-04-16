@@ -622,6 +622,15 @@ router.get('/public/:shareToken', async (req, res, next) => {
           </div>
         </div>
         ${content}
+
+        <!-- Pause overlay between screens -->
+        <div id="pause-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.92);align-items:center;justify-content:center;flex-direction:column">
+          <div style="text-align:center;color:white">
+            <div style="font-size:14px;text-transform:uppercase;letter-spacing:2px;opacity:0.6;margin-bottom:12px">Ecran suivant dans</div>
+            <div class="pause-counter" style="font-size:72px;font-weight:900;background:linear-gradient(135deg,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1">3</div>
+            <div style="font-size:13px;opacity:0.5;margin-top:16px">Preparez-vous...</div>
+          </div>
+        </div>
       </div>
       <!-- Submit bar -->
       <div id="submit-bar" style="display:${questionCount > 0 ? 'block' : 'none'}">
@@ -664,7 +673,17 @@ router.get('/public/:shareToken', async (req, res, next) => {
   </script>
   <script>
     let currentNav = null;
+    var _lastScreen = null;
+    var _pauseSeconds = 3;
     function showScreen(id) {
+      // If switching from another screen (not first load), show pause overlay
+      if (_lastScreen && _lastScreen !== id) {
+        _showPause(function() { _doShowScreen(id); });
+      } else {
+        _doShowScreen(id);
+      }
+    }
+    function _doShowScreen(id) {
       document.getElementById('welcome-screen').style.display = 'none';
       document.querySelectorAll('.screen-panel').forEach(el => el.style.display = 'none');
       const panel = document.getElementById('screen-' + id);
@@ -672,6 +691,20 @@ router.get('/public/:shareToken', async (req, res, next) => {
       if (currentNav) { currentNav.classList.remove('nav-active'); currentNav.style.background = 'transparent'; }
       currentNav = document.getElementById('nav-' + id);
       if (currentNav) { currentNav.classList.add('nav-active'); currentNav.style.background = 'rgba(255,255,255,0.2)'; }
+      _lastScreen = id;
+    }
+    function _showPause(cb) {
+      var overlay = document.getElementById('pause-overlay');
+      if (!overlay) { cb(); return; }
+      var counter = overlay.querySelector('.pause-counter');
+      overlay.style.display = 'flex';
+      var sec = _pauseSeconds;
+      counter.textContent = sec;
+      var iv = setInterval(function() {
+        sec--;
+        if (sec <= 0) { clearInterval(iv); overlay.style.display = 'none'; cb(); }
+        else { counter.textContent = sec; }
+      }, 1000);
     }
 
     // Question index tracker

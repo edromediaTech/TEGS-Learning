@@ -10,15 +10,30 @@
     @mousedown.prevent="startDrag"
     @touchstart.prevent="startDrag"
   >
+    <!-- Tooltip "Besoin d'aide ?" -->
+    <Transition name="copilot-tooltip">
+      <div
+        v-if="showTooltip"
+        class="absolute bottom-[calc(100%+8px)] right-0 bg-gray-900 text-white text-xs font-medium px-3 py-2 rounded-lg shadow-lg whitespace-nowrap pointer-events-none"
+      >
+        Besoin d'aide ? Cliquez ici
+        <div class="absolute -bottom-1 right-5 w-2 h-2 bg-gray-900 rotate-45"></div>
+      </div>
+    </Transition>
+
+    <!-- Bubble -->
     <button
       @click.stop="openPanel()"
-      class="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-2xl flex items-center justify-center hover:scale-110 transition-transform duration-200 ring-4 ring-white/20 cursor-pointer"
-      :class="{ 'animate-bounce': showPulse }"
+      class="relative w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-2xl flex items-center justify-center hover:scale-110 transition-transform duration-200 cursor-pointer copilot-bubble"
+      :class="{ 'copilot-pulse': showPulse }"
       title="TEGS Copilot"
     >
       <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
       </svg>
+      <!-- Badge notification -->
+      <span v-if="!copilot.hasSeenWelcome" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-ping"></span>
+      <span v-if="!copilot.hasSeenWelcome" class="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white"></span>
     </button>
   </div>
 
@@ -451,6 +466,9 @@ watch(() => copilot.currentStep, (step) => {
   }, 1000);
 }, { immediate: true });
 
+// ─── Tooltip ───
+const showTooltip = ref(false);
+
 // ─── Auto-trigger welcome for new users ───
 onMounted(() => {
   if (auth.isLoggedIn && !copilot.hasSeenWelcome) {
@@ -460,12 +478,14 @@ onMounted(() => {
     }, 2000);
   }
 
-  // Pulse animation on first 3 visits
+  // Pulse + tooltip on first 5 visits
   const visits = parseInt(localStorage.getItem('tegs-copilot-visits') || '0');
-  if (visits < 3) {
+  if (visits < 5) {
     showPulse.value = true;
     localStorage.setItem('tegs-copilot-visits', String(visits + 1));
-    setTimeout(() => { showPulse.value = false; }, 5000);
+    // Show tooltip after 3s, hide after 8s
+    setTimeout(() => { showTooltip.value = true; }, 3000);
+    setTimeout(() => { showTooltip.value = false; showPulse.value = false; }, 10000);
   }
 });
 
@@ -511,5 +531,31 @@ onUnmounted(() => {
 }
 .copilot-popover .driver-popover-arrow-side-bottom {
   border-top-color: white !important;
+}
+
+/* Bubble pulse ring animation */
+.copilot-pulse {
+  animation: copilot-ring 2s ease-in-out infinite;
+}
+@keyframes copilot-ring {
+  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.6); }
+  50% { box-shadow: 0 0 0 14px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+/* Tooltip transition */
+.copilot-tooltip-enter-active {
+  transition: all 0.3s ease-out;
+}
+.copilot-tooltip-leave-active {
+  transition: all 0.2s ease-in;
+}
+.copilot-tooltip-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+.copilot-tooltip-leave-to {
+  opacity: 0;
+  transform: translateY(6px);
 }
 </style>
