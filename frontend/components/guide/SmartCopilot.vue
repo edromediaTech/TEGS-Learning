@@ -469,8 +469,19 @@ watch(() => copilot.currentStep, (step) => {
 // ─── Tooltip ───
 const showTooltip = ref(false);
 
-// ─── Auto-trigger welcome for new users ───
+// ─── Keyboard shortcut: ? to toggle copilot ───
+function onKeydown(e: KeyboardEvent) {
+  const tag = (e.target as HTMLElement)?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+    e.preventDefault();
+    copilot.togglePanel();
+  }
+}
+
+// ─── Single onMounted: welcome + pulse + keyboard ───
 onMounted(() => {
+  // Auto-trigger welcome for new users
   if (auth.isLoggedIn && !copilot.hasSeenWelcome) {
     setTimeout(() => {
       copilot.markWelcomeSeen();
@@ -483,24 +494,11 @@ onMounted(() => {
   if (visits < 5) {
     showPulse.value = true;
     localStorage.setItem('tegs-copilot-visits', String(visits + 1));
-    // Show tooltip after 3s, hide after 8s
     setTimeout(() => { showTooltip.value = true; }, 3000);
     setTimeout(() => { showTooltip.value = false; showPulse.value = false; }, 10000);
   }
-});
 
-// ─── Keyboard shortcut: ? to toggle copilot ───
-function onKeydown(e: KeyboardEvent) {
-  // Ignore if typing in an input/textarea
-  const tag = (e.target as HTMLElement)?.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-  if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
-    e.preventDefault();
-    copilot.togglePanel();
-  }
-}
-
-onMounted(() => {
+  // Keyboard shortcut
   document.addEventListener('keydown', onKeydown);
 });
 

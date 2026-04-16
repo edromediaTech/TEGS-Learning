@@ -542,6 +542,24 @@
               </div>
             </div>
 
+            <!-- Pause entre ecrans -->
+            <div class="mt-6 pt-6 border-t border-gray-200">
+              <h4 class="font-bold text-gray-800 mb-1">Pause entre les ecrans</h4>
+              <p class="text-sm text-gray-500 mb-3">
+                Duree du countdown affiche entre chaque ecran du quiz. 0 = pas de pause.
+              </p>
+              <div class="flex items-center gap-3">
+                <input
+                  v-model.number="timerForm.screenPauseDuration"
+                  type="number"
+                  min="0"
+                  max="30"
+                  class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                />
+                <span class="text-sm text-gray-500">secondes (defaut : 3)</span>
+              </div>
+            </div>
+
             <button @click="saveTimer" :disabled="saving" class="mt-4 bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50 font-medium">
               {{ saving ? 'Sauvegarde...' : 'Sauvegarder le chronometre' }}
             </button>
@@ -673,6 +691,7 @@ const survForm = reactive({
 
 const timerForm = reactive({
   globalTimeLimit: 0,
+  screenPauseDuration: 3,
 });
 const computedTimer = ref<any>(null);
 
@@ -730,6 +749,7 @@ function loadForm() {
   }
   // Timer
   timerForm.globalTimeLimit = (store.current as any).globalTimeLimit || 0;
+  timerForm.screenPauseDuration = (store.current as any).screenPauseDuration ?? 3;
   // Evaluation mode
   evalForm.evaluationType = (store.current as any).evaluationType || 'personalized';
   evalForm.liveStartTime = (store.current as any).liveStartTime
@@ -757,6 +777,7 @@ async function saveTimer() {
   try {
     await store.updateModule(moduleId, {
       globalTimeLimit: timerForm.globalTimeLimit,
+      screenPauseDuration: timerForm.screenPauseDuration,
     } as any);
     successMsg.value = 'Chronometre sauvegarde !';
     setTimeout(() => { successMsg.value = ''; }, 3000);

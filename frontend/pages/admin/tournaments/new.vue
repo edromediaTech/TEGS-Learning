@@ -279,6 +279,7 @@ async function handleCreate() {
       label: r.label || `Round`,
       promoteTopX: Math.max(1, r.promoteTopX || 1),
       ...(r.module_id ? { module_id: r.module_id } : {}),
+      ...(r.section_index !== null && r.section_index !== undefined ? { section_index: r.section_index } : {}),
     }));
     const tournament = await store.createTournament({
       title: form.title,
