@@ -118,6 +118,12 @@ const moduleSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    screenPauseDuration: {
+      type: Number,
+      default: 3,
+      min: 0,
+      max: 30,
+    },
     proctoring: {
       type: String,
       enum: ['none', 'snapshot', 'video'],

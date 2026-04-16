@@ -489,9 +489,25 @@ onMounted(() => {
   }
 });
 
+// ─── Keyboard shortcut: ? to toggle copilot ───
+function onKeydown(e: KeyboardEvent) {
+  // Ignore if typing in an input/textarea
+  const tag = (e.target as HTMLElement)?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+  if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+    e.preventDefault();
+    copilot.togglePanel();
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('keydown', onKeydown);
+});
+
 onUnmounted(() => {
   stopHighlight();
   if (validateInterval) clearInterval(validateInterval);
+  document.removeEventListener('keydown', onKeydown);
 });
 </script>
 

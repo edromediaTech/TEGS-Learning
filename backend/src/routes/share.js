@@ -674,7 +674,7 @@ router.get('/public/:shareToken', async (req, res, next) => {
   <script>
     let currentNav = null;
     var _lastScreen = null;
-    var _pauseSeconds = 3;
+    var _pauseSeconds = ${mod.screenPauseDuration ?? 3};
     function showScreen(id) {
       // If switching from another screen (not first load), show pause overlay
       if (_lastScreen && _lastScreen !== id) {
@@ -694,6 +694,7 @@ router.get('/public/:shareToken', async (req, res, next) => {
       _lastScreen = id;
     }
     function _showPause(cb) {
+      if (_pauseSeconds <= 0) { cb(); return; }
       var overlay = document.getElementById('pause-overlay');
       if (!overlay) { cb(); return; }
       var counter = overlay.querySelector('.pause-counter');
