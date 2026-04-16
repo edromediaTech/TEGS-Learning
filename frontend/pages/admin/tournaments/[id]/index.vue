@@ -382,7 +382,7 @@ import TournamentTree from '~/components/tournament/TournamentTree.vue';
 definePageMeta({ middleware: 'auth' });
 
 const store = useTournamentStore();
-const moduleStore = useModuleStore();
+const moduleStore = useModulesStore();
 const ts = useTournamentSocket();
 const route = useRoute();
 const id = route.params.id as string;

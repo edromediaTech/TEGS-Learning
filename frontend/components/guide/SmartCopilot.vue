@@ -309,7 +309,7 @@ import { missions, categories } from '~/config/tours';
 
 const copilot = useCopilotStore();
 const auth = useAuthStore();
-const moduleStore = useModuleStore();
+const moduleStore = useModulesStore();
 const tournamentStore = useTournamentStore();
 const router = useRouter();
 const route = useRoute();
