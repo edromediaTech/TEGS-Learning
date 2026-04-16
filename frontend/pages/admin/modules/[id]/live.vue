@@ -471,7 +471,7 @@
                     ref="leaderboardRef"
                     :rankings="rankings"
                     :max-display="30"
-                    @leader-change="(name: string) => console.log('New leader:', name)"
+                    @leader-change="() => {}"
                   />
                 </div>
               </div>

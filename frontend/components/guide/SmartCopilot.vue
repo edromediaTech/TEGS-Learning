@@ -92,6 +92,23 @@
             </div>
           </div>
 
+          <!-- Smart suggestion based on user state -->
+          <div v-if="smartSuggestion" class="px-4 pb-2">
+            <button
+              @click="copilot.startMission(smartSuggestion.missionId)"
+              class="w-full text-left p-3 rounded-xl bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 hover:shadow-md transition-all"
+            >
+              <div class="flex items-center gap-2.5">
+                <span class="text-xl">{{ smartSuggestion.icon }}</span>
+                <div class="flex-1 min-w-0">
+                  <p class="text-xs font-bold text-indigo-700">Suggestion pour vous</p>
+                  <p class="text-[11px] text-indigo-600 mt-0.5">{{ smartSuggestion.text }}</p>
+                </div>
+                <span class="text-indigo-400 text-xs">Demarrer &#x2192;</span>
+              </div>
+            </button>
+          </div>
+
           <!-- Category tabs -->
           <div class="px-4 flex gap-1.5 flex-wrap pb-2">
             <button
@@ -133,6 +150,9 @@
                         <div class="h-full bg-indigo-500 rounded-full transition-all" :style="{ width: getMissionProgress(mission.id) + '%' }"></div>
                       </div>
                     </div>
+                    <span v-if="copilot.missionCompletedAt(mission.id)" class="text-[10px] text-green-500">
+                      {{ formatDate(copilot.missionCompletedAt(mission.id)) }}
+                    </span>
                   </div>
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-300 group-hover:text-indigo-400 transition flex-shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
@@ -289,6 +309,8 @@ import { missions, categories } from '~/config/tours';
 
 const copilot = useCopilotStore();
 const auth = useAuthStore();
+const moduleStore = useModuleStore();
+const tournamentStore = useTournamentStore();
 const router = useRouter();
 const route = useRoute();
 
@@ -302,6 +324,49 @@ const bubbleRef = ref<HTMLElement | null>(null);
 let driverInstance: ReturnType<typeof driver> | null = null;
 
 const userRole = computed(() => auth.user?.role || '');
+
+// ─── Smart suggestion based on user state ───
+const smartSuggestion = computed(() => {
+  if (!auth.isLoggedIn) return null;
+  const role = userRole.value;
+
+  // Don't suggest if user already has an active mission
+  if (copilot.activeMissionId) return null;
+
+  // Check: has the user completed the welcome?
+  if (!copilot.isMissionCompleted('welcome')) {
+    return { missionId: 'welcome', icon: '\uD83D\uDC4B', text: 'Decouvrez la plateforme avec le tour de bienvenue.' };
+  }
+
+  if (role === 'admin_ddene' || role === 'superadmin' || role === 'teacher') {
+    // Check modules
+    const hasModules = moduleStore.modules.length > 0;
+    if (!hasModules && !copilot.isMissionCompleted('create-module')) {
+      return { missionId: 'create-module', icon: '\uD83D\uDCDA', text: 'Vous n\'avez aucun module. Creez votre premier quiz !' };
+    }
+
+    // Check tournaments
+    const hasTournaments = tournamentStore.tournaments.length > 0;
+    if (hasModules && !hasTournaments && !copilot.isMissionCompleted('create-tournament')) {
+      return { missionId: 'create-tournament', icon: '\uD83C\uDFC6', text: 'Vos modules sont prets. Creez votre premier tournoi !' };
+    }
+
+    // Suggest analytics if not seen
+    if (hasModules && !copilot.isMissionCompleted('view-analytics')) {
+      return { missionId: 'view-analytics', icon: '\uD83D\uDCCA', text: 'Consultez vos analytics et rapports de resultats.' };
+    }
+  }
+
+  if (role === 'authorized_agent' && !copilot.isMissionCompleted('agent-collect')) {
+    return { missionId: 'agent-collect', icon: '\uD83D\uDCB0', text: 'Apprenez a collecter des paiements avec votre terminal.' };
+  }
+
+  if (role === 'student' && !copilot.isMissionCompleted('student-register')) {
+    return { missionId: 'student-register', icon: '\uD83C\uDF93', text: 'Inscrivez-vous a votre premier concours !' };
+  }
+
+  return null;
+});
 
 const availableCategories = computed(() => {
   const userMissions = copilot.availableMissions(userRole.value);
@@ -443,6 +508,13 @@ function stopHighlight() {
   copilot.highlighting = false;
 }
 
+// ─── Helpers ───
+function formatDate(iso: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+}
+
 // ─── Mission progress helper ───
 function getMissionProgress(missionId: string): number {
   const mission = missions.find(m => m.id === missionId);
@@ -479,8 +551,14 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 
-// ─── Single onMounted: welcome + pulse + keyboard ───
+// ─── Single onMounted: welcome + pulse + keyboard + data fetch ───
 onMounted(() => {
+  // Fetch data for smart suggestions (non-blocking)
+  if (auth.isLoggedIn) {
+    moduleStore.fetchModules().catch(() => {});
+    tournamentStore.fetchTournaments().catch(() => {});
+  }
+
   // Auto-trigger welcome for new users
   if (auth.isLoggedIn && !copilot.hasSeenWelcome) {
     setTimeout(() => {

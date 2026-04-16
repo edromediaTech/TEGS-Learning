@@ -13,6 +13,8 @@ interface CopilotState {
   completedSteps: string[];
   /** Missions fully completed (mission IDs) */
   completedMissions: string[];
+  /** Completion timestamps { missionId: ISO date } */
+  completionDates: Record<string, string>;
   /** Whether the user has ever seen the welcome tour */
   hasSeenWelcome: boolean;
   /** Is driver.js highlight currently active */
@@ -40,6 +42,7 @@ function saveState(state: CopilotState) {
     currentStepIndex: state.currentStepIndex,
     completedSteps: state.completedSteps,
     completedMissions: state.completedMissions,
+    completionDates: state.completionDates,
     hasSeenWelcome: state.hasSeenWelcome,
     position: state.position,
   }));
@@ -54,6 +57,7 @@ export const useCopilotStore = defineStore('copilot', {
       currentStepIndex: saved.currentStepIndex ?? 0,
       completedSteps: saved.completedSteps ?? [],
       completedMissions: saved.completedMissions ?? [],
+      completionDates: saved.completionDates ?? {},
       hasSeenWelcome: saved.hasSeenWelcome ?? false,
       highlighting: false,
       position: saved.position ?? null,
@@ -105,6 +109,11 @@ export const useCopilotStore = defineStore('copilot', {
     /** Is a specific mission fully completed */
     isMissionCompleted() {
       return (missionId: string) => this.completedMissions.includes(missionId);
+    },
+
+    /** Get completion date for a mission */
+    missionCompletedAt() {
+      return (missionId: string) => this.completionDates[missionId] || null;
     },
   },
 
@@ -214,6 +223,7 @@ export const useCopilotStore = defineStore('copilot', {
     _finishMission() {
       if (this.activeMissionId && !this.completedMissions.includes(this.activeMissionId)) {
         this.completedMissions.push(this.activeMissionId);
+        this.completionDates[this.activeMissionId] = new Date().toISOString();
       }
     },
 
