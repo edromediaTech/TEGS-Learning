@@ -1,6 +1,6 @@
 # TEGS-Learning — Instructions Agent
 
-> Derniere mise a jour : 2026-04-16
+> Derniere mise a jour : 2026-04-17
 
 ## 1. Presentation
 
@@ -82,9 +82,9 @@ concours academiques en ligne, studio de contenu, suivi pedagogique, assistant i
 - `tournament.js` — `/tournament`
 - `agent.js` — `/agent` (chat, confirm, reject, panic)
 
-### Tests
-- `tests/unit/agent.js` — 67 tests unitaires (10 modules) — `npm test`
-- `tests/integration/test-*.js` — 16 tests d'intégration (backend + MongoDB live requis) — `node tests/integration/<name>.js`
+### Tests (`backend/tests/`)
+- `unit/agent.js` — 67 tests unitaires (10 modules) — `npm test` (tourne en CI avant build)
+- `integration/test-*.js` — 16 tests (backend + MongoDB live requis) — `node tests/integration/<name>.js`
 
 ---
 
@@ -139,6 +139,14 @@ concours academiques en ligne, studio de contenu, suivi pedagogique, assistant i
 
 ## 5. Deploiement
 
+### CI/CD (`cloudbuild.yaml`)
+Pipeline sur push master :
+1. `test-backend` — `npm ci && npm test` (fail fast)
+2. `build-backend` — Docker build + push GCR
+3. `deploy-backend` — Cloud Run (min-instances=1 en CI, override manuel a 0 en pre-prod)
+4. `build-and-deploy-frontend` — Nuxt generate + Firebase Hosting
+
+### Deploiement manuel
 ```bash
 # Backend → Cloud Run
 gcloud builds submit ./backend --tag gcr.io/luminous-mesh-459718-p4/tegs-backend:TAG
@@ -152,7 +160,9 @@ npx firebase-tools deploy --only hosting --project=luminous-mesh-459718-p4
 ```
 
 ### Secrets (Secret Manager)
-`tegs-mongo-uri` `tegs-jwt-secret` `tegs-gcs-jwt-secret` `GATEWAY_AUTH_TOKEN`
+- Backend Cloud Run : `tegs-mongo-uri` `tegs-jwt-secret` `tegs-gcs-jwt-secret` `tegs-moncash-client-id` `tegs-moncash-client-secret` `tegs-natcash-merchant-id` `tegs-natcash-api-key`
+- CI Firebase : `firebase-ci-token`
+- Agent LLM (via backend env) : `GATEWAY_AUTH_TOKEN`
 
 ---
 
@@ -185,6 +195,8 @@ Routes: kebab-case — Modeles: PascalCase — Composants: PascalCase — Stores
 ---
 
 ## 7. Variables d'Environnement
+
+> Templates : `backend/.env.example` et `frontend/.env.example` (copier en `.env`)
 
 ### Backend (`.env`)
 ```
