@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node tests-agent.js"
+    "test": "node tests/unit/agent.js",
+    "test:integration": "echo 'Requires backend running on localhost:3000 and local MongoDB. Usage: node tests/integration/<name>.js'"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

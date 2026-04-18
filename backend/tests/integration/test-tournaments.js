@@ -294,8 +294,8 @@ async function runTests() {
 
   const mongoose = require('mongoose');
   await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/tegs_learning');
-  const QuizResult = require('./src/models/QuizResult');
-  const Participant = require('./src/models/Participant');
+  const QuizResult = require('../../src/models/QuizResult');
+  const Participant = require('../../src/models/Participant');
 
   // Lier les user_id aux participants
   const dbParticipants = await Participant.find({ tournament_id: tournamentId });

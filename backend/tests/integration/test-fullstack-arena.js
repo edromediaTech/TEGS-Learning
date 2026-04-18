@@ -240,7 +240,7 @@ async function run() {
   assert(regSponsored.data.sponsorName === 'Mairie de Fort-Liberté', 'Sponsor: Mairie');
 
   // Vérifier le badge
-  const Participant = require('./src/models/Participant');
+  const Participant = require('../../src/models/Participant');
   const boursier = await Participant.findById(regSponsored.data.participant_id).lean();
   assert(boursier?.sponsorName === 'Mairie de Fort-Liberté', 'Profil: Boursier Mairie');
   assert(boursier?.sponsorCode === sponsorCode, 'Code parrainage enregistré');
@@ -353,7 +353,7 @@ async function run() {
   await request('POST', `/tournaments/${tournamentId}/start-round`, null, adminToken);
 
   // Simuler quiz results
-  const QuizResult = require('./src/models/QuizResult');
+  const QuizResult = require('../../src/models/QuizResult');
   const dbParts = await Participant.find({ tournament_id: tournamentId, status: 'registered', paid: true });
   const scores = [95, 90, 88, 85, 80, 75, 70, 65, 60, 55, 50];
   for (let i = 0; i < Math.min(dbParts.length, scores.length); i++) {

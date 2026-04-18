@@ -52,6 +52,13 @@
               Ouvrir les inscriptions
             </button>
             <button
+              v-if="canReopenRegistration"
+              @click="reopenRegistration"
+              :disabled="reopening"
+              class="bg-emerald-50 text-emerald-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors disabled:opacity-50">
+              {{ reopening ? 'Reouverture...' : 'Rouvrir les inscriptions' }}
+            </button>
+            <button
               v-if="store.current.status === 'registration' || (store.current.status === 'active' && activeRound?.status === 'completed' && !isLastRound)"
               @click="handleStartRoundLive"
               class="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-4 py-2 rounded-lg text-sm font-bold hover:from-amber-600 hover:to-orange-600 transition-all shadow-md">
@@ -389,6 +396,7 @@ const id = route.params.id as string;
 
 const activeTab = ref('bracket');
 const advancing = ref(false);
+const reopening = ref(false);
 const shareCopied = ref(false);
 const modulesList = computed(() => moduleStore.modules);
 
@@ -440,6 +448,29 @@ onMounted(async () => {
 async function changeStatus(status: string) {
   await store.updateTournament(id, { status } as any);
   await store.fetchTournament(id);
+}
+
+const canReopenRegistration = computed(() => {
+  const t = store.current;
+  if (!t) return false;
+  if (t.status === 'draft') return false;
+  return true;
+});
+
+async function reopenRegistration() {
+  const t = store.current;
+  if (!t) return;
+  if (t.status === 'active' || t.status === 'completed') {
+    const label = t.status === 'active' ? 'en cours' : 'termine';
+    if (!confirm(`Le tournoi est ${label}. Rouvrir les inscriptions le repassera en mode inscription. Continuer ?`)) return;
+  }
+  reopening.value = true;
+  try {
+    await store.updateTournament(id, { status: 'registration', registrationClose: null } as any);
+    await store.fetchTournament(id);
+  } finally {
+    reopening.value = false;
+  }
 }
 
 // Live socket actions (broadcast to all spectators)

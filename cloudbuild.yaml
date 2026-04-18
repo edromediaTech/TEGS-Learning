@@ -7,6 +7,14 @@ substitutions:
   _BACKEND_SERVICE: tegs-backend
 
 steps:
+  # --- Backend: Unit tests (fail fast before build) ---
+  - id: "test-backend"
+    name: "node:20-alpine"
+    entrypoint: "sh"
+    args:
+      - "-c"
+      - "cd backend && npm ci && npm test"
+
   # --- Backend: Build & Push ---
   - id: "build-backend"
     name: "gcr.io/cloud-builders/docker"
@@ -17,6 +25,7 @@ steps:
       - "-t"
       - "gcr.io/$PROJECT_ID/${_BACKEND_SERVICE}:latest"
       - "./backend"
+    waitFor: ["test-backend"]
 
   - id: "push-backend"
     name: "gcr.io/cloud-builders/docker"

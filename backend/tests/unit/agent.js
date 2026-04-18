@@ -53,7 +53,7 @@ async function testAsync(name, fn) {
 
 function testAgentConfig() {
   console.log('\n── 1. agentConfig ──');
-  const { isAgentEnabled, getProfileForRole, AGENT_PROFILES, ANOMALY_THRESHOLD } = require('./src/config/agentConfig');
+  const { isAgentEnabled, getProfileForRole, AGENT_PROFILES, ANOMALY_THRESHOLD } = require('../../src/config/agentConfig');
 
   test('isAgentEnabled reflète PROCESS_AGENTIC_ON', () => {
     const prev = process.env.PROCESS_AGENTIC_ON;
@@ -116,7 +116,7 @@ function testAgentConfig() {
 
 function testSessionStore() {
   console.log('\n── 2. sessionStore ──');
-  const store = require('./src/agent/sessionStore');
+  const store = require('../../src/agent/sessionStore');
 
   test('getOrCreateSession crée une nouvelle session', () => {
     const { sessionId, messages, isNew } = store.getOrCreateSession('user1', 'tenant1');
@@ -214,7 +214,7 @@ function testSessionStore() {
 
 function testPanicSwitch() {
   console.log('\n── 3. panicSwitch ──');
-  const panic = require('./src/agent/panicSwitch');
+  const panic = require('../../src/agent/panicSwitch');
 
   // Reset state
   panic.panicDeactivate();
@@ -267,7 +267,7 @@ function testPanicSwitch() {
 
 function testBaseTool() {
   console.log('\n── 4. baseTool ──');
-  const { defineTool } = require('./src/agent/tools/_baseTool');
+  const { defineTool } = require('../../src/agent/tools/_baseTool');
 
   const readTool = defineTool({
     id: 'testRead',
@@ -344,7 +344,7 @@ function testBaseTool() {
 
 function testToolsRegistry() {
   console.log('\n── 5. tools/index ──');
-  const { getTool, getToolsForRole, getToolSchemas, getAllTools } = require('./src/agent/tools');
+  const { getTool, getToolsForRole, getToolSchemas, getAllTools } = require('../../src/agent/tools');
 
   test('13 outils enregistrés au total', () => {
     assert.strictEqual(getAllTools().length, 13);
@@ -419,8 +419,8 @@ function testToolsRegistry() {
 
 function testPromptTemplates() {
   console.log('\n── 6. promptTemplates ──');
-  const { buildSystemPrompt } = require('./src/agent/promptTemplates');
-  const { getProfileForRole } = require('./src/config/agentConfig');
+  const { buildSystemPrompt } = require('../../src/agent/promptTemplates');
+  const { getProfileForRole } = require('../../src/config/agentConfig');
 
   test('buildSystemPrompt public — contient Ambassadeur et restrictions', () => {
     const profile = getProfileForRole('public');
@@ -456,7 +456,7 @@ function testPromptTemplates() {
 
 function testDocsIndex() {
   console.log('\n── 7. docsIndex ──');
-  const { DOCS_INDEX, searchDocs } = require('./src/agent/knowledge/docsIndex');
+  const { DOCS_INDEX, searchDocs } = require('../../src/agent/knowledge/docsIndex');
 
   test('DOCS_INDEX contient au moins 10 documents', () => {
     assert.ok(DOCS_INDEX.length >= 10, `Seulement ${DOCS_INDEX.length} docs`);
@@ -516,8 +516,8 @@ function testDocsIndex() {
 
 function testAgentGate() {
   console.log('\n── 8. agentGate ──');
-  const { requireAgentEnabled, agentRateLimit } = require('./src/middleware/agentGate');
-  const panic = require('./src/agent/panicSwitch');
+  const { requireAgentEnabled, agentRateLimit } = require('../../src/middleware/agentGate');
+  const panic = require('../../src/agent/panicSwitch');
 
   // Mock Express req/res/next
   function mockReq(overrides = {}) {
@@ -594,7 +594,7 @@ function testOrchestrator() {
   // On teste la logique unitaire accessible.
 
   // Access sanitizeMessage indirectement via processMessage behavior
-  const { processMessage } = require('./src/agent/orchestrator');
+  const { processMessage } = require('../../src/agent/orchestrator');
 
   test('processMessage avec message vide retourne réponse par défaut', async () => {
     const result = await processMessage('', {
@@ -630,7 +630,7 @@ function testOrchestrator() {
 
 function testConfirmationStore() {
   console.log('\n── 10. confirmationStore ──');
-  const { createConfirmation, getConfirmation, rejectConfirmation } = require('./src/agent/confirmationStore');
+  const { createConfirmation, getConfirmation, rejectConfirmation } = require('../../src/agent/confirmationStore');
 
   test('createConfirmation retourne un ID', () => {
     const id = createConfirmation('u1', 't1', 'tournamentCreate', { title: 'Test' }, 'sess1');
@@ -684,7 +684,7 @@ async function main() {
   // Async tests
   console.log('\n── 9. orchestrator ──');
   await testAsync('processMessage avec message vide retourne réponse par défaut', async () => {
-    const { processMessage } = require('./src/agent/orchestrator');
+    const { processMessage } = require('../../src/agent/orchestrator');
     const result = await processMessage('', {
       user: { id: 'test', role: 'student', tenant_id: 't1' },
       tenantId: 't1',
@@ -695,7 +695,7 @@ async function main() {
   });
 
   await testAsync('processMessage avec role inconnu retourne message profil', async () => {
-    const { processMessage } = require('./src/agent/orchestrator');
+    const { processMessage } = require('../../src/agent/orchestrator');
     const result = await processMessage('Bonjour', {
       user: { id: 'test2', role: 'hacker', tenant_id: 't1' },
       tenantId: 't1',

@@ -33,9 +33,9 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const { fetch: undiciFetch } = require('undici');
 
-const Tenant = require('./src/models/Tenant');
-const User = require('./src/models/User');
-const Module = require('./src/models/Module');
+const Tenant = require('../../src/models/Tenant');
+const User = require('../../src/models/User');
+const Module = require('../../src/models/Module');
 
 const PORT = process.env.PORT || 3000;
 const BASE_URL = process.env.BASE_URL || `http://127.0.0.1:${PORT}/api`;

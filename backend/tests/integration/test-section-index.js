@@ -41,9 +41,9 @@ async function apiFetch(method, path, body = null, token = null) {
 
 async function main() {
   await mongoose.connect(process.env.MONGODB_URI);
-  const Module = require('./src/models/Module');
-  const Tournament = require('./src/models/Tournament');
-  const User = require('./src/models/User');
+  const Module = require('../../src/models/Module');
+  const Tournament = require('../../src/models/Tournament');
+  const User = require('../../src/models/User');
   const jwt = require('jsonwebtoken');
 
   const uid = Date.now().toString(36);

@@ -169,8 +169,8 @@ async function runAudit() {
   assert(participants.every(p => p.token?.startsWith('TKT-')), 'Tous les tokens commencent par TKT-');
 
   // Lier user_id aux participants
-  const Participant = require('./src/models/Participant');
-  const QuizResult = require('./src/models/QuizResult');
+  const Participant = require('../../src/models/Participant');
+  const QuizResult = require('../../src/models/QuizResult');
   const dbParticipants = await Participant.find({ tournament_id: tournamentId }).sort({ createdAt: 1 });
   for (let i = 0; i < dbParticipants.length; i++) {
     dbParticipants[i].user_id = students[i]?.id || null;
@@ -460,7 +460,7 @@ async function runAudit() {
   assert(supervisorCode.includes('verify-token'), 'Superviseur appelle verify-token');
 
   // Notifications backend
-  const DeviceToken = require('./src/models/DeviceToken');
+  const DeviceToken = require('../../src/models/DeviceToken');
   const regDev = await request('POST', '/notifications/register-device', {
     token: `cert-fcm-${uid}`, platform: 'android',
   });
