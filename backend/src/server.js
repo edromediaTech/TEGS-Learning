@@ -27,6 +27,7 @@ const sponsorshipRoutes = require('./routes/sponsorship');
 const voteRoutes = require('./routes/votes');
 const queueRoutes = require('./routes/queue');
 const agentRoutes = require('./routes/agent');
+const knowledgeToFormRoutes = require('./routes/knowledgeToForm');
 
 const http = require('http');
 const path = require('path');
@@ -96,6 +97,7 @@ app.use('/api/sponsorship', sponsorshipRoutes);
 app.use('/api/votes', voteRoutes);
 app.use('/api/queue', queueRoutes);
 app.use('/api/agent', agentRoutes);
+app.use('/api/knowledge-to-form', knowledgeToFormRoutes);
 
 // --- Gestion d'erreurs globale ---
 app.use((err, _req, res, _next) => {

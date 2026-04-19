@@ -86,17 +86,19 @@ function testAgentConfig() {
     assert.ok(!p.allowedTools.includes('tournamentCreate'));
   });
 
-  test('profil admin_ddene — mutations autorisées, 12 outils', () => {
+  test('profil admin_ddene — mutations autorisées, 13 outils', () => {
     const p = getProfileForRole('admin_ddene');
     assert.strictEqual(p.canMutate, true);
-    assert.strictEqual(p.allowedTools.length, 12);
+    assert.strictEqual(p.allowedTools.length, 13);
     assert.ok(p.allowedTools.includes('tournamentCreate'));
+    assert.ok(p.allowedTools.includes('knowledgeToForm'));
   });
 
-  test('profil superadmin — 13 outils (inclut agentAdmin)', () => {
+  test('profil superadmin — 14 outils (inclut agentAdmin + knowledgeToForm)', () => {
     const p = getProfileForRole('superadmin');
-    assert.strictEqual(p.allowedTools.length, 13);
+    assert.strictEqual(p.allowedTools.length, 14);
     assert.ok(p.allowedTools.includes('agentAdmin'));
+    assert.ok(p.allowedTools.includes('knowledgeToForm'));
   });
 
   test('profil public — 2 outils seulement, max 10 req/h', () => {
@@ -346,8 +348,8 @@ function testToolsRegistry() {
   console.log('\n── 5. tools/index ──');
   const { getTool, getToolsForRole, getToolSchemas, getAllTools } = require('../../src/agent/tools');
 
-  test('13 outils enregistrés au total', () => {
-    assert.strictEqual(getAllTools().length, 13);
+  test('14 outils enregistrés au total', () => {
+    assert.strictEqual(getAllTools().length, 14);
   });
 
   test('getTool retourne un outil par ID', () => {
@@ -374,9 +376,9 @@ function testToolsRegistry() {
     assert.strictEqual(tools.length, 2);
   });
 
-  test('getToolsForRole("superadmin") — 13 outils', () => {
+  test('getToolsForRole("superadmin") — 14 outils', () => {
     const tools = getToolsForRole('superadmin');
-    assert.strictEqual(tools.length, 13);
+    assert.strictEqual(tools.length, 14);
   });
 
   test('getToolsForRole("unknown") — 0 outils', () => {
@@ -401,11 +403,12 @@ function testToolsRegistry() {
     assert.strictEqual(ids.length, unique.size, 'IDs en double détectés');
   });
 
-  test('les 13 outils documentés dans CLAUDE.md sont présents', () => {
+  test('les 14 outils documentés dans CLAUDE.md sont présents', () => {
     const expectedIds = [
       'searchDocumentation', 'faq', 'tournamentList', 'tournamentDetail',
       'tournamentCreate', 'participantSearch', 'moduleList', 'analyticsOverview',
       'commissionCalc', 'quotaStatus', 'reportGenerate', 'userSearch', 'agentAdmin',
+      'knowledgeToForm',
     ];
     for (const id of expectedIds) {
       assert.ok(getTool(id), `Outil manquant: ${id}`);

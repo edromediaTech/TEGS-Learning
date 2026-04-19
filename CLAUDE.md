@@ -25,9 +25,9 @@ concours academiques en ligne, studio de contenu, suivi pedagogique, assistant i
 ## 2. Backend (`backend/`)
 
 ### Entree
-`src/server.js` — Express, CORS, compression, Socket.io, 22 routes
+`src/server.js` — Express, CORS, compression, Socket.io, 23 routes
 
-### Routes (22 — `src/routes/`)
+### Routes (23 — `src/routes/`)
 | Route | Path | Description |
 |-------|------|-------------|
 | auth | `/api/auth` | Register, login, /me |
@@ -52,6 +52,7 @@ concours academiques en ligne, studio de contenu, suivi pedagogique, assistant i
 | queue | `/api/queue` | File d'attente |
 | qrcode | `/api/qr` | QR codes |
 | agent | `/api/agent` | Assistant chat, confirmations, panic, settings, audit |
+| knowledge-to-form | `/api/knowledge-to-form` | Generation quiz/formulaire depuis PDF/DOCX/URL (mode DATA/STRUCTURE) |
 
 ### Modeles (17 — `src/models/`)
 `Tenant` `User` `Module` `Tournament` `Participant` `QuizResult` `Sponsor` `SponsorshipPack` `Transaction` `Statement` `LaunchSession` `LiveSession` `Vote` `DeviceToken` `GuaranteeLog` `ProctoringEvidence` `AgentAuditLog`
@@ -63,7 +64,7 @@ concours academiques en ligne, studio de contenu, suivi pedagogique, assistant i
 - `agentGate.js` — `requireAgentEnabled`, `agentRateLimit`
 
 ### Services (`src/services/`)
-`cmi5Xml` `fcm` `moncash` `natcash` `trafficController` `aiGateway`
+`cmi5Xml` `fcm` `moncash` `natcash` `trafficController` `aiGateway` `knowledgeExtractor`
 
 ### Assistant (`src/agent/`)
 | Fichier | Description |
@@ -75,7 +76,7 @@ concours academiques en ligne, studio de contenu, suivi pedagogique, assistant i
 | `panicSwitch.js` | Arret d'urgence + broadcast |
 | `tenantSettings.js` | Config par tenant (cache 5min) |
 | `knowledge/docsIndex.js` | Base de connaissances (39 documents) |
-| `tools/` | 13 outils avec RBAC + audit |
+| `tools/` | 14 outils avec RBAC + audit (inclut `knowledgeToForm` — generation quiz depuis document) |
 
 ### Socket.io (`src/socket/`)
 - `index.js` — 5 namespaces
@@ -112,6 +113,7 @@ concours academiques en ligne, studio de contenu, suivi pedagogique, assistant i
 | `/admin/media` | Mediatheque |
 | `/admin/agent` | Surveillance assistant, audit, arret d'urgence |
 | `/admin/agent-settings` | Config assistant : limites, outils, moteur, couts |
+| `/admin/knowledge-to-form` | Wizard : generer un quiz/formulaire depuis PDF, DOCX ou URL |
 
 ### Stores Pinia
 `auth.ts` `modules.ts` `tournaments.ts` `agent.ts`
@@ -122,6 +124,7 @@ concours academiques en ligne, studio de contenu, suivi pedagogique, assistant i
 ### Composants cles
 - `blocks/` — 18 types x (Edit + Preview) = 36+ composants
 - `agent/` — `AgentChatPanel`, `AgentBubble`, `AgentMessageBubble`, `AgentProposalCard`, `AgentThinkingIndicator`
+- `admin/` — `FormGenerationWizard` (wizard 3 etapes Source/Mode/Revision pour knowledge-to-form)
 
 ---
 

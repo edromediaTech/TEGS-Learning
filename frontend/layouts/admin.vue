@@ -124,6 +124,9 @@ const navItems = computed(() => {
     { to: '/admin/analytics', label: 'Analytics', icon: '\uD83D\uDCCA' },
   );
   if (auth.isSuperAdmin || auth.isAdmin) {
+    items.push({ to: '/admin/knowledge-to-form', label: 'Generer un quiz', icon: '\u2728' });
+  }
+  if (auth.isSuperAdmin || auth.isAdmin) {
     items.push({ to: '/admin/billing', label: 'Facturation', icon: '\uD83D\uDCB3' });
     items.push({ to: '/admin/agent', label: 'Assistant', icon: '\uD83E\uDD16' });
     items.push({ to: '/admin/agent-settings', label: 'Config Agent', icon: '\u2699\uFE0F' });

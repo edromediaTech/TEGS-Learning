@@ -8,6 +8,7 @@
 
 const crypto = require('crypto');
 const Tournament = require('../models/Tournament');
+const Module = require('../models/Module');
 const AgentAuditLog = require('../models/AgentAuditLog');
 
 const CONFIRMATION_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -46,9 +47,10 @@ function createConfirmation(userId, tenantId, toolId, actionData, sessionId) {
  *
  * @param {string} confirmationId
  * @param {string} userId - L'utilisateur qui confirme (doit etre le createur)
+ * @param {object} [overrides] - Modifications faites par l'admin (ex: questions editees)
  * @returns {{ success: boolean, result?: object, error?: string }}
  */
-async function executeConfirmation(confirmationId, userId) {
+async function executeConfirmation(confirmationId, userId, overrides = null) {
   const conf = confirmations.get(confirmationId);
 
   if (!conf) {
@@ -69,7 +71,10 @@ async function executeConfirmation(confirmationId, userId) {
   }
 
   try {
-    const result = await executeMutation(conf.toolId, conf.actionData, conf.tenantId, userId);
+    const mergedData = overrides && typeof overrides === 'object'
+      ? { ...conf.actionData, ...overrides }
+      : conf.actionData;
+    const result = await executeMutation(conf.toolId, mergedData, conf.tenantId, userId);
     conf.status = 'confirmed';
 
     // Audit
@@ -164,9 +169,151 @@ async function executeMutation(toolId, actionData, tenantId, userId) {
       };
     }
 
+    case 'knowledgeToForm': {
+      const result = await persistKnowledgeToForm(actionData, tenantId, userId);
+      return result;
+    }
+
     default:
       throw new Error(`Mutation non supportee pour l'outil: ${toolId}`);
   }
+}
+
+/**
+ * Persiste le resultat d'une generation knowledge-to-form.
+ * Cree un Module brouillon avec une section contenant les questions ou les
+ * champs de formulaire sous forme de contentBlocks. Si targetType vaut
+ * 'tournament_draft', cree egalement un Tournament brouillon pointant sur
+ * ce Module (1 round).
+ */
+async function persistKnowledgeToForm(actionData, tenantId, userId) {
+  const crypto = require('crypto');
+  const {
+    title = 'Quiz genere',
+    mode = 'DATA',
+    questions = [],
+    fields = [],
+    sourceMeta = {},
+    targetType = 'module_draft',
+  } = actionData || {};
+
+  const contentBlocks = mode === 'STRUCTURE'
+    ? fields.map((f, i) => ({
+        type: 'open_answer',
+        order: i,
+        data: {
+          label: f.label,
+          fieldType: f.type,
+          required: !!f.required,
+          options: Array.isArray(f.options) ? f.options : [],
+        },
+      }))
+    : questions.map((q, i) => {
+        if (q.type === 'true_false') {
+          return {
+            type: 'true_false',
+            order: i,
+            data: {
+              question: q.prompt,
+              correctAnswer: q.correctIndex === 0,
+              explanation: q.explanation || '',
+              points: 1,
+              duration: 30,
+            },
+          };
+        }
+        if (q.type === 'open_answer') {
+          return {
+            type: 'open_answer',
+            order: i,
+            data: {
+              question: q.prompt,
+              expectedAnswer: q.explanation || '',
+              points: 1,
+              duration: 60,
+            },
+          };
+        }
+        return {
+          type: 'quiz',
+          order: i,
+          data: {
+            question: q.prompt,
+            options: (q.options || []).map((label, idx) => ({
+              text: label,
+              isCorrect: idx === q.correctIndex,
+            })),
+            explanation: q.explanation || '',
+            points: 1,
+            duration: 45,
+          },
+        };
+      });
+
+  const sectionTitle = mode === 'STRUCTURE' ? 'Formulaire genere' : 'Questions generees';
+  const screenTitle = sourceMeta?.url ? `Source : ${sourceMeta.url}` : `Source : ${sourceMeta?.kind || 'document'}`;
+
+  const moduleDoc = await Module.create({
+    title,
+    description: `Brouillon genere automatiquement depuis une source externe (${sourceMeta?.kind || 'document'}).`,
+    status: 'draft',
+    sections: [
+      {
+        title: sectionTitle,
+        order: 0,
+        screens: [
+          {
+            title: screenTitle.slice(0, 120),
+            order: 0,
+            contentBlocks,
+          },
+        ],
+      },
+    ],
+    tenant_id: tenantId,
+    created_by: userId,
+  });
+
+  if (targetType === 'tournament_draft' && mode === 'DATA') {
+    const tournament = await Tournament.create({
+      title,
+      description: `Brouillon genere automatiquement depuis ${sourceMeta?.url || sourceMeta?.kind || 'un document'}.`,
+      status: 'draft',
+      registrationFee: 0,
+      currency: 'HTG',
+      maxParticipants: 0,
+      rounds: [
+        {
+          order: 0,
+          label: 'Eliminatoire',
+          module_id: moduleDoc._id,
+          promoteTopX: 10,
+          status: 'pending',
+        },
+      ],
+      currentRound: 0,
+      prizes: [],
+      shareToken: crypto.randomBytes(6).toString('hex'),
+      tenant_id: tenantId,
+      created_by: userId,
+    });
+
+    return {
+      message: `Tournoi brouillon "${title}" cree avec 1 round et ${contentBlocks.length} question(s). Module associe pret dans le Studio.`,
+      moduleId: moduleDoc._id.toString(),
+      tournamentId: tournament._id.toString(),
+      shareToken: tournament.shareToken,
+      status: 'draft',
+      blocks: contentBlocks.length,
+    };
+  }
+
+  return {
+    message: `Module brouillon "${title}" cree avec ${contentBlocks.length} bloc(s).`,
+    moduleId: moduleDoc._id.toString(),
+    status: 'draft',
+    blocks: contentBlocks.length,
+  };
 }
 
 // Cleanup periodique (toutes les 5 minutes)

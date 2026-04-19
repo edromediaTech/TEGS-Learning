@@ -24,6 +24,7 @@ const toolModules = [
   require('./userSearch'),
   require('./agentAdmin'),
   require('./searchDocumentation'),
+  require('./knowledgeToForm'),
 ];
 
 for (const tool of toolModules) {
