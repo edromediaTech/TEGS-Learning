@@ -665,8 +665,142 @@ function testConfirmationStore() {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// RUN ALL
+// 11. knowledgeExtractor
 // ═══════════════════════════════════════════════════════════════
+
+function testKnowledgeExtractorSync() {
+  console.log('\n── 11. knowledgeExtractor (sync) ──');
+  const { ExtractionError } = require('../../src/services/knowledgeExtractor');
+
+  test('ExtractionError expose un code par defaut', () => {
+    const err = new ExtractionError('msg');
+    assert.strictEqual(err.name, 'ExtractionError');
+    assert.strictEqual(err.code, 'EXTRACTION_FAILED');
+  });
+
+  test('ExtractionError accepte un code custom', () => {
+    const err = new ExtractionError('msg', 'SOURCE_UNREADABLE');
+    assert.strictEqual(err.code, 'SOURCE_UNREADABLE');
+  });
+}
+
+async function testKnowledgeExtractorAsync() {
+  console.log('\n── 11. knowledgeExtractor (async) ──');
+  const { extract, extractFromPdf, extractFromDocx, extractFromUrl } = require('../../src/services/knowledgeExtractor');
+
+  await testAsync('extract — rejette source null', async () => {
+    try {
+      await extract(null);
+      throw new Error('should have thrown');
+    } catch (err) {
+      assert.ok(err.message.includes('source'));
+    }
+  });
+
+  await testAsync('extract — rejette image avec code UNSUPPORTED_MULTIMODAL', async () => {
+    try {
+      await extract({ buffer: Buffer.from('fake'), mimetype: 'image/png', originalname: 'a.png' });
+      throw new Error('should have thrown');
+    } catch (err) {
+      assert.strictEqual(err.code, 'UNSUPPORTED_MULTIMODAL');
+    }
+  });
+
+  await testAsync('extract — rejette type inconnu avec code UNSUPPORTED_TYPE', async () => {
+    try {
+      await extract({ buffer: Buffer.from('x'), mimetype: 'application/zip', originalname: 'a.zip' });
+      throw new Error('should have thrown');
+    } catch (err) {
+      assert.strictEqual(err.code, 'UNSUPPORTED_TYPE');
+    }
+  });
+
+  await testAsync('extract — route TXT et retourne meta kind=txt', async () => {
+    const result = await extract({
+      buffer: Buffer.from('Ceci est un texte de test suffisamment long pour passer la validation.', 'utf-8'),
+      mimetype: 'text/plain',
+      originalname: 'test.txt',
+    });
+    assert.ok(result.text.includes('texte de test'));
+    assert.strictEqual(result.meta.kind, 'txt');
+  });
+
+  await testAsync('extract — rejette TXT trop court avec code SOURCE_UNREADABLE', async () => {
+    try {
+      await extract({ buffer: Buffer.from('abc', 'utf-8'), mimetype: 'text/plain', originalname: 'a.txt' });
+      throw new Error('should have thrown');
+    } catch (err) {
+      assert.strictEqual(err.code, 'SOURCE_UNREADABLE');
+    }
+  });
+
+  await testAsync('extractFromPdf — rejette buffer vide', async () => {
+    try {
+      await extractFromPdf(Buffer.alloc(0));
+      throw new Error('should have thrown');
+    } catch (err) {
+      assert.ok(err.message.includes('vide') || err.message.includes('illisible'));
+    }
+  });
+
+  await testAsync('extractFromDocx — rejette buffer vide', async () => {
+    try {
+      await extractFromDocx(Buffer.alloc(0));
+      throw new Error('should have thrown');
+    } catch (err) {
+      assert.ok(err.message.includes('vide'));
+    }
+  });
+
+  await testAsync('extractFromUrl — rejette URL sans protocole', async () => {
+    try {
+      await extractFromUrl('just-a-string');
+      throw new Error('should have thrown');
+    } catch (err) {
+      assert.ok(err.message.includes('http'));
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 12. knowledgeToForm tool
+// ═══════════════════════════════════════════════════════════════
+
+function testKnowledgeToFormTool() {
+  console.log('\n── 12. knowledgeToForm tool ──');
+  const tool = require('../../src/agent/tools/knowledgeToForm');
+
+  test('tool id = "knowledgeToForm" et isMutation = true', () => {
+    assert.strictEqual(tool.id, 'knowledgeToForm');
+    assert.strictEqual(tool.isMutation, true);
+  });
+
+  test('RBAC — admin_ddene et superadmin autorises, student refuse', () => {
+    assert.strictEqual(tool.canAccess('admin_ddene'), true);
+    assert.strictEqual(tool.canAccess('superadmin'), true);
+    assert.strictEqual(tool.canAccess('student'), false);
+    assert.strictEqual(tool.canAccess('teacher'), false);
+    assert.strictEqual(tool.canAccess('public'), false);
+  });
+
+  test('parameters declare extractionMode requis', () => {
+    assert.ok(tool.parameters.required.includes('extractionMode'));
+    assert.deepStrictEqual(tool.parameters.properties.extractionMode.enum, ['DATA', 'STRUCTURE']);
+  });
+
+  test('parameters declare targetType enum module_draft et tournament_draft', () => {
+    const tt = tool.parameters.properties.targetType;
+    assert.ok(tt);
+    assert.deepStrictEqual(tt.enum.sort(), ['module_draft', 'tournament_draft']);
+  });
+
+  test('toSchema expose name/description/parameters pour le LLM', () => {
+    const schema = tool.toSchema();
+    assert.strictEqual(schema.name, 'knowledgeToForm');
+    assert.ok(schema.description);
+    assert.ok(schema.parameters);
+  });
+}
 
 async function main() {
   console.log('╔══════════════════════════════════════════════════╗');
@@ -683,8 +817,12 @@ async function main() {
   testDocsIndex();
   testAgentGate();
   testConfirmationStore();
+  testKnowledgeExtractorSync();
+  testKnowledgeToFormTool();
 
   // Async tests
+  await testKnowledgeExtractorAsync();
+
   console.log('\n── 9. orchestrator ──');
   await testAsync('processMessage avec message vide retourne réponse par défaut', async () => {
     const { processMessage } = require('../../src/agent/orchestrator');
