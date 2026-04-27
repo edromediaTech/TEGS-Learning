@@ -113,6 +113,7 @@ const navItems = computed(() => {
   const items = [];
   if (auth.isSuperAdmin) {
     items.push({ to: '/admin/tenants', label: 'Organisations', icon: '\uD83C\uDFEB' });
+    items.push({ to: '/admin/tegscreen', label: 'Licences TegScreen', icon: '\uD83D\uDCF1' });
   }
   if (auth.isSuperAdmin || auth.isAdmin) {
     items.push({ to: '/admin/users', label: 'Utilisateurs', icon: '\uD83D\uDC65' });
