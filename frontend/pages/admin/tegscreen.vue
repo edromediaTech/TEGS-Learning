@@ -52,7 +52,7 @@
               <td class="p-4 font-mono text-base tracking-wider">{{ c.code }}</td>
               <td class="p-4 text-center">{{ (c.machines || []).length }} / {{ c.numPcs }}</td>
               <td class="p-4 text-center">{{ c.numPhonesPerPc }}</td>
-              <td class="p-4 text-gray-500">{{ c.contactEmail || '-' }}</td>
+              <td class="p-4 text-gray-500">{{ c.email || '-' }}</td>
               <td class="p-4 text-center">
                 <span :class="statusClass(c.status)" class="px-2 py-1 rounded-full text-xs">
                   {{ statusLabel(c.status) }}
@@ -60,6 +60,7 @@
               </td>
               <td class="p-4 text-right space-x-2">
                 <button @click="copy(c.code)" class="text-gray-600 hover:underline text-xs">Copier code</button>
+                <button @click="resendCode(c)" class="text-emerald-600 hover:underline text-xs">Renvoyer email</button>
                 <button @click="openEdit(c)" class="text-blue-600 hover:underline text-xs">Modifier</button>
                 <button @click="openMachines(c)" v-if="(c.machines || []).length" class="text-indigo-600 hover:underline text-xs">
                   Machines ({{ c.machines.length }})
@@ -83,6 +84,11 @@
               <label class="block text-sm font-medium text-gray-700 mb-1">Nom du client</label>
               <input v-model="form.name" required class="w-full px-3 py-2 border rounded-lg" />
             </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Email <span class="text-red-500">*</span></label>
+              <input v-model="form.email" type="email" required class="w-full px-3 py-2 border rounded-lg" />
+              <p class="text-xs text-gray-500 mt-1">Le code d'activation sera envoyé à cet email. Le client devra l'utiliser pour activer.</p>
+            </div>
             <div class="grid grid-cols-2 gap-3">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Nb de PCs</label>
@@ -92,10 +98,6 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">Téléphones / PC</label>
                 <input v-model.number="form.numPhonesPerPc" type="number" min="1" max="1000" required class="w-full px-3 py-2 border rounded-lg" />
               </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Email contact</label>
-              <input v-model="form.contactEmail" type="email" class="w-full px-3 py-2 border rounded-lg" />
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
@@ -162,10 +164,10 @@ if (process.client && !auth.isSuperAdmin) {
 
 interface Machine { machineId: string; label: string; activatedAt: string; lastSeenAt: string }
 interface Customer {
-  id: string; name: string; code: string;
+  id: string; name: string; email: string; code: string;
   numPcs: number; numPhonesPerPc: number;
   status: 'pending' | 'active' | 'revoked';
-  machines: Machine[]; contactEmail: string; notes: string;
+  machines: Machine[]; notes: string;
   createdAt: string; updatedAt: string;
 }
 
@@ -177,9 +179,9 @@ const formError = ref('')
 
 const form = reactive({
   name: '',
+  email: '',
   numPcs: 1,
   numPhonesPerPc: 1,
-  contactEmail: '',
   notes: '',
 })
 
@@ -216,7 +218,7 @@ function openCreate() {
   form.name = ''
   form.numPcs = 1
   form.numPhonesPerPc = 1
-  form.contactEmail = ''
+  form.email = ''
   form.notes = ''
   formError.value = ''
   showForm.value = true
@@ -227,7 +229,7 @@ function openEdit(c: Customer) {
   form.name = c.name
   form.numPcs = c.numPcs
   form.numPhonesPerPc = c.numPhonesPerPc
-  form.contactEmail = c.contactEmail || ''
+  form.email = c.email || ''
   form.notes = c.notes || ''
   formError.value = ''
   showForm.value = true
@@ -256,6 +258,17 @@ async function save() {
     await load()
   } catch (e: any) {
     formError.value = e.data?.error || 'Erreur'
+  }
+}
+
+async function resendCode(c: Customer) {
+  try {
+    const res = await apiFetch(`/tegscreen/customers/${c.id}/resend`, { method: 'POST' })
+    const emailed = (res.data as { emailed: boolean })?.emailed
+    if (emailed) alert(`Code envoyé à ${c.email}`)
+    else alert(`SMTP non configuré côté serveur. Code à transmettre manuellement : ${c.code}`)
+  } catch (e: any) {
+    alert(e.data?.error || 'Erreur')
   }
 }
 

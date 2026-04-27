@@ -1,8 +1,11 @@
 const express = require('express');
 const crypto = require('crypto');
 const TegScreenCustomer = require('../models/TegScreenCustomer');
+const TegScreenTrial = require('../models/TegScreenTrial');
 const { authenticate, authorize } = require('../middleware/auth');
+const { sendActivationEmail } = require('../utils/tegscreenMailer');
 
+const DEFAULT_TRIAL_DAYS = 14;
 const router = express.Router();
 
 // -----------------------------------------------------------------------
@@ -24,6 +27,7 @@ function publicView(c) {
   return {
     id: c._id,
     name: c.name,
+    email: c.email,
     code: c.code,
     numPcs: c.numPcs,
     numPhonesPerPc: c.numPhonesPerPc,
@@ -34,7 +38,6 @@ function publicView(c) {
       activatedAt: m.activatedAt,
       lastSeenAt: m.lastSeenAt,
     })),
-    contactEmail: c.contactEmail,
     notes: c.notes,
     tenant_id: c.tenant_id || null,
     createdAt: c.createdAt,
@@ -42,26 +45,134 @@ function publicView(c) {
   };
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function isEmail(s) {
+  return typeof s === 'string' && EMAIL_RE.test(s.trim());
+}
+
 function findMachine(customer, machineId) {
   return (customer.machines || []).find(m => m.machineId === machineId);
 }
+
+function trialView(t) {
+  if (!t) return null;
+  return {
+    machineId: t.machineId,
+    email: t.email,
+    durationDays: t.durationDays,
+    startedAt: t.startedAt,
+    expiresAt: t.expiresAt,
+    status: t.status,
+    daysLeft: Math.max(0, Math.ceil((t.expiresAt - Date.now()) / 86400000)),
+    label: t.label,
+    convertedTo: t.convertedTo || null,
+  };
+}
+
+// =======================================================================
+// PUBLIC: trial — la machine peut demander UN essai gratuit
+// =======================================================================
+
+// POST /api/tegscreen/trial/start  { email, machine_id, label?, days? }
+// Refuse si l'email OU la machine_id a deja consomme un trial — on ne
+// reinitialise jamais. L'utilisateur doit acheter un code pour continuer.
+router.post('/trial/start', async (req, res, next) => {
+  try {
+    const { email, machine_id, label, days } = req.body || {};
+    if (!isEmail(email)) {
+      return res.status(400).json({ error: 'email invalide' });
+    }
+    if (typeof machine_id !== 'string' || machine_id.length < 4 || machine_id.length > 200) {
+      return res.status(400).json({ error: 'machine_id manquant ou invalide' });
+    }
+    const normalizedEmail = email.toLowerCase().trim();
+    const existingByMachine = await TegScreenTrial.findOne({ machineId: machine_id });
+    const existingByEmail = await TegScreenTrial.findOne({ email: normalizedEmail });
+    const existing = existingByMachine || existingByEmail;
+    if (existing) {
+      // Email ou machine deja vu — refuser un nouveau trial mais retourner
+      // l'etat du trial existant si c'est la meme paire (email+machine).
+      const samePair = existingByMachine && existingByMachine.email === normalizedEmail;
+      const now = Date.now();
+      if (existing.status === 'active' && existing.expiresAt < now) {
+        existing.status = 'expired';
+        await existing.save();
+      }
+      if (samePair) {
+        existing.lastSeenAt = new Date();
+        await existing.save();
+        return res.json({ ok: existing.status === 'active', trial: trialView(existing) });
+      }
+      // Mismatch (email different sur cette machine, ou email deja utilise ailleurs).
+      const reason = existingByMachine ? 'machine_already_used' : 'email_already_used';
+      return res.status(409).json({ error: 'Trial deja consomme', reason });
+    }
+    const requestedDays = Number.isInteger(days) && days >= 1 && days <= 90
+      ? days : DEFAULT_TRIAL_DAYS;
+    const startedAt = new Date();
+    const expiresAt = new Date(startedAt.getTime() + requestedDays * 86400000);
+    const trial = await TegScreenTrial.create({
+      machineId: machine_id,
+      email: normalizedEmail,
+      label: label ? String(label).trim() : '',
+      durationDays: requestedDays,
+      startedAt,
+      expiresAt,
+      status: 'active',
+    });
+    res.status(201).json({ ok: true, trial: trialView(trial) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/tegscreen/trial/verify  { machine_id }
+router.post('/trial/verify', async (req, res, next) => {
+  try {
+    const { machine_id } = req.body || {};
+    const trial = await TegScreenTrial.findOne({ machineId: machine_id });
+    if (!trial) return res.json({ valid: false, reason: 'no_trial' });
+    if (trial.status === 'converted') {
+      return res.json({ valid: false, reason: 'converted', trial: trialView(trial) });
+    }
+    if (trial.expiresAt < Date.now()) {
+      if (trial.status !== 'expired') {
+        trial.status = 'expired';
+        await trial.save();
+      }
+      return res.json({ valid: false, reason: 'expired', trial: trialView(trial) });
+    }
+    trial.lastSeenAt = new Date();
+    await trial.save();
+    res.json({ valid: true, trial: trialView(trial) });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // =======================================================================
 // PUBLIC: activation depuis une instance TegScreen
 // =======================================================================
 
-// POST /api/tegscreen/activate  { code, machine_id, label? }
+// POST /api/tegscreen/activate  { email, code, machine_id, label? }
 router.post('/activate', async (req, res, next) => {
   try {
-    const { code, machine_id, label } = req.body || {};
+    const { email, code, machine_id, label } = req.body || {};
+    if (!isEmail(email)) {
+      return res.status(400).json({ error: 'email invalide' });
+    }
     if (typeof code !== 'string' || !/^\d{8}$/.test(code)) {
       return res.status(400).json({ error: 'Code invalide (8 chiffres attendus)' });
     }
     if (typeof machine_id !== 'string' || machine_id.length < 4 || machine_id.length > 200) {
       return res.status(400).json({ error: 'machine_id manquant ou invalide' });
     }
+    const normalizedEmail = email.toLowerCase().trim();
     const customer = await TegScreenCustomer.findOne({ code });
     if (!customer) return res.status(404).json({ error: 'Code inconnu' });
+    if (customer.email !== normalizedEmail) {
+      return res.status(403).json({ error: 'Email ne correspond pas a ce code' });
+    }
     if (customer.status === 'revoked') {
       return res.status(403).json({ error: 'Licence revoquee' });
     }
@@ -85,6 +196,15 @@ router.post('/activate', async (req, res, next) => {
     }
     customer.status = 'active';
     await customer.save();
+
+    // If a trial existed for this machine, mark it as converted (so we can
+    // see the funnel from /admin/tegscreen).
+    try {
+      await TegScreenTrial.updateOne(
+        { machineId: machine_id, status: { $ne: 'converted' } },
+        { $set: { status: 'converted', convertedTo: customer._id } }
+      );
+    } catch (_) { /* non-blocking */ }
 
     res.json({
       ok: true,
@@ -140,12 +260,15 @@ router.use(authenticate);
 router.use(authorize('superadmin'));
 
 // POST /api/tegscreen/customers
-// Body: { name, numPcs, numPhonesPerPc, contactEmail?, notes?, tenant_id? }
+// Body: { name, email, numPcs, numPhonesPerPc, notes?, tenant_id? }
 router.post('/customers', async (req, res, next) => {
   try {
-    const { name, numPcs, numPhonesPerPc, contactEmail, notes, tenant_id } = req.body || {};
+    const { name, email, numPcs, numPhonesPerPc, notes, tenant_id } = req.body || {};
     if (typeof name !== 'string' || !name.trim()) {
       return res.status(400).json({ error: 'name requis' });
+    }
+    if (!isEmail(email)) {
+      return res.status(400).json({ error: 'email invalide' });
     }
     const pcs = Number(numPcs);
     const phones = Number(numPhonesPerPc);
@@ -155,17 +278,48 @@ router.post('/customers', async (req, res, next) => {
     if (!Number.isInteger(phones) || phones < 1 || phones > 1000) {
       return res.status(400).json({ error: 'numPhonesPerPc doit etre un entier entre 1 et 1000' });
     }
+    const normalizedEmail = email.toLowerCase().trim();
+    const dupe = await TegScreenCustomer.findOne({ email: normalizedEmail });
+    if (dupe) return res.status(409).json({ error: 'Un customer existe deja pour cet email' });
     const code = await generateUniqueCode();
     const doc = await TegScreenCustomer.create({
       name: name.trim(),
+      email: normalizedEmail,
       numPcs: pcs,
       numPhonesPerPc: phones,
       code,
-      contactEmail: contactEmail || '',
       notes: notes || '',
       tenant_id: tenant_id || null,
     });
-    res.status(201).json(publicView(doc));
+
+    // Try to email the code; if SMTP_URL is not set, the code is still in
+    // the response so the admin can send it manually.
+    let emailed = false;
+    try {
+      emailed = await sendActivationEmail(normalizedEmail, doc);
+    } catch (e) {
+      // Don't fail the create if email fails.
+      console.warn('[tegscreen] activation email failed:', e.message);
+    }
+
+    res.status(201).json({ ...publicView(doc), emailed });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/tegscreen/customers/:id/resend
+router.post('/customers/:id/resend', async (req, res, next) => {
+  try {
+    const doc = await TegScreenCustomer.findById(req.params.id);
+    if (!doc) return res.status(404).json({ error: 'Customer introuvable' });
+    let emailed = false;
+    try {
+      emailed = await sendActivationEmail(doc.email, doc);
+    } catch (e) {
+      return res.status(500).json({ error: 'Envoi email echoue : ' + e.message });
+    }
+    res.json({ emailed });
   } catch (err) {
     next(err);
   }
@@ -204,9 +358,12 @@ router.patch('/customers/:id', async (req, res, next) => {
   try {
     const doc = await TegScreenCustomer.findById(req.params.id);
     if (!doc) return res.status(404).json({ error: 'Customer introuvable' });
-    const { name, numPcs, numPhonesPerPc, contactEmail, notes } = req.body || {};
+    const { name, numPcs, numPhonesPerPc, email, notes } = req.body || {};
     if (name !== undefined) doc.name = String(name).trim();
-    if (contactEmail !== undefined) doc.contactEmail = String(contactEmail).trim();
+    if (email !== undefined) {
+      if (!isEmail(email)) return res.status(400).json({ error: 'email invalide' });
+      doc.email = email.toLowerCase().trim();
+    }
     if (notes !== undefined) doc.notes = String(notes).trim();
     if (numPcs !== undefined) {
       const v = Number(numPcs);

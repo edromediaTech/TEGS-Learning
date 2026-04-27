@@ -68,7 +68,16 @@ const tegScreenCustomerSchema = new mongoose.Schema(
       type: [machineSchema],
       default: [],
     },
-    contactEmail: { type: String, default: '', trim: true },
+    // Email obligatoire — utilise comme identifiant a l'activation et
+    // pour l'envoi du code 8-chiffres. Un email = un customer.
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+      lowercase: true,
+      trim: true,
+    },
     notes: { type: String, default: '', trim: true },
     tenant_id: {
       type: mongoose.Schema.Types.ObjectId,
