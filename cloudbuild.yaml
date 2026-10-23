@@ -9,7 +9,7 @@ substitutions:
 steps:
   # --- Backend: Unit tests (fail fast before build) ---
   - id: "test-backend"
-    name: "node:20-alpine"
+    name: "node:24-alpine"
     entrypoint: "sh"
     args:
       - "-c"
@@ -56,7 +56,7 @@ steps:
 
   # --- Frontend: Get backend URL, build Nuxt, deploy to Firebase ---
   - id: "build-and-deploy-frontend"
-    name: "node:20-alpine"
+    name: "node:24-alpine"
     entrypoint: "sh"
     args:
       - "-c"
