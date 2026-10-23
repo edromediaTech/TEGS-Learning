@@ -29,6 +29,15 @@
         ]
       },
       {
+        "source": "/simulations/**",
+        "headers": [
+          {
+            "key": "Access-Control-Allow-Origin",
+            "value": "*"
+          }
+        ]
+      },
+      {
         "source": "**",
         "headers": [
           {
