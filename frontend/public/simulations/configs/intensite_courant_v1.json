@@ -1,0 +1,378 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "simulation_id": "intensite_courant_v1",
+    "title": "L'Intensité du Courant et la Loi des Nœuds",
+    "subject": "Physique",
+    "grade_level": "Secondaire IV (2nde)",
+    "language": "fr",
+    "duration_minutes": 20,
+    "pedagogical_objective": "Comprendre le branchement en série de l'ampèremètre, le choix du calibre, et vérifier expérimentalement la loi des nœuds dans un circuit en dérivation.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-06-15"
+  },
+  "assets": [
+    {
+      "id": "battery",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Batterie 12V",
+      "position": [
+        -5.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.5,
+        1.0,
+        0.8
+      ],
+      "color": [
+        0.3,
+        0.3,
+        0.3
+      ],
+      "interactive": false,
+      "properties": {
+        "voltage": 12.0
+      }
+    },
+    {
+      "id": "bulb_1",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Ampoule 1 (6Ω)",
+      "position": [
+        3.0,
+        2.0,
+        0.0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "color": [
+        0.8,
+        0.8,
+        0.2
+      ],
+      "interactive": false,
+      "properties": {
+        "resistance_ohm": 6.0,
+        "state": "off"
+      }
+    },
+    {
+      "id": "bulb_2",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Ampoule 2 (12Ω)",
+      "position": [
+        3.0,
+        -2.0,
+        0.0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "color": [
+        0.8,
+        0.8,
+        0.2
+      ],
+      "interactive": false,
+      "properties": {
+        "resistance_ohm": 12.0,
+        "state": "off"
+      }
+    },
+    {
+      "id": "ammeter_total",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Ampèremètre principal (I_total)",
+      "position": [
+        -2.5,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.8,
+        0.6,
+        0.3
+      ],
+      "color": [
+        0.9,
+        0.2,
+        0.2
+      ],
+      "interactive": true,
+      "properties": {
+        "calibers_A": [
+          10,
+          5,
+          1
+        ],
+        "current_caliber_A": 10,
+        "is_connected": true,
+        "measured_current": 0.0
+      }
+    },
+    {
+      "id": "ammeter_1",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Ampèremètre branche 1 (I1)",
+      "position": [
+        0.0,
+        2.0,
+        0.0
+      ],
+      "scale": [
+        0.8,
+        0.6,
+        0.3
+      ],
+      "color": [
+        0.2,
+        0.9,
+        0.2
+      ],
+      "interactive": true,
+      "properties": {
+        "calibers_A": [
+          10,
+          5,
+          1
+        ],
+        "current_caliber_A": 10,
+        "is_connected": true,
+        "measured_current": 0.0
+      }
+    },
+    {
+      "id": "ammeter_2",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Ampèremètre branche 2 (I2)",
+      "position": [
+        0.0,
+        -2.0,
+        0.0
+      ],
+      "scale": [
+        0.8,
+        0.6,
+        0.3
+      ],
+      "color": [
+        0.2,
+        0.2,
+        0.9
+      ],
+      "interactive": true,
+      "properties": {
+        "calibers_A": [
+          10,
+          5,
+          1
+        ],
+        "current_caliber_A": 10,
+        "is_connected": true,
+        "measured_current": 0.0
+      }
+    },
+    {
+      "id": "node_in",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Nœud d'entrée",
+      "position": [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.2,
+        0.2,
+        0.2
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "interactive": false
+    },
+    {
+      "id": "node_out",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Nœud de sortie",
+      "position": [
+        5.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.2,
+        0.2,
+        0.2
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "interactive": false
+    }
+  ],
+  "physics": {
+    "engine": "custom_dc",
+    "variables": {
+      "voltage_source": "battery.voltage",
+      "resistance_1": "bulb_1.resistance_ohm",
+      "resistance_2": "bulb_2.resistance_ohm",
+      "current_1": "voltage_source / resistance_1",
+      "current_2": "voltage_source / resistance_2",
+      "current_total": "current_1 + current_2"
+    },
+    "friction_coefficient": 0.0,
+    "gravity": [
+      0.0,
+      0.0,
+      -9.81
+    ]
+  },
+  "events": [
+    {
+      "id": "evt_measure_total",
+      "trigger": "ammeter_total.is_connected == true AND ammeter_total.current_caliber_A >= current_total",
+      "action": "set_display_text",
+      "target": "ammeter_total",
+      "params": {
+        "value": "current_total",
+        "unit": "A",
+        "label": "I_tot =",
+        "precision": 2,
+        "color": "#FFFFFF"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Mesure correcte du courant total."
+    },
+    {
+      "id": "evt_measure_branch1",
+      "trigger": "ammeter_1.is_connected == true AND ammeter_1.current_caliber_A >= current_1",
+      "action": "set_display_text",
+      "target": "ammeter_1",
+      "params": {
+        "value": "current_1",
+        "unit": "A",
+        "label": "I1 =",
+        "precision": 2,
+        "color": "#FFFFFF"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Mesure correcte du courant dans la branche 1."
+    },
+    {
+      "id": "evt_measure_branch2",
+      "trigger": "ammeter_2.is_connected == true AND ammeter_2.current_caliber_A >= current_2",
+      "action": "set_display_text",
+      "target": "ammeter_2",
+      "params": {
+        "value": "current_2",
+        "unit": "A",
+        "label": "I2 =",
+        "precision": 2,
+        "color": "#FFFFFF"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Mesure correcte du courant dans la branche 2."
+    },
+    {
+      "id": "evt_fuse_blow_total",
+      "trigger": "ammeter_total.is_connected == true AND ammeter_total.current_caliber_A < current_total",
+      "action": "set_display_text",
+      "target": "ammeter_total",
+      "params": {
+        "text": "FUSIBLE GRILLE",
+        "color": "#FF0000"
+      },
+      "xapi_verb": "failed",
+      "xapi_description": "Calibre de l'ampèremètre principal trop faible."
+    },
+    {
+      "id": "evt_fuse_blow_1",
+      "trigger": "ammeter_1.is_connected == true AND ammeter_1.current_caliber_A < current_1",
+      "action": "set_display_text",
+      "target": "ammeter_1",
+      "params": {
+        "text": "FUSIBLE GRILLE",
+        "color": "#FF0000"
+      },
+      "xapi_verb": "failed",
+      "xapi_description": "Calibre de l'ampèremètre 1 trop faible."
+    },
+    {
+      "id": "evt_fuse_blow_2",
+      "trigger": "ammeter_2.is_connected == true AND ammeter_2.current_caliber_A < current_2",
+      "action": "set_display_text",
+      "target": "ammeter_2",
+      "params": {
+        "text": "FUSIBLE GRILLE",
+        "color": "#FF0000"
+      },
+      "xapi_verb": "failed",
+      "xapi_description": "Calibre de l'ampèremètre 2 trop faible."
+    },
+    {
+      "id": "evt_bulbs_on",
+      "trigger": "current_total > 0",
+      "action": "set_emission",
+      "target": "bulb_1, bulb_2",
+      "params": {
+        "intensity": 2.0,
+        "color": [
+          1.0,
+          0.9,
+          0.5
+        ]
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Les ampoules s'allument, le circuit est fermé."
+    },
+    {
+      "id": "evt_law_of_nodes_verified",
+      "trigger": "abs(ammeter_total.measured_current - (ammeter_1.measured_current + ammeter_2.measured_current)) < 0.01 AND ammeter_total.measured_current > 0",
+      "action": "show_overlay_message",
+      "target": "viewport",
+      "params": {
+        "title": "Félicitations!",
+        "message": "Loi des nœuds vérifiée : I_total = I1 + I2",
+        "duration_ms": 5000
+      },
+      "xapi_verb": "passed",
+      "xapi_description": "L'élève a vérifié avec succès la loi des nœuds."
+    }
+  ],
+  "scoring": {
+    "success_criteria": "evt_law_of_nodes_verified triggered",
+    "max_score": 100,
+    "penalty_per_fuse_blow": 25
+  },
+  "export": {
+    "format": "glb",
+    "filename": "intensite_courant_v1.glb",
+    "compression": true,
+    "target_size_mb": 5
+  },
+  "rendering_hints": {
+    "future_engine": "babylonjs",
+    "max_polycount": 50000,
+    "texture_resolution": 1024
+  }
+}

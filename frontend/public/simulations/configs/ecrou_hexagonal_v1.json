@@ -1,0 +1,244 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "simulation_id": "ecrou_hexagonal_v1",
+    "title": "Atelier Mécanique : L'Écrou et la Vis",
+    "subject": "Technologie",
+    "grade_level": "Secondaire I (7e AF)",
+    "language": "fr",
+    "duration_minutes": 10,
+    "pedagogical_objective": "Identifier les composants d'un assemblage vis-écrou (filetage, forme hexagonale) et simuler l'action de serrage avec une clé plate.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-05-15"
+  },
+  "assets": [
+    {
+      "id": "etabli",
+      "type": "primitive",
+      "primitive": "plane",
+      "label": "Établi d'atelier",
+      "position": [
+        0.0,
+        0.0,
+        -0.01
+      ],
+      "scale": [
+        4.0,
+        4.0,
+        1.0
+      ],
+      "color": [
+        0.6,
+        0.4,
+        0.2
+      ],
+      "interactive": false
+    },
+    {
+      "id": "vis_tete",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "vertices": 6,
+      "label": "Tête de vis M10",
+      "position": [
+        0.0,
+        0.0,
+        0.0325
+      ],
+      "scale": [
+        0.085,
+        0.085,
+        0.065
+      ],
+      "color": [
+        0.7,
+        0.7,
+        0.75
+      ],
+      "interactive": false
+    },
+    {
+      "id": "vis_corps",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Corps de vis M10 (filetage)",
+      "position": [
+        0.0,
+        0.0,
+        0.315
+      ],
+      "scale": [
+        0.05,
+        0.05,
+        0.5
+      ],
+      "color": [
+        0.6,
+        0.6,
+        0.65
+      ],
+      "interactive": true,
+      "properties": {
+        "is_threaded": true,
+        "thread_pitch_mm": 1.5
+      }
+    },
+    {
+      "id": "ecrou",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "vertices": 6,
+      "label": "Écrou hexagonal M10",
+      "position": [
+        0.0,
+        0.0,
+        0.4
+      ],
+      "scale": [
+        0.085,
+        0.085,
+        0.08
+      ],
+      "color": [
+        0.7,
+        0.7,
+        0.75
+      ],
+      "interactive": true,
+      "properties": {
+        "is_tight": false,
+        "rotation_angle_deg": 0.0
+      }
+    },
+    {
+      "id": "cle_plate",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Clé plate de 17",
+      "position": [
+        0.0,
+        0.6,
+        0.4
+      ],
+      "scale": [
+        0.25,
+        1.2,
+        0.015
+      ],
+      "color": [
+        0.45,
+        0.45,
+        0.5
+      ],
+      "interactive": true,
+      "properties": {
+        "is_engaged": false
+      }
+    }
+  ],
+  "physics": {
+    "engine": "custom_mechanical",
+    "variables": {
+      "nut_rotation": "ecrou.rotation_angle_deg",
+      "nut_z_position": "ecrou.position.z",
+      "thread_pitch": "vis_corps.thread_pitch_mm"
+    },
+    "friction_coefficient": 0.1,
+    "gravity": [
+      0.0,
+      0.0,
+      -9.81
+    ]
+  },
+  "events": [
+    {
+      "id": "evt_info_hexagone",
+      "trigger": "ecrou.is_hovered",
+      "action": "set_display_text",
+      "target": "ecrou",
+      "params": {
+        "label": "Forme",
+        "value": "Hexagonale (6 pans)",
+        "unit": "",
+        "color": "#FFFFFF",
+        "background": "#0b0f14"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "L'utilisateur observe la forme hexagonale de l'écrou, adaptée à la clé."
+    },
+    {
+      "id": "evt_info_filetage",
+      "trigger": "vis_corps.is_hovered",
+      "action": "set_display_text",
+      "target": "vis_corps",
+      "params": {
+        "label": "Caractéristique",
+        "value": "Filetage (taraudage)",
+        "unit": "",
+        "color": "#FFFFFF",
+        "background": "#0b0f14"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "L'utilisateur observe le filetage de la vis qui permet le vissage."
+    },
+    {
+      "id": "evt_engager_cle",
+      "trigger": "cle_plate.is_dragged_onto(ecrou)",
+      "action": "set_property",
+      "target": "cle_plate",
+      "params": {
+        "is_engaged": true
+      },
+      "xapi_verb": "attempted",
+      "xapi_description": "L'utilisateur engage la clé sur l'écrou."
+    },
+    {
+      "id": "evt_serrer_ecrou",
+      "trigger": "cle_plate.is_engaged == true AND cle_plate.is_rotated",
+      "action": "animate_screw",
+      "target": "ecrou",
+      "params": {
+        "axis": [
+          0,
+          0,
+          1
+        ],
+        "linked_translation_axis": [
+          0,
+          0,
+          -1
+        ],
+        "pitch": 0.0015
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "L'utilisateur serre l'écrou sur la vis."
+    },
+    {
+      "id": "evt_serrage_complet",
+      "trigger": "ecrou.position.z <= vis_tete.position.z + (vis_tete.scale.z / 2) + (ecrou.scale.z / 2)",
+      "action": "set_property",
+      "target": "ecrou",
+      "params": {
+        "is_tight": true
+      },
+      "xapi_verb": "completed",
+      "xapi_description": "Serrage de l'écrou terminé avec succès."
+    }
+  ],
+  "scoring": {
+    "success_criteria": "evt_serrage_complet.triggered",
+    "max_score": 100,
+    "penalty_per_mistake": 0
+  },
+  "export": {
+    "format": "glb",
+    "filename": "ecrou_hexagonal_v1.glb",
+    "compression": true,
+    "target_size_mb": 5
+  },
+  "rendering_hints": {
+    "future_engine": "babylonjs",
+    "max_polycount": 20000,
+    "texture_resolution": 1024
+  }
+}
