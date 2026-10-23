@@ -1,0 +1,282 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "simulation_id": "phys_dilatation_liquides_v1",
+    "title": "Dilatation Thermique des Liquides - Le Thermomètre à Alcool",
+    "subject": "Physique",
+    "grade_level": "Secondaire II (Seconde)",
+    "language": "fr",
+    "duration_minutes": 10,
+    "pedagogical_objective": "Observer et comprendre le phénomène de dilatation thermique d'un liquide (alcool) en fonction de la température de l'eau, et visualiser le point d'ébullition.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-05-15"
+  },
+  "assets": [
+    {
+      "id": "hot_plate",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Plaque Chauffante",
+      "position": [
+        0.0,
+        -0.05,
+        0.0
+      ],
+      "scale": [
+        1.2,
+        0.1,
+        1.2
+      ],
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ],
+      "interactive": true,
+      "properties": {
+        "temperature_celsius": 20.0,
+        "temp_min": 20.0,
+        "temp_max": 110.0,
+        "adjustable": true
+      }
+    },
+    {
+      "id": "beaker",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Bécher en verre (style cuisine)",
+      "position": [
+        0.0,
+        0.5,
+        0.0
+      ],
+      "scale": [
+        0.5,
+        1.0,
+        0.5
+      ],
+      "color": [
+        0.8,
+        0.9,
+        1.0
+      ],
+      "interactive": false,
+      "properties": {
+        "material_alpha": 0.3
+      }
+    },
+    {
+      "id": "water",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Eau",
+      "position": [
+        0.0,
+        0.4,
+        0.0
+      ],
+      "scale": [
+        0.48,
+        0.8,
+        0.48
+      ],
+      "color": [
+        0.3,
+        0.5,
+        0.8
+      ],
+      "interactive": false
+    },
+    {
+      "id": "thermo_body",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Thermomètre (corps)",
+      "position": [
+        0.0,
+        0.75,
+        0.0
+      ],
+      "scale": [
+        0.05,
+        1.5,
+        0.05
+      ],
+      "color": [
+        0.9,
+        0.9,
+        0.9
+      ],
+      "interactive": false,
+      "properties": {
+        "material_alpha": 0.5
+      }
+    },
+    {
+      "id": "alcohol_column",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Colonne d'alcool",
+      "position": [
+        0.0,
+        0.2,
+        0.0
+      ],
+      "scale": [
+        0.03,
+        0.4,
+        0.03
+      ],
+      "color": [
+        1.0,
+        0.4,
+        0.4
+      ],
+      "interactive": false
+    },
+    {
+      "id": "temp_display",
+      "type": "primitive",
+      "primitive": "plane",
+      "label": "Afficheur de Température",
+      "position": [
+        1.5,
+        0.7,
+        0.0
+      ],
+      "rotation_euler": [
+        0.0,
+        -1.5708,
+        0.0
+      ],
+      "scale": [
+        0.4,
+        0.3,
+        1.0
+      ],
+      "color": [
+        0.05,
+        0.05,
+        0.1
+      ],
+      "interactive": false
+    }
+  ],
+  "physics": {
+    "engine": "custom_thermal",
+    "variables": {
+      "temperature": "hot_plate.temperature_celsius",
+      "boiling_point": 95.0,
+      "initial_temp": 20.0,
+      "expansion_factor": 0.015
+    },
+    "friction_coefficient": 0.1,
+    "gravity": [
+      0.0,
+      -9.81,
+      0.0
+    ]
+  },
+  "events": [
+    {
+      "id": "evt_show_temp",
+      "trigger": "temperature >= initial_temp",
+      "action": "set_display_text",
+      "target": "temp_display",
+      "params": {
+        "value_from": "temperature",
+        "unit": "°C",
+        "label": "T =",
+        "precision": 1,
+        "color": "#FFD700",
+        "background": "#05050A"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Affiche la température de l'eau."
+    },
+    {
+      "id": "evt_alcohol_expand",
+      "trigger": "temperature > initial_temp",
+      "action": "animate_scale",
+      "target": "alcohol_column",
+      "params": {
+        "axis": [
+          0,
+          1,
+          0
+        ],
+        "formula": "0.4 + (temperature - initial_temp) * expansion_factor"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "La colonne d'alcool se dilate avec la chaleur."
+    },
+    {
+      "id": "evt_alcohol_color",
+      "trigger": "temperature > initial_temp",
+      "action": "tint_color",
+      "target": "alcohol_column",
+      "params": {
+        "start_color": [
+          1.0,
+          0.4,
+          0.4
+        ],
+        "end_color": [
+          1.0,
+          0.0,
+          0.0
+        ],
+        "value_map": "temperature",
+        "min_value": 20.0,
+        "max_value": 95.0
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "La couleur de l'alcool s'intensifie."
+    },
+    {
+      "id": "evt_water_boil",
+      "trigger": "temperature > boiling_point",
+      "action": "emit_particles",
+      "target": "water",
+      "params": {
+        "type": "smoke",
+        "rate": 50,
+        "lifespan": 3.0,
+        "speed": 0.2
+      },
+      "xapi_verb": "passed",
+      "xapi_description": "L'eau atteint son point d'ébullition et de la vapeur se forme."
+    },
+    {
+      "id": "evt_plate_glow",
+      "trigger": "temperature > 30",
+      "action": "set_emission",
+      "target": "hot_plate",
+      "params": {
+        "intensity_formula": "(temperature - 30) / 80",
+        "color": [
+          1.0,
+          0.2,
+          0.0
+        ]
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "La plaque chauffante devient incandescente."
+    }
+  ],
+  "scoring": {
+    "success_criteria": "evt_water_boil triggered",
+    "max_score": 100
+  },
+  "export": {
+    "format": "glb",
+    "filename": "phys_dilatation_liquides_v1.glb",
+    "compression": true,
+    "target_size_mb": 5
+  },
+  "rendering_hints": {
+    "future_engine": "babylonjs",
+    "max_polycount": 50000,
+    "texture_resolution": 1024
+  }
+}

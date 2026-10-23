@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>Dev login</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 2rem; max-width: 600px; margin: 0 auto; }
+    code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; }
+    .err { color: #b91c1c; }
+    .ok { color: #047857; }
+  </style>
+</head>
+<body>
+  <h1>Dev login (local only)</h1>
+  <p id="msg">Chargement...</p>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const token = params.get('t');
+    const tenant = params.get('tid');
+    const next = params.get('next') || '/admin/simulations-stats';
+    const msg = document.getElementById('msg');
+    if (!token || !tenant) {
+      msg.className = 'err';
+      msg.textContent = 'Parametres manquants : ?t=<jwt>&tid=<tenant_id>';
+    } else {
+      const cookieVal = encodeURIComponent(JSON.stringify({ token: token, tenant_id: tenant }));
+      document.cookie = '__session=' + cookieVal + '; path=/; max-age=14400; SameSite=Lax';
+      msg.className = 'ok';
+      msg.textContent = 'Cookie pose. Redirection vers ' + next + '...';
+      setTimeout(() => location.replace(next), 600);
+    }
+  </script>
+</body>
+</html>

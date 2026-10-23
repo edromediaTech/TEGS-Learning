@@ -1,0 +1,352 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "simulation_id": "tech_smartphone_assemblage_v1",
+    "title": "Assemblage d'un Smartphone - Etape par Etape",
+    "subject": "Depannage Smartphone",
+    "grade_level": "Formation professionnelle",
+    "language": "fr",
+    "duration_minutes": 25,
+    "pedagogical_objective": "Maitriser l'ordre de montage d'un smartphone : du chassis nu au telephone complet, en respectant la sequence batterie -> connecteur -> nappes -> circuits -> ecran. Module 3 du parcours Depannage.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-05-04",
+    "mode": "assembly"
+  },
+  "assets": [
+    {
+      "id": "chassis",
+      "label": "Chassis arriere",
+      "type": "primitive",
+      "primitive": "cube",
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.6,
+        3.2,
+        0.05
+      ],
+      "color": [
+        0.3,
+        0.3,
+        0.35
+      ],
+      "interactive": false
+    },
+    {
+      "id": "battery",
+      "label": "Batterie Li-ion 3.85V",
+      "type": "primitive",
+      "primitive": "cube",
+      "position": [
+        0.0,
+        -0.8,
+        0.3
+      ],
+      "scale": [
+        1.4,
+        1.0,
+        0.15
+      ],
+      "color": [
+        0.2,
+        0.5,
+        0.8
+      ],
+      "interactive": true
+    },
+    {
+      "id": "charge_connector",
+      "label": "Connecteur de charge USB-C",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "position": [
+        0.0,
+        -1.5,
+        0.1
+      ],
+      "scale": [
+        0.18,
+        0.18,
+        0.08
+      ],
+      "rotation_euler": [
+        1.5708,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.75,
+        0.75,
+        0.75
+      ],
+      "interactive": true
+    },
+    {
+      "id": "vibrator",
+      "label": "Vibreur (moteur lineaire)",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "position": [
+        -0.6,
+        -0.5,
+        0.4
+      ],
+      "scale": [
+        0.1,
+        0.1,
+        0.05
+      ],
+      "rotation_euler": [
+        1.5708,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.4,
+        0.4,
+        0.4
+      ],
+      "interactive": true
+    },
+    {
+      "id": "speaker",
+      "label": "Haut-parleur",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "position": [
+        -0.5,
+        1.3,
+        0.4
+      ],
+      "scale": [
+        0.15,
+        0.15,
+        0.05
+      ],
+      "rotation_euler": [
+        1.5708,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.2,
+        0.2,
+        0.25
+      ],
+      "interactive": true
+    },
+    {
+      "id": "pmic",
+      "label": "Puce gestion d'energie (PMIC)",
+      "type": "primitive",
+      "primitive": "cube",
+      "position": [
+        0.4,
+        0.4,
+        0.5
+      ],
+      "scale": [
+        0.25,
+        0.25,
+        0.05
+      ],
+      "color": [
+        0.15,
+        0.2,
+        0.3
+      ],
+      "interactive": true
+    },
+    {
+      "id": "cpu",
+      "label": "Processeur (CPU)",
+      "type": "primitive",
+      "primitive": "cube",
+      "position": [
+        -0.4,
+        0.4,
+        0.5
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.05
+      ],
+      "color": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "interactive": true
+    },
+    {
+      "id": "camera",
+      "label": "Module camera arriere",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "position": [
+        0.5,
+        1.3,
+        0.4
+      ],
+      "scale": [
+        0.2,
+        0.2,
+        0.15
+      ],
+      "color": [
+        0.1,
+        0.1,
+        0.15
+      ],
+      "interactive": true
+    },
+    {
+      "id": "screen",
+      "label": "Ecran AMOLED + tactile",
+      "type": "primitive",
+      "primitive": "plane",
+      "position": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "scale": [
+        1.4,
+        3.0,
+        1.0
+      ],
+      "color": [
+        0.05,
+        0.05,
+        0.1
+      ],
+      "interactive": true
+    }
+  ],
+  "physics": {
+    "engine": "static",
+    "variables": {},
+    "gravity": [
+      0.0,
+      0.0,
+      -9.81
+    ]
+  },
+  "events": [],
+  "assembly": {
+    "hide_at_start": [
+      "battery",
+      "charge_connector",
+      "vibrator",
+      "speaker",
+      "pmic",
+      "cpu",
+      "camera",
+      "screen"
+    ],
+    "steps": [
+      {
+        "order": 1,
+        "asset_id": "battery",
+        "label": "Inserer la batterie Li-ion dans son logement",
+        "rationale": "La batterie se monte en premier car elle se connecte ensuite au PCB via une nappe.",
+        "tools": [
+          "spudger plastique"
+        ]
+      },
+      {
+        "order": 2,
+        "asset_id": "charge_connector",
+        "label": "Visser la nappe du connecteur de charge USB-C",
+        "rationale": "Connecteur secondaire mais souvent enclave, doit etre installe avant les modules superieurs.",
+        "tools": [
+          "tournevis Phillips 1.5mm"
+        ]
+      },
+      {
+        "order": 3,
+        "asset_id": "vibrator",
+        "label": "Coller le moteur du vibreur",
+        "rationale": "Petit module a placer tot pour eviter de tout demonter pour y acceder plus tard.",
+        "tools": [
+          "adhesif pre-coupe"
+        ]
+      },
+      {
+        "order": 4,
+        "asset_id": "speaker",
+        "label": "Visser le haut-parleur",
+        "rationale": "Module de la partie haute, monte avant les puces principales.",
+        "tools": [
+          "tournevis Phillips 1.5mm"
+        ]
+      },
+      {
+        "order": 5,
+        "asset_id": "pmic",
+        "label": "Souder/positionner la puce de gestion d'energie (PMIC)",
+        "rationale": "Le PMIC alimente la carte mere donc doit etre operationnel avant le CPU.",
+        "tools": [
+          "station de soudure 350C"
+        ]
+      },
+      {
+        "order": 6,
+        "asset_id": "cpu",
+        "label": "Positionner le processeur (CPU) sur la carte mere",
+        "rationale": "Le CPU vient apres le PMIC car il consomme l'energie qu'il delivre.",
+        "tools": [
+          "pate thermique",
+          "station de soudure"
+        ]
+      },
+      {
+        "order": 7,
+        "asset_id": "camera",
+        "label": "Brancher le module camera arriere",
+        "rationale": "Module branche tardivement car sa nappe passe au-dessus des autres.",
+        "tools": [
+          "spudger plastique"
+        ]
+      },
+      {
+        "order": 8,
+        "asset_id": "screen",
+        "label": "Poser l'ecran AMOLED et connecter sa nappe tactile",
+        "rationale": "L'ecran est TOUJOURS le dernier element, il scelle l'appareil et tout test final passe par lui.",
+        "tools": [
+          "adhesif perimetrique",
+          "ventouse de positionnement"
+        ]
+      }
+    ]
+  },
+  "scoring": {
+    "success_criteria": "Assemblage complet sans erreur en moins de 5 minutes",
+    "max_score": 100,
+    "criteria": [
+      {
+        "name": "ordre_correct",
+        "weight": 60
+      },
+      {
+        "name": "absence_erreurs",
+        "weight": 30
+      },
+      {
+        "name": "temps_respecte",
+        "weight": 10
+      }
+    ]
+  },
+  "export": {
+    "format": "glb",
+    "filename": "tech_smartphone_assemblage_v1.glb",
+    "compression": true,
+    "target_size_mb": 5
+  }
+}

@@ -114,9 +114,13 @@ const navItems = computed(() => {
   if (auth.isSuperAdmin) {
     items.push({ to: '/admin/tenants', label: 'Organisations', icon: '\uD83C\uDFEB' });
     items.push({ to: '/admin/tegscreen', label: 'Licences TegScreen', icon: '\uD83D\uDCF1' });
+    items.push({ to: '/admin/simulations', label: 'Simulations CRNS', icon: '\uD83E\uDDEA' });
   }
   if (auth.isSuperAdmin || auth.isAdmin) {
     items.push({ to: '/admin/users', label: 'Utilisateurs', icon: '\uD83D\uDC65' });
+  }
+  if (auth.isSuperAdmin || auth.isAdmin || auth.isTeacher) {
+    items.push({ to: '/admin/simulations-stats', label: 'Stats Simulations', icon: '\uD83D\uDCC8' });
   }
   items.push(
     { to: '/admin/modules', label: 'Studio', icon: '\uD83C\uDFA8' },

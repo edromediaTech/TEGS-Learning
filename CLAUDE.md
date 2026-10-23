@@ -1,11 +1,13 @@
 # TEGS-Learning — Instructions Agent
 
-> Derniere mise a jour : 2026-04-17
+> Derniere mise a jour : 2026-05-02
 
 ## 1. Presentation
 
 **TEGS-Learning** est une plateforme educative complete pour Haiti (DDENE) :
 concours academiques en ligne, studio de contenu, suivi pedagogique, assistant intelligent, analytics.
+
+**Projet soeur — CRNS** (`C:\Users\COL\Documents\CRNS`) : Centre de Ressources Numeriques et de Simulation. Usine Python qui transforme un prompt enseignant en simulation 3D (Gemini/Vertex AI -> JSON config -> Blender -> GLB Draco). Les simulations sont publiees dans `frontend/public/simulations/` via `python core/deploy.py` du projet CRNS, puis exposees aux superadmins via la page `/admin/simulations`.
 
 | Element | Valeur |
 |---------|--------|
@@ -114,6 +116,7 @@ concours academiques en ligne, studio de contenu, suivi pedagogique, assistant i
 | `/admin/agent` | Surveillance assistant, audit, arret d'urgence |
 | `/admin/agent-settings` | Config assistant : limites, outils, moteur, couts |
 | `/admin/knowledge-to-form` | Wizard : generer un quiz/formulaire depuis PDF, DOCX ou URL |
+| `/admin/simulations` | **Superadmin uniquement.** Galerie 3D des simulations CRNS, modal de detail (pedagogie, composants, events, physique, JSON brut) |
 
 ### Stores Pinia
 `auth.ts` `modules.ts` `tournaments.ts` `agent.ts`
@@ -125,6 +128,15 @@ concours academiques en ligne, studio de contenu, suivi pedagogique, assistant i
 - `blocks/` — 18 types x (Edit + Preview) = 36+ composants
 - `agent/` — `AgentChatPanel`, `AgentBubble`, `AgentMessageBubble`, `AgentProposalCard`, `AgentThinkingIndicator`
 - `admin/` — `FormGenerationWizard` (wizard 3 etapes Source/Mode/Revision pour knowledge-to-form)
+
+### Assets statiques (`frontend/public/`)
+Servis directement par Firebase Hosting a la racine du domaine.
+- `logo.png`, `agent-faq-cache.json`, `screenshots/` — assets historiques
+- `simulations/` — **publie par le projet CRNS** (ne pas editer manuellement)
+  - `manifest.json` — index des simulations (`simulation_id`, `title`, `subject`, `grade_level`, `duration_minutes`, `objective`, `asset_url`, `config_url`, `n_events`, `n_assets`, `size_bytes`)
+  - `<sim_id>.glb` — modele 3D Draco (10-20 Ko chacun)
+  - `configs/<sim_id>.json` — configuration source complete (assets, physics, events xAPI)
+  - Regeneration : `cd C:\Users\COL\Documents\CRNS && python core/deploy.py`
 
 ---
 
@@ -189,6 +201,9 @@ Tags : `[DONE]` (toujours quand fini), `[REVIEW]`, `[TASK:ObjectId]`
 
 ### Nommage
 Routes: kebab-case — Modeles: PascalCase — Composants: PascalCase — Stores: camelCase
+
+### Web Components / custom elements
+Vue est configure pour reconnaitre `<model-viewer>` (Google) comme element personnalise (cf. `nuxt.config.ts`, `vue.compilerOptions.isCustomElement`). Le script est charge via CDN jsdelivr dans la page qui en a besoin. Pour ajouter un autre web component, etendre la fonction `isCustomElement`.
 
 ### Interface utilisateur
 - **NE PAS** utiliser de jargon technique dans les pages publiques/utilisateurs

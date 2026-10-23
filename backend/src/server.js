@@ -80,6 +80,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tenants', tenantRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/xapi', xapiRoutes);
+app.use('/api/tutor', require('./routes/tutor'));
+app.use('/api/crns-classrooms', require('./routes/crns-classrooms'));
 app.use('/api/modules', moduleRoutes);
 app.use('/api/cmi5', cmi5Routes);
 app.use('/api/share', shareRoutes);
