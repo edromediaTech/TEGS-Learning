@@ -8,10 +8,16 @@
 import { defineEventHandler, getQuery, setCookie, sendRedirect, createError } from 'h3';
 
 export default defineEventHandler((event) => {
+  // Garde-fou : un build Nitro de prod (Dockerfile) exposerait sinon la route.
+  if (!import.meta.dev) {
+    throw createError({ statusCode: 404 });
+  }
+
   const q = getQuery(event);
   const t = typeof q.t === 'string' ? q.t : '';
   const tid = typeof q.tid === 'string' ? q.tid : '';
-  const next = typeof q.next === 'string' && q.next.startsWith('/') ? q.next : '/admin/simulations-stats';
+  // Chemin interne uniquement : "//hote" ou "/\hote" serait une redirection externe.
+  const next = typeof q.next === 'string' && /^\/(?![/\\])/.test(q.next) ? q.next : '/admin/simulations-stats';
 
   if (!t || !tid) {
     throw createError({ statusCode: 400, statusMessage: 'Parametres manquants : ?t=<jwt>&tid=<tenant_id>' });
