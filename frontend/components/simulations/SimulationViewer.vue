@@ -7,6 +7,7 @@
           :src="assetUrl"
           :alt="title"
           camera-controls
+          :max-camera-orbit="hasGround ? 'auto 88deg auto' : undefined"
           auto-rotate
           auto-rotate-delay="3000"
           rotation-per-second="20deg"
@@ -92,6 +93,7 @@
       v-if="hasInspectableAssets && !hasAssembly"
       :assets="assetsForLibrary"
       :model-viewer-el="viewerEl"
+      :allow-below="!hasGround"
       @isolate="onLibraryIsolate"
       @reset="onLibraryReset"
     />
@@ -153,6 +155,9 @@ import type { XapiEventConfig } from '~/composables/useXapiTracker';
 interface AssetCfg {
   id: string;
   label?: string;
+  primitive?: string;
+  location?: number[];
+  scale?: number[];
   fault_states?: Record<string, any>;
   test_points?: { name: string; voltage_nominal: number; fault_value?: number }[];
 }
@@ -212,6 +217,16 @@ const classroomSocket = useCrnsClassroomSocket();
 
 const events = computed(() => props.config?.events ?? []);
 const assetsList = computed<AssetCfg[]>(() => props.config?.assets ?? []);
+// Scene posee sur un sol (etabli, paillasse...) : grand plan a la base de la scene.
+// La camera ne descend alors pas sous l'horizon, sinon on voit le dessous du sol.
+// Sans sol (smartphone), la vue de dessous reste permise.
+const hasGround = computed(() =>
+  assetsList.value.some(
+    (a) => a.primitive === 'plane'
+      && (a.scale?.[0] ?? 1) >= 3 && (a.scale?.[1] ?? 1) >= 3
+      && (a.location?.[2] ?? 0) <= 0
+  )
+);
 const hasFaultStates = computed(() =>
   assetsList.value.some(
     (a) => a.fault_states && Object.keys(a.fault_states).length > 0,
