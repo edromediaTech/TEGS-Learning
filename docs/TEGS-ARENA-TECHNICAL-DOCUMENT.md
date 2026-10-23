@@ -74,7 +74,7 @@ La plateforme a ete construite en 10 sprints (Auth, xAPI, Modules, Block Builder
 
 | Service | Configuration |
 |---------|--------------|
-| **Cloud Run** | node:20-alpine, non-root user `tegs`, health check /api/health |
+| **Cloud Run** | node:24-alpine, non-root user `tegs`, health check /api/health |
 | **Firebase Hosting** | SPA rewrite, cache 7d JS/CSS, 30d images, security headers |
 | **MongoDB** | Connection via URI dans Secret Manager |
 | **GCS** | dp-storage-service pour media uploads, signed URLs |
