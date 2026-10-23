@@ -1,0 +1,228 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "simulation_id": "tension_electrique_v1",
+    "title": "La Tension Électrique : Association en Série et en Parallèle",
+    "subject": "Physique",
+    "grade_level": "Secondaire II (8e)",
+    "language": "fr",
+    "duration_minutes": 10,
+    "pedagogical_objective": "Comprendre et mesurer la tension résultante de l'association de piles en série et en parallèle à l'aide d'un voltmètre virtuel.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-05-10"
+  },
+  "assets": [
+    {
+      "id": "workbench",
+      "type": "primitive",
+      "primitive": "plane",
+      "label": "Établi",
+      "position": [
+        0.0,
+        0.0,
+        -0.1
+      ],
+      "scale": [
+        10.0,
+        10.0,
+        1.0
+      ],
+      "color": [
+        0.3,
+        0.3,
+        0.35
+      ],
+      "interactive": false
+    },
+    {
+      "id": "battery_1",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Pile AA #1",
+      "position": [
+        -2.0,
+        0.0,
+        0.5
+      ],
+      "scale": [
+        0.2,
+        0.2,
+        0.5
+      ],
+      "color": [
+        0.7,
+        0.7,
+        0.7
+      ],
+      "interactive": true,
+      "properties": {
+        "voltage": 1.5,
+        "draggable": true
+      }
+    },
+    {
+      "id": "battery_2",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Pile AA #2",
+      "position": [
+        -1.0,
+        0.0,
+        0.5
+      ],
+      "scale": [
+        0.2,
+        0.2,
+        0.5
+      ],
+      "color": [
+        0.7,
+        0.7,
+        0.7
+      ],
+      "interactive": true,
+      "properties": {
+        "voltage": 1.5,
+        "draggable": true
+      }
+    },
+    {
+      "id": "voltmeter",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Voltmètre",
+      "position": [
+        2.0,
+        0.0,
+        0.5
+      ],
+      "scale": [
+        0.8,
+        0.3,
+        0.5
+      ],
+      "color": [
+        0.9,
+        0.6,
+        0.0
+      ],
+      "interactive": true,
+      "properties": {
+        "target_config": "none",
+        "probes_inverted": false
+      }
+    }
+  ],
+  "physics": {
+    "engine": "custom_dc",
+    "variables": {
+      "v_single": "battery_1.voltage",
+      "v_series": "battery_1.voltage + battery_2.voltage",
+      "v_parallel": "battery_1.voltage"
+    },
+    "friction_coefficient": 0.2,
+    "gravity": [
+      0.0,
+      0.0,
+      -9.81
+    ]
+  },
+  "events": [
+    {
+      "id": "evt_measure_single",
+      "trigger": "voltmeter.target_config == 'single' AND voltmeter.probes_inverted == false",
+      "action": "set_display_text",
+      "target": "voltmeter",
+      "params": {
+        "value": 1.5,
+        "unit": "V",
+        "label": "Tension :",
+        "precision": 1,
+        "color": "#FFFFFF",
+        "background": "#000000"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "L'élève mesure la tension d'une seule pile (1.5V)."
+    },
+    {
+      "id": "evt_measure_inverted",
+      "trigger": "voltmeter.target_config == 'single' AND voltmeter.probes_inverted == true",
+      "action": "set_display_text",
+      "target": "voltmeter",
+      "params": {
+        "value": -1.5,
+        "unit": "V",
+        "label": "Tension :",
+        "precision": 1,
+        "color": "#FFFFFF",
+        "background": "#000000"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "L'élève observe l'inversion de la tension en branchant le voltmètre à l'envers."
+    },
+    {
+      "id": "evt_measure_series",
+      "trigger": "voltmeter.target_config == 'series'",
+      "action": "set_display_text",
+      "target": "voltmeter",
+      "params": {
+        "value": 3.0,
+        "unit": "V",
+        "label": "Série :",
+        "precision": 1,
+        "color": "#FFFFFF",
+        "background": "#000000"
+      },
+      "xapi_verb": "passed",
+      "xapi_description": "L'élève mesure correctement la tension de deux piles en série (3.0V)."
+    },
+    {
+      "id": "evt_measure_parallel",
+      "trigger": "voltmeter.target_config == 'parallel'",
+      "action": "set_display_text",
+      "target": "voltmeter",
+      "params": {
+        "value": 1.5,
+        "unit": "V",
+        "label": "Parallèle :",
+        "precision": 1,
+        "color": "#FFFFFF",
+        "background": "#000000"
+      },
+      "xapi_verb": "passed",
+      "xapi_description": "L'élève mesure correctement la tension de deux piles en parallèle (1.5V)."
+    },
+    {
+      "id": "evt_clear_display",
+      "trigger": "voltmeter.target_config == 'none'",
+      "action": "set_display_text",
+      "target": "voltmeter",
+      "params": {
+        "value": 0.0,
+        "unit": "V",
+        "label": "Tension :",
+        "precision": 1,
+        "color": "#FFFFFF",
+        "background": "#000000"
+      },
+      "xapi_verb": "initialized",
+      "xapi_description": "Le voltmètre est prêt à mesurer."
+    }
+  ],
+  "scoring": {
+    "success_criteria": "evt_measure_series.triggered AND evt_measure_parallel.triggered",
+    "max_score": 100,
+    "penalty_per_explosion": 0
+  },
+  "export": {
+    "format": "glb",
+    "filename": "tension_electrique_v1.glb",
+    "compression": true,
+    "target_size_mb": 5
+  },
+  "rendering_hints": {
+    "future_engine": "babylonjs",
+    "max_polycount": 20000,
+    "texture_resolution": 512
+  }
+}

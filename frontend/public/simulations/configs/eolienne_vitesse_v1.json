@@ -1,0 +1,217 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "simulation_id": "eolienne_vitesse_v1",
+    "title": "Éolienne et Vitesse du Vent",
+    "subject": "Physique",
+    "grade_level": "Secondaire IV (Seconde)",
+    "language": "fr",
+    "duration_minutes": 10,
+    "pedagogical_objective": "Comprendre l'impact de la vitesse du vent sur la rotation d'une éolienne et identifier le seuil de rupture mécanique de ses pales.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-05-10"
+  },
+  "assets": [
+    {
+      "id": "ground",
+      "type": "primitive",
+      "primitive": "plane",
+      "label": "Sol",
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        20.0,
+        20.0,
+        1.0
+      ],
+      "color": [
+        0.3,
+        0.5,
+        0.2
+      ],
+      "interactive": false
+    },
+    {
+      "id": "mast",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Mât de l'éolienne",
+      "position": [
+        0.0,
+        2.5,
+        0.0
+      ],
+      "scale": [
+        0.2,
+        2.5,
+        0.2
+      ],
+      "color": [
+        0.8,
+        0.8,
+        0.8
+      ],
+      "interactive": false
+    },
+    {
+      "id": "nacelle",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Nacelle",
+      "position": [
+        0.0,
+        5.0,
+        0.0
+      ],
+      "scale": [
+        0.6,
+        0.5,
+        0.5
+      ],
+      "color": [
+        0.7,
+        0.7,
+        0.7
+      ],
+      "interactive": false
+    },
+    {
+      "id": "rotor_assembly",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Rotor (Pales)",
+      "position": [
+        0.7,
+        5.0,
+        0.0
+      ],
+      "scale": [
+        0.1,
+        2.0,
+        2.0
+      ],
+      "rotation_euler": [
+        0.0,
+        1.5708,
+        0.0
+      ],
+      "color": [
+        0.95,
+        0.95,
+        0.95
+      ],
+      "interactive": false,
+      "properties": {
+        "max_wind_speed_kmh": 50.0,
+        "state": "intact"
+      }
+    },
+    {
+      "id": "wind_control",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Contrôleur de Vent",
+      "position": [
+        -5.0,
+        1.0,
+        0.0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "color": [
+        0.2,
+        0.5,
+        0.8
+      ],
+      "interactive": true,
+      "properties": {
+        "wind_speed_kmh": 0.0,
+        "wind_speed_min": 0.0,
+        "wind_speed_max": 100.0,
+        "adjustable": true
+      }
+    }
+  ],
+  "physics": {
+    "engine": "custom_dc",
+    "variables": {
+      "wind_speed": "wind_control.wind_speed_kmh",
+      "max_speed_threshold": "rotor_assembly.max_wind_speed_kmh",
+      "rotation_speed_formula": "wind_speed * 0.1"
+    },
+    "friction_coefficient": 0.05,
+    "gravity": [
+      0.0,
+      -9.81,
+      0.0
+    ]
+  },
+  "events": [
+    {
+      "id": "evt_rotor_spin",
+      "trigger": "wind_control.wind_speed_kmh > 0 AND wind_control.wind_speed_kmh <= rotor_assembly.max_wind_speed_kmh",
+      "action": "set_rotation",
+      "target": "rotor_assembly",
+      "params": {
+        "axis": [
+          1,
+          0,
+          0
+        ],
+        "speed_formula": "wind_control.wind_speed_kmh * 0.1"
+      },
+      "xapi_verb": "interacted",
+      "xapi_description": "L'éolienne tourne normalement sous l'effet du vent."
+    },
+    {
+      "id": "evt_blades_break",
+      "trigger": "wind_control.wind_speed_kmh > rotor_assembly.max_wind_speed_kmh",
+      "action": "explode",
+      "target": "rotor_assembly",
+      "params": {
+        "fragments": 30,
+        "force": 8.0
+      },
+      "xapi_verb": "failed",
+      "xapi_description": "Les pales se brisent, la vitesse du vent a dépassé le seuil de tolérance."
+    },
+    {
+      "id": "evt_rotor_stop",
+      "trigger": "wind_control.wind_speed_kmh == 0",
+      "action": "set_rotation",
+      "target": "rotor_assembly",
+      "params": {
+        "axis": [
+          1,
+          0,
+          0
+        ],
+        "speed_formula": "0"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "L'éolienne est à l'arrêt, faute de vent."
+    }
+  ],
+  "scoring": {
+    "success_criteria": "evt_rotor_spin triggered for 15 seconds without triggering evt_blades_break",
+    "max_score": 100,
+    "penalty_per_explosion": 100
+  },
+  "export": {
+    "format": "glb",
+    "filename": "eolienne_vitesse_v1.glb",
+    "compression": true,
+    "target_size_mb": 5
+  },
+  "rendering_hints": {
+    "future_engine": "babylonjs",
+    "max_polycount": 50000,
+    "texture_resolution": 1024
+  }
+}

@@ -1,5 +1,7 @@
 <template>
-  <div class="space-y-2">
+  <!-- Simulation 3D CRNS : pas de suivi tuteur dans l'apercu du studio -->
+  <BlocksCrnsSimulationBlock v-if="data.kind === 'crns_simulation_3d' && data.url" :data="data" :tutor-enabled="false" />
+  <div v-else class="space-y-2">
     <p v-if="data.title" class="font-medium text-gray-700">{{ data.title }}</p>
     <div v-if="data.url" class="border rounded-lg overflow-hidden mx-auto" :style="{ maxWidth: (data.width || 800) + 'px' }">
       <iframe
@@ -18,5 +20,5 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ data: { url: string; width: number; height: number; title: string } }>();
+defineProps<{ data: { url: string; width: number; height: number; title: string; kind?: string; config_url?: string } }>();
 </script>

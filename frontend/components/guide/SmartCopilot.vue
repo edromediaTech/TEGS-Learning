@@ -559,14 +559,6 @@ onMounted(() => {
     tournamentStore.fetchTournaments().catch(() => {});
   }
 
-  // Auto-trigger welcome for new users
-  if (auth.isLoggedIn && !copilot.hasSeenWelcome) {
-    setTimeout(() => {
-      copilot.markWelcomeSeen();
-      copilot.startMission('welcome');
-    }, 2000);
-  }
-
   // Pulse + tooltip on first 5 visits
   const visits = parseInt(localStorage.getItem('tegs-copilot-visits') || '0');
   if (visits < 5) {

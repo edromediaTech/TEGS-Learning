@@ -1,0 +1,230 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "simulation_id": "phys_solaire_charge_v1",
+    "title": "Charge d'une Batterie par Panneau Solaire",
+    "subject": "Physique",
+    "grade_level": "Secondaire IV (Seconde)",
+    "language": "fr",
+    "duration_minutes": 15,
+    "pedagogical_objective": "Comprendre l'influence de l'inclinaison d'un panneau solaire et de l'intensité lumineuse sur l'efficacité de charge d'une batterie et le risque de surchauffe.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-05-10"
+  },
+  "assets": [
+    {
+      "id": "solar_panel",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Panneau Solaire",
+      "position": [
+        0.0,
+        0.0,
+        1.0
+      ],
+      "scale": [
+        1.0,
+        0.7,
+        0.05
+      ],
+      "rotation_euler": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.1,
+        0.15,
+        0.3
+      ],
+      "interactive": true,
+      "properties": {
+        "inclination_deg": 0.0,
+        "inclination_min": -90.0,
+        "inclination_max": 90.0,
+        "adjustable": true,
+        "temperature_celsius": 25.0,
+        "max_temp_celsius": 85.0
+      }
+    },
+    {
+      "id": "battery",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Batterie 12V",
+      "position": [
+        -1.2,
+        0.0,
+        0.4
+      ],
+      "scale": [
+        0.4,
+        0.3,
+        0.5
+      ],
+      "color": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "interactive": false,
+      "properties": {
+        "voltage_nominal": 12.0,
+        "charge_level_percent": 20.0,
+        "charge_level_min": 0.0,
+        "charge_level_max": 100.0
+      }
+    },
+    {
+      "id": "sun",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Soleil",
+      "position": [
+        0.0,
+        5.0,
+        5.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "color": [
+        1.0,
+        1.0,
+        0.0
+      ],
+      "interactive": true,
+      "properties": {
+        "intensity_percent": 50.0,
+        "intensity_min": 10.0,
+        "intensity_max": 100.0,
+        "adjustable": true
+      }
+    },
+    {
+      "id": "ground",
+      "type": "primitive",
+      "primitive": "plane",
+      "label": "Sol",
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        10.0,
+        10.0,
+        1.0
+      ],
+      "color": [
+        0.4,
+        0.6,
+        0.3
+      ],
+      "interactive": false
+    }
+  ],
+  "physics": {
+    "engine": "custom_energy",
+    "variables": {
+      "sun_intensity": "sun.intensity_percent / 100.0",
+      "optimal_angle_deg": 45.0,
+      "angle_diff": "abs(solar_panel.inclination_deg - optimal_angle_deg)",
+      "angle_efficiency": "max(0, 1 - angle_diff / 90.0)",
+      "generated_power": "sun_intensity * angle_efficiency * 25.0",
+      "charge_current": "generated_power / battery.voltage_nominal",
+      "heat_factor": "sun_intensity * (1.0 - angle_efficiency)",
+      "temperature_change_rate": "(heat_factor * 50.0) - 2.0"
+    },
+    "friction_coefficient": 0.1,
+    "gravity": [
+      0.0,
+      0.0,
+      -9.81
+    ]
+  },
+  "events": [
+    {
+      "id": "evt_battery_charging",
+      "trigger": "charge_current > 0.1 AND battery.charge_level_percent < 100",
+      "action": "set_emission",
+      "target": "battery",
+      "params": {
+        "intensity": 2.0,
+        "color": [
+          0.2,
+          1.0,
+          0.2
+        ]
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "La batterie est en cours de charge."
+    },
+    {
+      "id": "evt_battery_full",
+      "trigger": "battery.charge_level_percent >= 100",
+      "action": "set_emission",
+      "target": "battery",
+      "params": {
+        "intensity": 5.0,
+        "color": [
+          0.0,
+          1.0,
+          0.0
+        ]
+      },
+      "xapi_verb": "completed",
+      "xapi_description": "La batterie est complètement chargée."
+    },
+    {
+      "id": "evt_panel_overheat",
+      "trigger": "solar_panel.temperature_celsius > solar_panel.max_temp_celsius",
+      "action": "set_emission",
+      "target": "solar_panel",
+      "params": {
+        "intensity": 8.0,
+        "color": [
+          1.0,
+          0.2,
+          0.0
+        ]
+      },
+      "xapi_verb": "failed",
+      "xapi_description": "Le panneau solaire est en surchauffe."
+    },
+    {
+      "id": "evt_optimal_angle",
+      "trigger": "angle_efficiency > 0.95",
+      "action": "set_emission",
+      "target": "solar_panel",
+      "params": {
+        "intensity": 1.0,
+        "color": [
+          0.8,
+          0.8,
+          1.0
+        ]
+      },
+      "xapi_verb": "interacted",
+      "xapi_description": "L'inclinaison du panneau est optimale pour la charge."
+    }
+  ],
+  "scoring": {
+    "success_criteria": "evt_battery_full triggered without evt_panel_overheat",
+    "max_score": 100,
+    "penalty_for_overheat": 50
+  },
+  "export": {
+    "format": "glb",
+    "filename": "phys_solaire_charge_v1.glb",
+    "compression": true,
+    "target_size_mb": 5
+  },
+  "rendering_hints": {
+    "future_engine": "babylonjs",
+    "max_polycount": 50000,
+    "texture_resolution": 1024
+  }
+}

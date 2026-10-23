@@ -1,0 +1,249 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "simulation_id": "chim_neutralisation_vinaigre_bicarbonate_v1",
+    "title": "Réaction de Neutralisation : Vinaigre et Bicarbonate",
+    "subject": "Chimie",
+    "grade_level": "Secondaire I (7e)",
+    "language": "fr",
+    "duration_minutes": 10,
+    "pedagogical_objective": "Observer la production de dioxyde de carbone (CO2) lors d'une réaction acido-basique et visualiser le concept de production de gaz.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-05-10"
+  },
+  "assets": [
+    {
+      "id": "paillasse",
+      "type": "primitive",
+      "primitive": "plane",
+      "label": "Paillasse de laboratoire",
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        5.0,
+        5.0,
+        1.0
+      ],
+      "color": [
+        0.5,
+        0.4,
+        0.3
+      ],
+      "interactive": false
+    },
+    {
+      "id": "becher",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Bécher",
+      "position": [
+        0.0,
+        0.0,
+        0.5
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        1.0
+      ],
+      "color": [
+        0.8,
+        0.8,
+        0.9
+      ],
+      "interactive": false
+    },
+    {
+      "id": "vinaigre",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Vinaigre (Acide acétique)",
+      "position": [
+        0.0,
+        0.0,
+        0.25
+      ],
+      "scale": [
+        0.48,
+        0.48,
+        0.5
+      ],
+      "color": [
+        0.95,
+        0.95,
+        0.8
+      ],
+      "interactive": false,
+      "properties": {
+        "ph": 2.4,
+        "volume_ml": 100
+      },
+      "states": {
+        "neutralized": {
+          "color": [
+            0.55,
+            0.78,
+            0.55
+          ]
+        }
+      }
+    },
+    {
+      "id": "bicarbonate",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Bicarbonate de Soude (Cliquer pour ajouter)",
+      "position": [
+        1.5,
+        0.0,
+        0.15
+      ],
+      "scale": [
+        0.3,
+        0.3,
+        0.3
+      ],
+      "color": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "interactive": true,
+      "properties": {
+        "is_added": false,
+        "mass_g": 10
+      }
+    },
+    {
+      "id": "ballon",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Ballon de baudruche",
+      "position": [
+        0.0,
+        0.0,
+        1.1
+      ],
+      "scale": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "color": [
+        0.9,
+        0.2,
+        0.2
+      ],
+      "interactive": false,
+      "properties": {
+        "inflation": 0.0
+      },
+      "states": {
+        "inflated": {
+          "color": [
+            0.9,
+            0.2,
+            0.2
+          ],
+          "scale_factor": 8.0
+        }
+      }
+    }
+  ],
+  "physics": {
+    "engine": "custom_reaction",
+    "variables": {},
+    "friction_coefficient": 0.1,
+    "gravity": [
+      0.0,
+      0.0,
+      -9.81
+    ]
+  },
+  "events": [
+    {
+      "id": "evt_start_reaction",
+      "trigger": "bicarbonate.is_added == true",
+      "action": "set_visibility",
+      "target": "bicarbonate",
+      "params": {
+        "visible": false
+      },
+      "xapi_verb": "interacted",
+      "xapi_description": "L'utilisateur a versé le bicarbonate de soude dans le vinaigre."
+    },
+    {
+      "id": "evt_fizzing",
+      "trigger": "bicarbonate.is_added == true",
+      "action": "emit_particles",
+      "target": "vinaigre",
+      "state": "neutralized",
+      "params": {
+        "count": 1000,
+        "duration_s": 8,
+        "rate": 125,
+        "color": [
+          0.9,
+          0.9,
+          0.9
+        ],
+        "velocity": [
+          0.0,
+          0.0,
+          0.3
+        ]
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "La réaction produit des bulles de CO2."
+    },
+    {
+      "id": "evt_inflate_balloon",
+      "trigger": "bicarbonate.is_added == true",
+      "action": "animate_scale",
+      "target": "ballon",
+      "state": "inflated",
+      "params": {
+        "to_scale": [
+          0.8,
+          0.8,
+          1.0
+        ],
+        "duration_s": 8,
+        "delay_s": 0.5
+      },
+      "xapi_verb": "passed",
+      "xapi_description": "Le ballon se gonfle, ce qui démontre la production de gaz."
+    },
+    {
+      "id": "evt_phenolphtaleine",
+      "trigger": "user_adds_indicator == true",
+      "action": "tint_color",
+      "target": "becher",
+      "params": {
+        "color": "#d63384",
+        "duration_ms": 1500,
+        "opacity": 0.7
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Ajout de phénolphtaléine : la solution prend une teinte rose en milieu basique"
+    }
+  ],
+  "scoring": {
+    "success_criteria": "evt_inflate_balloon triggered",
+    "max_score": 100
+  },
+  "export": {
+    "format": "glb",
+    "filename": "chim_neutralisation_vinaigre_bicarbonate_v1.glb",
+    "compression": true,
+    "target_size_mb": 5
+  },
+  "rendering_hints": {
+    "future_engine": "babylonjs",
+    "max_polycount": 50000,
+    "texture_resolution": 1024
+  }
+}

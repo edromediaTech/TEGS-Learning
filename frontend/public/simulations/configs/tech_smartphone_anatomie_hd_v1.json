@@ -1,0 +1,490 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "simulation_id": "tech_smartphone_anatomie_hd_v1",
+    "title": "Anatomie Smartphone HD - Vue Eclatee Premium",
+    "subject": "Depannage Smartphone",
+    "grade_level": "Formation professionnelle",
+    "language": "fr",
+    "duration_minutes": 20,
+    "pedagogical_objective": "Version HD : matériaux PBR (verre, métal, plastique) avec coins arrondis. Plus lourd à charger (~200 Ko vs 30 Ko) mais beaucoup plus réaliste pour la démonstration en classe.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-05-04",
+    "quality": "hd",
+    "lite_variant_id": "tech_smartphone_anatomie_v1"
+  },
+  "assets": [
+    {
+      "id": "chassis",
+      "label": "Chassis arriere",
+      "type": "primitive",
+      "primitive": "cube",
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.6,
+        3.2,
+        0.05
+      ],
+      "color": [
+        0.3,
+        0.3,
+        0.35
+      ],
+      "interactive": false,
+      "material": "metal"
+    },
+    {
+      "id": "battery",
+      "label": "Batterie Li-ion 3.85V",
+      "type": "primitive",
+      "primitive": "cube",
+      "position": [
+        0.0,
+        -0.8,
+        0.3
+      ],
+      "scale": [
+        1.4,
+        1.0,
+        0.15
+      ],
+      "color": [
+        0.2,
+        0.5,
+        0.8
+      ],
+      "interactive": true,
+      "properties": {
+        "voltage_nominal": 3.85,
+        "capacity_mAh": 4000
+      },
+      "test_points": [
+        {
+          "name": "VBAT+",
+          "voltage_nominal": 4.2,
+          "fault_value": 2.8
+        },
+        {
+          "name": "GND",
+          "voltage_nominal": 0.0,
+          "fault_value": 0.0
+        }
+      ],
+      "fault_states": {
+        "defaillant": {
+          "label": "Batterie gonflee",
+          "color": [
+            0.7,
+            0.2,
+            0.2
+          ],
+          "emission": 0.8,
+          "scale_factor": 1.18,
+          "diagnostic_hint": "Tension < 3.5V meme apres charge complete, bornes chaudes au toucher, deformation visible du chassis."
+        }
+      },
+      "material": "plastic"
+    },
+    {
+      "id": "cpu",
+      "label": "Processeur (CPU)",
+      "type": "primitive",
+      "primitive": "cube",
+      "position": [
+        -0.4,
+        0.4,
+        0.5
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.05
+      ],
+      "color": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "interactive": true,
+      "test_points": [
+        {
+          "name": "VDD_CORE",
+          "voltage_nominal": 1.2,
+          "fault_value": 0.0
+        },
+        {
+          "name": "VDD_IO",
+          "voltage_nominal": 1.8,
+          "fault_value": 0.0
+        }
+      ],
+      "fault_states": {
+        "defaillant": {
+          "label": "CPU brule (overheat)",
+          "color": [
+            0.6,
+            0.1,
+            0.05
+          ],
+          "emission": 1.6,
+          "diagnostic_hint": "Telephone redemarre en boucle pendant l'usage, surchauffe extreme, ecran qui freeze. Reflow ou remplacement carte mere."
+        }
+      },
+      "material": "pcb"
+    },
+    {
+      "id": "pmic",
+      "label": "Puce gestion d'energie (PMIC)",
+      "type": "primitive",
+      "primitive": "cube",
+      "position": [
+        0.4,
+        0.4,
+        0.5
+      ],
+      "scale": [
+        0.25,
+        0.25,
+        0.05
+      ],
+      "color": [
+        0.15,
+        0.2,
+        0.3
+      ],
+      "interactive": true,
+      "test_points": [
+        {
+          "name": "VOUT_3V3",
+          "voltage_nominal": 3.3,
+          "fault_value": 0.0
+        },
+        {
+          "name": "VOUT_1V8",
+          "voltage_nominal": 1.8,
+          "fault_value": 0.0
+        },
+        {
+          "name": "VIN",
+          "voltage_nominal": 4.2,
+          "fault_value": 4.2
+        }
+      ],
+      "fault_states": {
+        "defaillant": {
+          "label": "PMIC HS",
+          "color": [
+            0.7,
+            0.15,
+            0.05
+          ],
+          "emission": 1.3,
+          "diagnostic_hint": "Telephone ne s'allume plus du tout, pas de detection chargeur. Le PMIC est la 1ere puce a verifier sur un appareil mort."
+        }
+      },
+      "material": "pcb"
+    },
+    {
+      "id": "charge_connector",
+      "label": "Connecteur de charge USB-C",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "position": [
+        0.0,
+        -1.5,
+        0.1
+      ],
+      "scale": [
+        0.18,
+        0.18,
+        0.08
+      ],
+      "rotation_euler": [
+        1.5708,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.75,
+        0.75,
+        0.75
+      ],
+      "interactive": true,
+      "test_points": [
+        {
+          "name": "VBUS",
+          "voltage_nominal": 5.0,
+          "fault_value": 1.2
+        },
+        {
+          "name": "CC1",
+          "voltage_nominal": 0.55,
+          "fault_value": 0.0
+        }
+      ],
+      "fault_states": {
+        "defaillant": {
+          "label": "Connecteur oxyde / tordu",
+          "color": [
+            0.4,
+            0.3,
+            0.1
+          ],
+          "emission": 0.4,
+          "diagnostic_hint": "Cable qui se debranche tout seul, charge intermittente, parfois necessite de bouger le cable. Nettoyage a l'alcool isopropylique ou remplacement de la nappe."
+        }
+      },
+      "material": "metal"
+    },
+    {
+      "id": "screen",
+      "label": "Ecran AMOLED + tactile",
+      "type": "primitive",
+      "primitive": "plane",
+      "position": [
+        0.0,
+        0.0,
+        1.2
+      ],
+      "scale": [
+        1.4,
+        3.0,
+        1.0
+      ],
+      "color": [
+        0.05,
+        0.05,
+        0.1
+      ],
+      "interactive": true,
+      "test_points": [
+        {
+          "name": "VLED+",
+          "voltage_nominal": 5.5,
+          "fault_value": 0.0
+        },
+        {
+          "name": "TOUCH_VDD",
+          "voltage_nominal": 3.3,
+          "fault_value": 0.0
+        }
+      ],
+      "fault_states": {
+        "defaillant": {
+          "label": "Ecran fissure",
+          "color": [
+            0.1,
+            0.05,
+            0.2
+          ],
+          "emission": 0.4,
+          "diagnostic_hint": "Lignes verticales colorees, zones noires/blanches, tactile partiellement inactif, impact visible. Remplacement de l'assemblage ecran complet."
+        }
+      },
+      "material": "glass"
+    },
+    {
+      "id": "speaker",
+      "label": "Haut-parleur",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "position": [
+        -0.5,
+        1.3,
+        0.4
+      ],
+      "scale": [
+        0.15,
+        0.15,
+        0.05
+      ],
+      "rotation_euler": [
+        1.5708,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.2,
+        0.2,
+        0.25
+      ],
+      "interactive": true,
+      "test_points": [
+        {
+          "name": "SPK+",
+          "voltage_nominal": 3.3,
+          "fault_value": 0.0
+        }
+      ],
+      "fault_states": {
+        "defaillant": {
+          "label": "Haut-parleur grille",
+          "color": [
+            0.5,
+            0.3,
+            0.1
+          ],
+          "emission": 0.7,
+          "diagnostic_hint": "Son sature meme a faible volume, distorsion, parfois aucun son. Souvent du a une chute ou eau. Remplacement direct."
+        }
+      },
+      "material": "plastic"
+    },
+    {
+      "id": "camera",
+      "label": "Module camera arriere",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "position": [
+        0.5,
+        1.3,
+        0.4
+      ],
+      "scale": [
+        0.2,
+        0.2,
+        0.15
+      ],
+      "color": [
+        0.1,
+        0.1,
+        0.15
+      ],
+      "interactive": true,
+      "test_points": [
+        {
+          "name": "VCAM_DVDD",
+          "voltage_nominal": 1.2,
+          "fault_value": 0.0
+        },
+        {
+          "name": "VCAM_AVDD",
+          "voltage_nominal": 2.8,
+          "fault_value": 0.0
+        }
+      ],
+      "fault_states": {
+        "defaillant": {
+          "label": "Camera floue / nappe HS",
+          "color": [
+            0.6,
+            0.2,
+            0.4
+          ],
+          "emission": 0.5,
+          "diagnostic_hint": "Image floue dans tous les modes, autofocus qui patine, parfois application appareil photo plante au demarrage. Remplacement du module."
+        }
+      },
+      "material": "metal"
+    },
+    {
+      "id": "vibrator",
+      "label": "Vibreur (moteur lineaire)",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "position": [
+        -0.6,
+        -0.5,
+        0.4
+      ],
+      "scale": [
+        0.1,
+        0.1,
+        0.05
+      ],
+      "rotation_euler": [
+        1.5708,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.4,
+        0.4,
+        0.4
+      ],
+      "interactive": true,
+      "test_points": [
+        {
+          "name": "VIB+",
+          "voltage_nominal": 3.0,
+          "fault_value": 0.0
+        }
+      ],
+      "fault_states": {
+        "defaillant": {
+          "label": "Vibreur muet",
+          "color": [
+            0.4,
+            0.2,
+            0.2
+          ],
+          "emission": 0.5,
+          "diagnostic_hint": "Aucune vibration meme avec le mode vibreur active dans les parametres. Souvent du a la nappe deconnectee ou au moteur grille."
+        }
+      },
+      "material": "rubber"
+    }
+  ],
+  "physics": {
+    "engine": "static",
+    "variables": {},
+    "gravity": [
+      0.0,
+      0.0,
+      -9.81
+    ]
+  },
+  "events": [
+    {
+      "id": "evt_inject_random_fault",
+      "trigger": "user_clicks_inject",
+      "action": "inject_random_fault",
+      "target": "*",
+      "params": {},
+      "xapi_verb": "experienced",
+      "xapi_description": "Une panne aleatoire a ete injectee dans un composant du smartphone."
+    },
+    {
+      "id": "evt_reset_fault",
+      "trigger": "user_clicks_reset",
+      "action": "clear_fault",
+      "target": "*",
+      "params": {},
+      "xapi_verb": "experienced",
+      "xapi_description": "Tous les composants sont remis en etat fonctionnel."
+    }
+  ],
+  "scoring": {
+    "success_criteria": "Diagnostic correct du composant defaillant + ordre de demontage respecte",
+    "max_score": 100,
+    "criteria": [
+      {
+        "name": "diagnostic_correct",
+        "weight": 50
+      },
+      {
+        "name": "demount_order_correct",
+        "weight": 30
+      },
+      {
+        "name": "tools_correct",
+        "weight": 20
+      }
+    ]
+  },
+  "export": {
+    "format": "glb",
+    "filename": "tech_smartphone_anatomie_hd_v1.glb",
+    "compression": true,
+    "target_size_mb": 5
+  },
+  "rendering_hints": {
+    "future_engine": "babylonjs",
+    "max_polycount": 50000,
+    "texture_resolution": 1024
+  }
+}

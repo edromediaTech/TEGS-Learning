@@ -174,6 +174,9 @@
                 <iframe :src="block.data.url" class="w-full border rounded-lg" :style="{ height: (block.data.height || 500) + 'px' }" frameborder="0"></iframe>
               </div>
 
+              <!-- Simulation 3D CRNS -->
+              <BlocksCrnsSimulationBlock v-else-if="block.type === 'embed' && block.data.kind === 'crns_simulation_3d' && block.data.url" :data="block.data" />
+
               <!-- Embed -->
               <div v-else-if="block.type === 'embed' && block.data.url" class="mx-auto" :style="{ maxWidth: (block.data.width || 800) + 'px' }">
                 <p v-if="block.data.title" class="font-semibold mb-2">{{ block.data.title }}</p>

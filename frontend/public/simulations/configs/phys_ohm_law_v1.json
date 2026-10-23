@@ -1,0 +1,229 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "simulation_id": "phys_ohm_law_v1",
+    "title": "La Loi d'Ohm - Circuit avec Ampoule",
+    "subject": "Physique",
+    "grade_level": "Secondaire III (3e)",
+    "language": "fr",
+    "duration_minutes": 15,
+    "pedagogical_objective": "Comprendre la relation U = R x I et identifier le seuil de rupture d'une ampoule lorsque la tension dépasse sa tolerance.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-05-02"
+  },
+  "assets": [
+    {
+      "id": "battery",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Pile 9V",
+      "position": [
+        -2.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.4,
+        0.6,
+        0.8
+      ],
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ],
+      "interactive": true,
+      "properties": {
+        "voltage": 9.0,
+        "voltage_min": 0.0,
+        "voltage_max": 24.0,
+        "adjustable": true
+      }
+    },
+    {
+      "id": "bulb",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Ampoule",
+      "position": [
+        2.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "color": [
+        1.0,
+        0.9,
+        0.5
+      ],
+      "interactive": true,
+      "properties": {
+        "resistance_ohm": 5.0,
+        "max_voltage": 12.0,
+        "state": "off"
+      }
+    },
+    {
+      "id": "wire_1",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Fil conducteur (haut)",
+      "position": [
+        0.0,
+        0.0,
+        0.5
+      ],
+      "scale": [
+        0.05,
+        0.05,
+        2.0
+      ],
+      "rotation_euler": [
+        0.0,
+        1.5708,
+        0.0
+      ],
+      "color": [
+        0.8,
+        0.1,
+        0.1
+      ],
+      "interactive": false
+    },
+    {
+      "id": "wire_2",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Fil conducteur (bas)",
+      "position": [
+        0.0,
+        0.0,
+        -0.5
+      ],
+      "scale": [
+        0.05,
+        0.05,
+        2.0
+      ],
+      "rotation_euler": [
+        0.0,
+        1.5708,
+        0.0
+      ],
+      "color": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "interactive": false
+    }
+  ],
+  "physics": {
+    "engine": "custom_dc",
+    "variables": {
+      "voltage_source": "battery.voltage",
+      "resistance": "bulb.resistance_ohm",
+      "current_formula": "voltage_source / resistance",
+      "max_voltage_threshold": "bulb.max_voltage"
+    },
+    "friction_coefficient": 0.0,
+    "gravity": [
+      0.0,
+      0.0,
+      -9.81
+    ]
+  },
+  "events": [
+    {
+      "id": "evt_bulb_on",
+      "trigger": "current > 0 AND voltage_source <= bulb.max_voltage",
+      "action": "set_emission",
+      "target": "bulb",
+      "params": {
+        "intensity": 5.0,
+        "color": [
+          1.0,
+          0.95,
+          0.6
+        ]
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "L'ampoule s'allume normalement"
+    },
+    {
+      "id": "evt_bulb_explode",
+      "trigger": "voltage_source > bulb.max_voltage",
+      "action": "explode",
+      "target": "bulb",
+      "params": {
+        "fragments": 12,
+        "force": 4.0
+      },
+      "xapi_verb": "failed",
+      "xapi_description": "L'ampoule explose - tension excessive"
+    },
+    {
+      "id": "evt_circuit_open",
+      "trigger": "current == 0",
+      "action": "set_emission",
+      "target": "bulb",
+      "params": {
+        "intensity": 0.0
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Circuit ouvert - aucun courant"
+    },
+    {
+      "id": "evt_show_voltage",
+      "trigger": "battery.voltage > 0",
+      "action": "set_display_text",
+      "target": "battery",
+      "params": {
+        "value": 9.0,
+        "unit": "V",
+        "label": "U =",
+        "precision": 1,
+        "color": "#7CFC00",
+        "background": "#0b0f14"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Affiche la tension lue sur la pile"
+    },
+    {
+      "id": "evt_show_current",
+      "trigger": "current > 0",
+      "action": "set_display_text",
+      "target": "battery",
+      "params": {
+        "value": 1.8,
+        "unit": "A",
+        "label": "I =",
+        "precision": 2,
+        "color": "#ffd24a",
+        "background": "#0b0f14"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Affiche l'intensite calculee dans le circuit"
+    }
+  ],
+  "scoring": {
+    "success_criteria": "evt_bulb_on triggered without evt_bulb_explode",
+    "max_score": 100,
+    "penalty_per_explosion": 25
+  },
+  "export": {
+    "format": "glb",
+    "filename": "ohm_law_v1.glb",
+    "compression": true,
+    "target_size_mb": 5
+  },
+  "rendering_hints": {
+    "future_engine": "babylonjs",
+    "max_polycount": 50000,
+    "texture_resolution": 1024
+  }
+}

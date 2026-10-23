@@ -1,0 +1,236 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "simulation_id": "pompe_solaire_v1",
+    "title": "Simulation d'une Pompe à Eau Solaire",
+    "subject": "Physique",
+    "grade_level": "Secondaire II (4e)",
+    "language": "fr",
+    "duration_minutes": 10,
+    "pedagogical_objective": "Comprendre le fonctionnement d'un système photovoltaïque simple et la dépendance de la pompe à eau à l'ensoleillement.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-06-15"
+  },
+  "assets": [
+    {
+      "id": "sol",
+      "type": "primitive",
+      "primitive": "plane",
+      "label": "Sol",
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        10.0,
+        10.0,
+        1.0
+      ],
+      "color": [
+        0.3,
+        0.5,
+        0.2
+      ],
+      "interactive": false
+    },
+    {
+      "id": "panneau_solaire",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Panneau Solaire",
+      "position": [
+        0.0,
+        1.0,
+        0.8
+      ],
+      "scale": [
+        1.2,
+        1.8,
+        0.05
+      ],
+      "rotation_euler": [
+        0.785,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.1,
+        0.1,
+        0.3
+      ],
+      "interactive": false,
+      "properties": {
+        "max_power_watts": 100.0
+      }
+    },
+    {
+      "id": "pompe",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Pompe à Eau",
+      "position": [
+        0.0,
+        -1.0,
+        0.25
+      ],
+      "scale": [
+        0.25,
+        0.25,
+        0.25
+      ],
+      "color": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "interactive": false,
+      "properties": {
+        "required_watts": 50.0,
+        "state": "off"
+      }
+    },
+    {
+      "id": "puits",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Puits",
+      "position": [
+        0.0,
+        -2.0,
+        0.1
+      ],
+      "scale": [
+        0.6,
+        0.6,
+        0.1
+      ],
+      "color": [
+        0.2,
+        0.5,
+        0.8
+      ],
+      "interactive": false
+    },
+    {
+      "id": "jet_eau",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Jet d'eau",
+      "position": [
+        1.0,
+        -1.0,
+        0.25
+      ],
+      "scale": [
+        0.04,
+        0.04,
+        1.0
+      ],
+      "rotation_euler": [
+        0.0,
+        1.5708,
+        0.0
+      ],
+      "color": [
+        0.5,
+        0.8,
+        1.0
+      ],
+      "interactive": false,
+      "properties": {
+        "visible": false
+      }
+    },
+    {
+      "id": "soleil",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Luminosité (Soleil)",
+      "position": [
+        0.0,
+        5.0,
+        5.0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "color": [
+        1.0,
+        1.0,
+        0.0
+      ],
+      "interactive": true,
+      "properties": {
+        "intensity": 1.0,
+        "intensity_min": 0.0,
+        "intensity_max": 1.0,
+        "adjustable": true
+      }
+    }
+  ],
+  "physics": {
+    "engine": "custom_power_system",
+    "variables": {
+      "light_intensity": "soleil.intensity",
+      "panel_output_power": "panneau_solaire.max_power_watts * light_intensity",
+      "pump_power_requirement": "pompe.required_watts"
+    },
+    "friction_coefficient": 0.1,
+    "gravity": [
+      0.0,
+      0.0,
+      -9.81
+    ]
+  },
+  "events": [
+    {
+      "id": "evt_pompe_on",
+      "trigger": "panel_output_power >= pump_power_requirement",
+      "action": "set_property",
+      "target": "jet_eau",
+      "params": {
+        "visible": true
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "La pompe s'active car l'ensoleillement est suffisant."
+    },
+    {
+      "id": "evt_pompe_off",
+      "trigger": "panel_output_power < pump_power_requirement",
+      "action": "set_property",
+      "target": "jet_eau",
+      "params": {
+        "visible": false
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "La pompe s'arrête car l'ensoleillement est insuffisant (crépuscule)."
+    },
+    {
+      "id": "evt_ajustement_lumiere",
+      "trigger": "on_property_change(soleil.intensity)",
+      "action": "log",
+      "target": "soleil",
+      "params": {},
+      "xapi_verb": "interacted",
+      "xapi_description": "L'utilisateur a modifié la luminosité pour simuler le cycle jour/nuit."
+    }
+  ],
+  "scoring": {
+    "success_criteria": "evt_pompe_on triggered AND evt_pompe_off triggered",
+    "max_score": 100
+  },
+  "export": {
+    "format": "glb",
+    "filename": "pompe_solaire_v1.glb",
+    "compression": true,
+    "target_size_mb": 5
+  },
+  "rendering_hints": {
+    "future_engine": "babylonjs",
+    "max_polycount": 50000,
+    "texture_resolution": 1024
+  }
+}

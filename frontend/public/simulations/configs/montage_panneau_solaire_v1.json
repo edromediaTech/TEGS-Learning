@@ -1,0 +1,347 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "simulation_id": "montage_panneau_solaire_v1",
+    "title": "Montage d'un Système Solaire : Série et Parallèle",
+    "subject": "Physique",
+    "grade_level": "Secondaire IV (2nde)",
+    "language": "fr",
+    "duration_minutes": 15,
+    "pedagogical_objective": "Démontrer l'effet des montages série et parallèle sur la tension et le courant d'un système photovoltaïque, et comprendre le rôle du régulateur de charge et l'importance du respect des polarités.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-06-15"
+  },
+  "assets": [
+    {
+      "id": "panel_1",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Panneau Solaire 1",
+      "position": [
+        -3.0,
+        1.0,
+        0.0
+      ],
+      "scale": [
+        1.5,
+        0.1,
+        0.8
+      ],
+      "color": [
+        0.1,
+        0.2,
+        0.4
+      ],
+      "interactive": false,
+      "properties": {
+        "voltage": 12.0,
+        "current": 5.0
+      }
+    },
+    {
+      "id": "panel_2",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Panneau Solaire 2",
+      "position": [
+        -3.0,
+        -1.0,
+        0.0
+      ],
+      "scale": [
+        1.5,
+        0.1,
+        0.8
+      ],
+      "color": [
+        0.1,
+        0.2,
+        0.4
+      ],
+      "interactive": false,
+      "properties": {
+        "voltage": 12.0,
+        "current": 5.0
+      }
+    },
+    {
+      "id": "regulator",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Régulateur MPPT",
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.5,
+        0.6,
+        0.4
+      ],
+      "color": [
+        0.5,
+        0.5,
+        0.5
+      ],
+      "interactive": true,
+      "properties": {
+        "state": "off",
+        "is_damaged": 0
+      }
+    },
+    {
+      "id": "battery",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Batterie",
+      "position": [
+        3.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.8,
+        1.0,
+        0.7
+      ],
+      "color": [
+        0.2,
+        0.2,
+        0.2
+      ],
+      "interactive": false,
+      "properties": {
+        "voltage": 12.0,
+        "charge_level": 0.5
+      }
+    },
+    {
+      "id": "wire_template",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Fil de connexion",
+      "position": [
+        0.0,
+        -5.0,
+        0.0
+      ],
+      "scale": [
+        0.05,
+        0.05,
+        1.0
+      ],
+      "color": [
+        0.8,
+        0.1,
+        0.1
+      ],
+      "interactive": false
+    },
+    {
+      "id": "terminal_p1_plus",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Borne + Panneau 1",
+      "position": [
+        -2.0,
+        1.0,
+        0.5
+      ],
+      "scale": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "color": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "interactive": true
+    },
+    {
+      "id": "terminal_p1_minus",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Borne - Panneau 1",
+      "position": [
+        -2.0,
+        1.0,
+        -0.5
+      ],
+      "scale": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "color": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "interactive": true
+    },
+    {
+      "id": "terminal_p2_plus",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Borne + Panneau 2",
+      "position": [
+        -2.0,
+        -1.0,
+        0.5
+      ],
+      "scale": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "color": [
+        1.0,
+        0.0,
+        0.0
+      ],
+      "interactive": true
+    },
+    {
+      "id": "terminal_p2_minus",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Borne - Panneau 2",
+      "position": [
+        -2.0,
+        -1.0,
+        -0.5
+      ],
+      "scale": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "color": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "interactive": true
+    }
+  ],
+  "physics": {
+    "engine": "custom_dc",
+    "variables": {
+      "is_series": "connection(terminal_p1_plus, terminal_p2_minus)",
+      "is_parallel": "connection(terminal_p1_plus, terminal_p2_plus) AND connection(terminal_p1_minus, terminal_p2_minus)",
+      "is_polarity_error": "connection(terminal_p1_plus, terminal_p1_minus) OR connection(terminal_p2_plus, terminal_p2_minus)",
+      "voltage_in": "is_series ? (panel_1.voltage + panel_2.voltage) : (is_parallel ? panel_1.voltage : 0)",
+      "current_in": "is_series ? panel_1.current : (is_parallel ? (panel_1.current + panel_2.current) : 0)",
+      "is_charging": "voltage_in > battery.voltage AND regulator.is_damaged == 0"
+    },
+    "friction_coefficient": 0.1,
+    "gravity": [
+      0.0,
+      0.0,
+      -9.81
+    ]
+  },
+  "events": [
+    {
+      "id": "evt_show_series_values",
+      "trigger": "is_series == true AND regulator.is_damaged == 0",
+      "action": "set_display_text",
+      "target": "regulator",
+      "params": {
+        "value": 24.0,
+        "unit": "V",
+        "label": "U (série) =",
+        "precision": 1,
+        "color": "#7CFC00"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "L'élève a correctement monté les panneaux en série, observant l'addition des tensions."
+    },
+    {
+      "id": "evt_show_parallel_values",
+      "trigger": "is_parallel == true AND regulator.is_damaged == 0",
+      "action": "set_display_text",
+      "target": "regulator",
+      "params": {
+        "value": 10.0,
+        "unit": "A",
+        "label": "I (parallèle) =",
+        "precision": 1,
+        "color": "#ffd24a"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "L'élève a correctement monté les panneaux en parallèle, observant l'addition des courants."
+    },
+    {
+      "id": "evt_polarity_error_damage",
+      "trigger": "is_polarity_error == true AND regulator.is_damaged == 0",
+      "action": "set_property",
+      "target": "regulator",
+      "params": {
+        "property": "is_damaged",
+        "value": 1
+      },
+      "xapi_verb": "failed",
+      "xapi_description": "Erreur critique : L'élève a créé un court-circuit en inversant les polarités, endommageant le régulateur."
+    },
+    {
+      "id": "evt_show_damage_effect",
+      "trigger": "regulator.is_damaged == 1",
+      "action": "explode",
+      "target": "regulator",
+      "params": {
+        "fragments": 5,
+        "force": 0.5,
+        "effect": "smoke"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Visualisation des dégâts sur le régulateur suite à l'inversion de polarité."
+    },
+    {
+      "id": "evt_battery_charging",
+      "trigger": "is_charging == true",
+      "action": "set_emission",
+      "target": "battery",
+      "params": {
+        "intensity": 2.0,
+        "color": [
+          0.2,
+          1.0,
+          0.2
+        ]
+      },
+      "xapi_verb": "passed",
+      "xapi_description": "Le système est fonctionnel et la batterie est en cours de charge."
+    },
+    {
+      "id": "evt_stop_charging",
+      "trigger": "is_charging == false",
+      "action": "set_emission",
+      "target": "battery",
+      "params": {
+        "intensity": 0.0
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Le circuit est ouvert ou incorrect, la charge de la batterie est arrêtée."
+    }
+  ],
+  "scoring": {
+    "success_criteria": "evt_battery_charging triggered for 10 seconds",
+    "max_score": 100,
+    "penalty_per_polarity_error": 75
+  },
+  "export": {
+    "format": "glb",
+    "filename": "montage_panneau_solaire_v1.glb",
+    "compression": true,
+    "target_size_mb": 5
+  },
+  "rendering_hints": {
+    "future_engine": "babylonjs",
+    "max_polycount": 20000,
+    "texture_resolution": 512
+  }
+}

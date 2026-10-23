@@ -28,6 +28,7 @@ const voteRoutes = require('./routes/votes');
 const queueRoutes = require('./routes/queue');
 const agentRoutes = require('./routes/agent');
 const knowledgeToFormRoutes = require('./routes/knowledgeToForm');
+const tegscreenRoutes = require('./routes/tegscreen');
 
 const http = require('http');
 const path = require('path');
@@ -79,6 +80,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/tenants', tenantRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/xapi', xapiRoutes);
+app.use('/api/tutor', require('./routes/tutor'));
+app.use('/api/crns-classrooms', require('./routes/crns-classrooms'));
 app.use('/api/modules', moduleRoutes);
 app.use('/api/cmi5', cmi5Routes);
 app.use('/api/share', shareRoutes);
@@ -98,6 +101,7 @@ app.use('/api/votes', voteRoutes);
 app.use('/api/queue', queueRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/knowledge-to-form', knowledgeToFormRoutes);
+app.use('/api/tegscreen', tegscreenRoutes);
 
 // --- Gestion d'erreurs globale ---
 app.use((err, _req, res, _next) => {

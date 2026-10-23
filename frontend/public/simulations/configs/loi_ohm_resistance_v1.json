@@ -1,0 +1,299 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "simulation_id": "loi_ohm_resistance_v1",
+    "title": "La Loi d'Ohm : Résistance et Potentiomètre",
+    "subject": "Physique",
+    "grade_level": "Secondaire III (3e)",
+    "language": "fr",
+    "duration_minutes": 10,
+    "pedagogical_objective": "Illustrer la loi d'Ohm (U=RxI) en permettant à l'élève de faire varier la résistance d'un potentiomètre pour contrôler l'intensité du courant dans un circuit et protéger une LED contre la surintensité.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-05-10"
+  },
+  "assets": [
+    {
+      "id": "power_source",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Source de Tension Fixe",
+      "position": [
+        -3.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.8,
+        0.5,
+        0.5
+      ],
+      "color": [
+        0.3,
+        0.3,
+        0.3
+      ],
+      "interactive": false,
+      "properties": {
+        "voltage": 12.0
+      }
+    },
+    {
+      "id": "potentiometer",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Potentiomètre (Résistance Variable)",
+      "position": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.6,
+        0.6,
+        0.3
+      ],
+      "color": [
+        0.5,
+        0.5,
+        0.6
+      ],
+      "interactive": true,
+      "properties": {
+        "resistance_ohm": 5000.0,
+        "resistance_min": 100.0,
+        "resistance_max": 10000.0,
+        "adjustable": true
+      }
+    },
+    {
+      "id": "led",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Diode Électroluminescente (LED)",
+      "position": [
+        3.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.3,
+        0.3,
+        0.3
+      ],
+      "color": [
+        0.8,
+        0.1,
+        0.1
+      ],
+      "interactive": false,
+      "properties": {
+        "state": "off",
+        "max_current": 0.025
+      }
+    },
+    {
+      "id": "wire_1",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Fil de connexion",
+      "position": [
+        -1.5,
+        0.0,
+        0.3
+      ],
+      "scale": [
+        0.05,
+        0.05,
+        1.5
+      ],
+      "rotation_euler": [
+        0.0,
+        1.5708,
+        0.0
+      ],
+      "color": [
+        0.8,
+        0.1,
+        0.1
+      ],
+      "interactive": false
+    },
+    {
+      "id": "wire_2",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Fil de connexion",
+      "position": [
+        1.5,
+        0.0,
+        0.3
+      ],
+      "scale": [
+        0.05,
+        0.05,
+        1.5
+      ],
+      "rotation_euler": [
+        0.0,
+        1.5708,
+        0.0
+      ],
+      "color": [
+        0.8,
+        0.1,
+        0.1
+      ],
+      "interactive": false
+    },
+    {
+      "id": "wire_3",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Fil de connexion (retour)",
+      "position": [
+        0.0,
+        0.0,
+        -0.3
+      ],
+      "scale": [
+        0.05,
+        0.05,
+        3.0
+      ],
+      "rotation_euler": [
+        0.0,
+        1.5708,
+        0.0
+      ],
+      "color": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "interactive": false
+    }
+  ],
+  "physics": {
+    "engine": "custom_dc",
+    "variables": {
+      "voltage_source": "power_source.voltage",
+      "resistance": "potentiometer.resistance_ohm",
+      "current_formula": "voltage_source / resistance",
+      "max_current_threshold": "led.max_current"
+    },
+    "friction_coefficient": 0.1,
+    "gravity": [
+      0.0,
+      0.0,
+      -9.81
+    ]
+  },
+  "events": [
+    {
+      "id": "evt_update_led_brightness",
+      "trigger": "current > 0 AND current <= led.max_current",
+      "action": "set_emission",
+      "target": "led",
+      "params": {
+        "intensity_formula": "current / led.max_current * 5.0",
+        "color": [
+          1.0,
+          0.2,
+          0.2
+        ]
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "La luminosité de la LED varie avec le courant."
+    },
+    {
+      "id": "evt_led_burnout",
+      "trigger": "current > led.max_current",
+      "action": "set_color",
+      "target": "led",
+      "params": {
+        "color": [
+          0.1,
+          0.1,
+          0.1
+        ]
+      },
+      "xapi_verb": "failed",
+      "xapi_description": "La LED a grillé. La résistance est trop faible, le courant est trop élevé."
+    },
+    {
+      "id": "evt_led_off_burnt",
+      "trigger": "current > led.max_current",
+      "action": "set_emission",
+      "target": "led",
+      "params": {
+        "intensity": 0.0
+      },
+      "xapi_verb": "terminated",
+      "xapi_description": "La LED est grillée et ne s'allume plus."
+    },
+    {
+      "id": "evt_show_voltage",
+      "trigger": "true",
+      "action": "set_display_text",
+      "target": "power_source",
+      "params": {
+        "value_formula": "power_source.voltage",
+        "unit": "V",
+        "label": "U =",
+        "precision": 1,
+        "color": "#7CFC00",
+        "background": "#0b0f14"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Affiche la tension de la source."
+    },
+    {
+      "id": "evt_show_resistance",
+      "trigger": "true",
+      "action": "set_display_text",
+      "target": "potentiometer",
+      "params": {
+        "value_formula": "potentiometer.resistance_ohm",
+        "unit": "Ω",
+        "label": "R =",
+        "precision": 0,
+        "color": "#FFA500",
+        "background": "#0b0f14"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Affiche la valeur de la résistance ajustée."
+    },
+    {
+      "id": "evt_show_current",
+      "trigger": "true",
+      "action": "set_display_text",
+      "target": "led",
+      "params": {
+        "value_formula": "current * 1000",
+        "unit": "mA",
+        "label": "I =",
+        "precision": 2,
+        "color": "#1E90FF",
+        "background": "#0b0f14"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Affiche l'intensité calculée dans le circuit."
+    }
+  ],
+  "scoring": {
+    "success_criteria": "experienced evt_update_led_brightness AND NOT triggered evt_led_burnout",
+    "max_score": 100,
+    "penalty_per_burnout": 50
+  },
+  "export": {
+    "format": "glb",
+    "filename": "loi_ohm_resistance_v1.glb",
+    "compression": true,
+    "target_size_mb": 5
+  },
+  "rendering_hints": {
+    "future_engine": "babylonjs",
+    "max_polycount": 20000,
+    "texture_resolution": 512
+  }
+}
