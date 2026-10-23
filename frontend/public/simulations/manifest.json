@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-05-07T01:39:02.644313+00:00",
-  "count": 10,
+  "generated_at": "2026-10-23T16:33:57.279510+00:00",
+  "count": 14,
   "simulations": [
     {
       "simulation_id": "chim_neutralisation_vinaigre_bicarbonate_v1",
@@ -17,6 +17,20 @@
       "n_assets": 5
     },
     {
+      "simulation_id": "ecrou_hexagonal_v1",
+      "title": "Atelier Mécanique : L'Écrou et la Vis",
+      "subject": "Technologie",
+      "grade_level": "Secondaire I (7e AF)",
+      "language": "fr",
+      "duration_minutes": 10,
+      "objective": "Identifier les composants d'un assemblage vis-écrou (filetage, forme hexagonale) et simuler l'action de serrage avec une clé plate.",
+      "asset_url": "/simulations/ecrou_hexagonal_v1.glb",
+      "config_url": "/simulations/configs/ecrou_hexagonal_v1.json",
+      "size_bytes": 7620,
+      "n_events": 5,
+      "n_assets": 5
+    },
+    {
       "simulation_id": "eolienne_vitesse_v1",
       "title": "Éolienne et Vitesse du Vent",
       "subject": "Physique",
@@ -29,6 +43,48 @@
       "size_bytes": 16932,
       "n_events": 3,
       "n_assets": 5
+    },
+    {
+      "simulation_id": "intensite_courant_v1",
+      "title": "L'Intensité du Courant et la Loi des Nœuds",
+      "subject": "Physique",
+      "grade_level": "Secondaire IV (2nde)",
+      "language": "fr",
+      "duration_minutes": 20,
+      "objective": "Comprendre le branchement en série de l'ampèremètre, le choix du calibre, et vérifier expérimentalement la loi des nœuds dans un circuit en dérivation.",
+      "asset_url": "/simulations/intensite_courant_v1.glb",
+      "config_url": "/simulations/configs/intensite_courant_v1.json",
+      "size_bytes": 30352,
+      "n_events": 8,
+      "n_assets": 8
+    },
+    {
+      "simulation_id": "loi_ohm_resistance_v1",
+      "title": "La Loi d'Ohm : Résistance et Potentiomètre",
+      "subject": "Physique",
+      "grade_level": "Secondaire III (3e)",
+      "language": "fr",
+      "duration_minutes": 10,
+      "objective": "Illustrer la loi d'Ohm (U=RxI) en permettant à l'élève de faire varier la résistance d'un potentiomètre pour contrôler l'intensité du courant dans un circuit et protéger une LED contre la surintensité.",
+      "asset_url": "/simulations/loi_ohm_resistance_v1.glb",
+      "config_url": "/simulations/configs/loi_ohm_resistance_v1.json",
+      "size_bytes": 16336,
+      "n_events": 6,
+      "n_assets": 6
+    },
+    {
+      "simulation_id": "montage_panneau_solaire_v1",
+      "title": "Montage d'un Système Solaire : Série et Parallèle",
+      "subject": "Physique",
+      "grade_level": "Secondaire IV (2nde)",
+      "language": "fr",
+      "duration_minutes": 15,
+      "objective": "Démontrer l'effet des montages série et parallèle sur la tension et le courant d'un système photovoltaïque, et comprendre le rôle du régulateur de charge et l'importance du respect des polarités.",
+      "asset_url": "/simulations/montage_panneau_solaire_v1.glb",
+      "config_url": "/simulations/configs/montage_panneau_solaire_v1.json",
+      "size_bytes": 42268,
+      "n_events": 6,
+      "n_assets": 9
     },
     {
       "simulation_id": "phys_ohm_law_v1",
@@ -82,7 +138,7 @@
       "objective": "Comprendre le fonctionnement d'un système photovoltaïque simple et la dépendance de la pompe à eau à l'ensoleillement.",
       "asset_url": "/simulations/pompe_solaire_v1.glb",
       "config_url": "/simulations/configs/pompe_solaire_v1.json",
-      "size_bytes": 18856,
+      "size_bytes": 15052,
       "n_events": 3,
       "n_assets": 6
     },

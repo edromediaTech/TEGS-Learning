@@ -57,7 +57,7 @@
       <div class="flex flex-wrap items-center gap-2 text-xs">
         <span class="text-gray-500">Vues :</span>
         <button
-          v-for="v in viewAngles"
+          v-for="v in visibleViews"
           :key="v.label"
           @click="setView(v.orbit)"
           class="px-2.5 py-1 rounded border border-gray-300 bg-white hover:border-emerald-400 hover:bg-emerald-50 font-medium text-gray-700"
@@ -136,10 +136,12 @@ interface AssetWithDesc {
   testPoints?: { name: string; voltage_nominal: number }[];
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   assets: AssetWithDesc[];
   modelViewerEl: any;
-}>();
+  // false quand la scene a un sol : la camera est bloquee au-dessus de l'horizon.
+  allowBelow?: boolean;
+}>(), { allowBelow: true });
 
 const emit = defineEmits<{
   (e: 'isolate', assetId: string): void;
@@ -158,6 +160,9 @@ const viewAngles = [
   { label: '3/4',     orbit: '45deg 70deg auto' },
   { label: 'Côté',    orbit: '90deg 90deg auto' },
 ];
+const visibleViews = computed(() =>
+  props.allowBelow ? viewAngles : viewAngles.filter((v) => v.label !== 'Dessous'),
+);
 
 const inspectables = computed(() =>
   props.assets.filter((a) => a.label && a.id !== 'chassis'),

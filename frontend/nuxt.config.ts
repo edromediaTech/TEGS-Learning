@@ -1,5 +1,11 @@
 export default defineNuxtConfig({
   ssr: false,
+
+  // GLB et configs lus par la page de partage du backend (autre origine).
+  // En prod, meme en-tete dans firebase.json.
+  routeRules: {
+    '/simulations/**': { headers: { 'Access-Control-Allow-Origin': '*' } },
+  },
   modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', '@vite-pwa/nuxt'],
 
   // === PWA / Service Worker (Phase 1.3 offline-first pour Fort-Liberte) ===

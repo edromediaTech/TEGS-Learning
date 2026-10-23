@@ -170,6 +170,16 @@ function renderLiveGatePage(mod, theme, status) {
 </html>`;
 }
 
+// Simulation 3D injectee par CRNS : le GLB est servi par le frontend (/simulations/...),
+// donc on resout l'URL sur FRONTEND_URL et on l'affiche avec <model-viewer>, meme
+// version que SimulationViewer. Une iframe sur un .glb ne montrerait rien.
+// Le module script n'est execute qu'une fois par page meme s'il est repete.
+function renderCrnsSimulation(d) {
+  const front = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
+  const src = /^https?:\/\//i.test(d.url) ? d.url : `${front}${d.url.startsWith('/') ? '' : '/'}${d.url}`;
+  return `<div style="margin:16px 0">${d.title ? `<p style="font-weight:600;margin-bottom:8px">${escapeHtml(d.title)}</p>` : ''}<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script><model-viewer src="${escapeHtml(src)}" alt="${escapeHtml(d.title || 'Simulation 3D')}" camera-controls touch-action="pan-y" auto-rotate shadow-intensity="1" max-camera-orbit="auto 90deg auto" style="width:100%;height:480px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px"></model-viewer></div>`;
+}
+
 function renderBlock(block, theme) {
   const d = block.data || {};
   switch (block.type) {
@@ -221,6 +231,7 @@ function renderBlock(block, theme) {
       return `<div style="margin:16px 0">${d.title ? `<p style="font-weight:600;margin-bottom:8px">${escapeHtml(d.title)}</p>` : ''}<iframe src="${escapeHtml(d.url)}" style="width:100%;height:${d.height || 500}px;border:1px solid #e5e7eb;border-radius:8px" frameborder="0"></iframe></div>`;
     case 'embed':
       if (!d.url) return '';
+      if (d.kind === 'crns_simulation_3d') return renderCrnsSimulation(d);
       return `<div style="margin:16px auto;max-width:${d.width || 800}px">${d.title ? `<p style="font-weight:600;margin-bottom:8px">${escapeHtml(d.title)}</p>` : ''}<iframe src="${escapeHtml(d.url)}" width="${d.width || 800}" height="${d.height || 500}" style="width:100%;border:1px solid #e5e7eb;border-radius:8px" frameborder="0" sandbox="allow-scripts allow-same-origin allow-popups"></iframe></div>`;
     case 'media':
       if (!d.url) return '';
