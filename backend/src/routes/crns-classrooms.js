@@ -5,13 +5,18 @@
 // POST   /api/crns-classrooms/:code/join   - rejoindre via code (student)
 // DELETE /api/crns-classrooms/:id          - archiver (teacher proprietaire)
 // GET    /api/crns-classrooms/:id          - detail + roster (teacher proprietaire)
+// POST   /api/crns-classrooms/:id/students - creer des eleves (matricule + PIN), E4
+// POST   /api/crns-classrooms/:id/credentials - regenerer les PIN d'eleves de la classe, E4
 
 const express = require('express');
+const mongoose = require('mongoose');
 const crypto = require('crypto');
 const { authenticate } = require('../middleware/auth');
 const tenantIsolation = require('../middleware/tenantIsolation');
 const CrnsClassroom = require('../models/CrnsClassroom');
 const Statement = require('../models/Statement');
+const User = require('../models/User');
+const { createStudent, issueCredentials } = require('../services/studentCredentials');
 
 const router = express.Router();
 router.use(authenticate);
@@ -171,6 +176,87 @@ router.delete('/:id', async (req, res, next) => {
     classroom.archived_at = new Date();
     await classroom.save();
     res.json({ archived: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// --- Identifiants eleves (E4) : matricule + PIN, distribues par l'enseignant ---
+
+const MAX_NEW_STUDENTS = 100;
+
+// Classe active du tenant, geree par son enseignant, un admin_ddene ou un superadmin.
+async function ownedClassroom(req, res) {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    res.status(404).json({ error: 'Classe introuvable' });
+    return null;
+  }
+  const classroom = await CrnsClassroom.findOne({ _id: req.params.id, ...req.tenantFilter(), archived_at: null });
+  if (!classroom) {
+    res.status(404).json({ error: 'Classe introuvable ou archivee' });
+    return null;
+  }
+  const isOwner = String(classroom.teacher_id) === String(req.user.id);
+  if (!isOwner && !['admin_ddene', 'superadmin'].includes(req.user.role)) {
+    res.status(403).json({ error: "Seul l'enseignant de la classe peut gerer ses identifiants" });
+    return null;
+  }
+  return classroom;
+}
+
+function sheetRow(user, pin) {
+  return { id: user._id, first_name: user.firstName, last_name: user.lastName, matricule: user.matricule, pin };
+}
+
+// === POST /:id/students : { students: [{ first_name, last_name }] } ===
+// Renvoie les PIN en clair UNE seule fois (fiche a imprimer et distribuer).
+router.post('/:id/students', async (req, res, next) => {
+  try {
+    const classroom = await ownedClassroom(req, res);
+    if (!classroom) return;
+    const list = Array.isArray(req.body?.students) ? req.body.students : null;
+    if (!list || list.length === 0 || list.length > MAX_NEW_STUDENTS) {
+      return res.status(400).json({ error: `students : 1 a ${MAX_NEW_STUDENTS} eleves` });
+    }
+    const clean = list.map((s) => ({
+      firstName: String(s?.first_name || '').trim(),
+      lastName: String(s?.last_name || '').trim(),
+    }));
+    const bad = clean.findIndex((s) => !s.firstName || !s.lastName || s.firstName.length > 60 || s.lastName.length > 60);
+    if (bad >= 0) return res.status(400).json({ error: `Eleve ${bad + 1} : prenom et nom requis (60 caracteres max)` });
+
+    const sheet = [];
+    for (const s of clean) {
+      const { user, pin } = await createStudent({ ...s, tenantId: classroom.tenant_id });
+      classroom.student_ids.push(user._id);
+      sheet.push(sheetRow(user, pin));
+    }
+    await classroom.save();
+    res.status(201).json({ classroom: { id: classroom._id, name: classroom.name, code: classroom.code }, students: sheet });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// === POST /:id/credentials : { student_ids?: [...] } (defaut : toute la classe) ===
+// Nouveau PIN (l'ancien cesse de fonctionner), matricule attribue s'il manquait.
+router.post('/:id/credentials', async (req, res, next) => {
+  try {
+    const classroom = await ownedClassroom(req, res);
+    if (!classroom) return;
+    const members = new Set(classroom.student_ids.map(String));
+    const wanted = Array.isArray(req.body?.student_ids) ? req.body.student_ids.map(String) : [...members];
+    const outsiders = wanted.filter((id) => !members.has(id));
+    if (outsiders.length) return res.status(400).json({ error: 'student_ids : eleve hors de la classe', student_ids: outsiders });
+
+    const students = await User.find({ _id: { $in: wanted }, tenant_id: classroom.tenant_id, role: 'student' });
+    const sheet = [];
+    for (const user of students) {
+      const { pin } = await issueCredentials(user);
+      sheet.push(sheetRow(user, pin));
+    }
+    sheet.sort((a, b) => `${a.last_name} ${a.first_name}`.localeCompare(`${b.last_name} ${b.first_name}`, 'fr'));
+    res.json({ classroom: { id: classroom._id, name: classroom.name, code: classroom.code }, students: sheet });
   } catch (err) {
     next(err);
   }

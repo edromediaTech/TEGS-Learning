@@ -183,6 +183,11 @@ copie, horodatage corrige par l'ecart d'horloge). Contrat : `docs/edge-sync-api.
 `node backend/tests/integration/test-edge-sync.js`. Catalogue des simulations : manifeste CRNS
 v2 (`CRNS_MANIFEST_URL`, GCS par defaut). `model-viewer` et Draco sont servis depuis
 `frontend/public/vendor/` (`useModelViewer()`), jamais depuis un CDN.
+Identifiants eleves (E4) : matricule + PIN a 6 chiffres generes par l'enseignant
+(`POST /api/crns-classrooms/:id/students` et `/credentials`, PIN montre une fois, stocke
+bcrypt), connexion `POST /api/auth/login-pin` (verrouillage 5 echecs / 15 min, 30 echecs
+par IP / 10 min, `trust proxy` = 1). Page de connexion : onglets Eleve / Personnel.
+Tests : `node backend/tests/integration/test-student-pin.js`.
 
 ## 6. Conventions
 

@@ -37,6 +37,10 @@ const { initSocket } = require('./socket');
 const app = express();
 const server = http.createServer(app);
 
+// Derriere un seul proxy (Cloud Run, ou nginx sur un noeud TEGS-Edge) : req.ip = adresse
+// du client vue par ce proxy, non falsifiable par l'en-tete X-Forwarded-For du client.
+app.set('trust proxy', 1);
+
 // --- Middlewares globaux ---
 app.use(compression());
 app.use(cors({

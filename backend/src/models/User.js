@@ -106,6 +106,18 @@ const userSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    // --- Identifiants eleves TEGS-Edge (E4) : matricule + PIN, distribues par l'enseignant ---
+    // Le matricule n'est pas secret ; le PIN (6 chiffres) n'est stocke que hache (bcrypt).
+    // L'empreinte est envoyee aux noeuds edge pour la connexion hors ligne.
+    matricule: {
+      type: String,
+      trim: true,
+      uppercase: true,
+    },
+    pin_hash: { type: String, select: false },
+    pin_set_at: { type: Date },
+    pin_failed_attempts: { type: Number, default: 0 },
+    pin_locked_until: { type: Date },
   },
   { timestamps: true }
 );
@@ -126,6 +138,12 @@ userSchema.pre('validate', function (next) {
 /**
  * Hash du mot de passe avant sauvegarde.
  */
+// Un matricule est unique dans son etablissement.
+userSchema.index(
+  { tenant_id: 1, matricule: 1 },
+  { unique: true, partialFilterExpression: { matricule: { $type: 'string' } } }
+);
+
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);

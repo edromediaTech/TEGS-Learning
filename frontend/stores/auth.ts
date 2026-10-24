@@ -77,6 +77,20 @@ export const useAuthStore = defineStore('auth', {
       session.value = { token: res.token, tenant_id: res.user.tenant_id || '' };
     },
 
+    // Connexion eleve par matricule + PIN (identifiants distribues par l'enseignant).
+    async loginPin(tenant_id: string, matricule: string, pin: string) {
+      const config = useRuntimeConfig();
+      const res = await $fetch<any>(`${config.public.apiBase}/auth/login-pin`, {
+        method: 'POST',
+        body: { tenant_id, matricule, pin },
+      });
+      this.user = res.user;
+      this.token = res.token;
+      this.tenant_id = res.user.tenant_id || null;
+      const session = getSessionCookie();
+      session.value = { token: res.token, tenant_id: res.user.tenant_id || '' };
+    },
+
     async fetchMe() {
       // Read from __session cookie
       const session = getSessionCookie();

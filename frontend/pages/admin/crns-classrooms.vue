@@ -124,6 +124,93 @@
             <p class="text-gray-700 text-xs">{{ formatDate(c.created_at) }}</p>
           </div>
         </div>
+
+        <!-- Identifiants eleves : matricule + PIN (connexion hors ligne TEGS-Edge) -->
+        <div class="flex gap-2 mt-4 pt-3 border-t border-gray-100">
+          <button
+            @click="openAdd(c)"
+            class="flex-1 text-xs px-2 py-1.5 bg-indigo-600 text-white font-bold rounded hover:bg-indigo-700"
+          >
+            + Ajouter des élèves
+          </button>
+          <button
+            @click="onRegenerate(c)"
+            :disabled="!(c.student_ids || []).length || busy"
+            class="flex-1 text-xs px-2 py-1.5 bg-white border border-indigo-300 text-indigo-700 rounded hover:bg-indigo-50 disabled:opacity-40"
+          >
+            Régénérer les PIN
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fenetre : ajout d'eleves, puis fiche des identifiants -->
+    <div v-if="modal" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+        <template v-if="modal.mode === 'add'">
+          <h2 class="text-lg font-bold text-gray-900">Ajouter des élèves à « {{ modal.classroom.name }} »</h2>
+          <p class="text-sm text-gray-500 mt-1 mb-3">
+            Un élève par ligne : « Prénom ; Nom » (ou collez deux colonnes depuis un tableur).
+            Chaque élève reçoit un matricule et un PIN à 6 chiffres.
+          </p>
+          <textarea
+            v-model="namesText"
+            rows="8"
+            placeholder="Jean ; Baptiste&#10;Marie Rose ; Pierre"
+            class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-mono"
+          ></textarea>
+          <p class="text-xs mt-1" :class="parsedError ? 'text-red-600' : 'text-gray-500'">
+            {{ parsedError || `${parsedStudents.length} élève(s) prêt(s)` }}
+          </p>
+          <div class="flex gap-2 mt-4">
+            <button
+              @click="onAddStudents"
+              :disabled="!parsedStudents.length || !!parsedError || busy"
+              class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-md hover:bg-indigo-700 disabled:opacity-50"
+            >
+              {{ busy ? 'Création...' : 'Créer les identifiants' }}
+            </button>
+            <button @click="modal = null" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200">
+              Annuler
+            </button>
+          </div>
+        </template>
+
+        <template v-else>
+          <div class="p-3 mb-4 bg-amber-50 border border-amber-300 rounded text-sm text-amber-800">
+            Les PIN ne sont affichés <strong>qu'une seule fois</strong>. Imprimez la fiche maintenant ;
+            en cas de perte, utilisez « Régénérer les PIN ».
+          </div>
+          <div class="print-sheet">
+            <h2 class="text-lg font-bold text-gray-900">Identifiants — {{ modal.classroom.name }}</h2>
+            <p class="text-xs text-gray-500 mb-3">
+              Connexion : page de connexion, onglet « Élève », choisir l'école, puis matricule et PIN.
+            </p>
+            <table class="w-full text-sm border-collapse">
+              <thead>
+                <tr class="text-left text-xs uppercase text-gray-500 border-b">
+                  <th class="py-1.5">Nom</th><th>Prénom</th><th>Matricule</th><th>PIN</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="s in modal.sheet" :key="s.id" class="border-b border-gray-100">
+                  <td class="py-1.5 font-medium">{{ s.last_name }}</td>
+                  <td>{{ s.first_name }}</td>
+                  <td class="font-mono font-bold tracking-wider">{{ s.matricule }}</td>
+                  <td class="font-mono font-bold tracking-widest">{{ s.pin }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="flex gap-2 mt-4">
+            <button @click="printSheet" class="flex-1 px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-md hover:bg-indigo-700">
+              Imprimer la fiche
+            </button>
+            <button @click="closeSheet" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm rounded-md hover:bg-gray-200">
+              Fermer
+            </button>
+          </div>
+        </template>
       </div>
     </div>
   </NuxtLayout>
@@ -147,6 +234,14 @@ const { apiFetch } = useApi();
 const availableCourses = [
   { id: 'depannage_smartphone_v1', label: 'Dépannage Smartphone (Sécurité + Loi d\'Ohm + Anatomie + Assemblage)' },
 ];
+
+interface CredentialRow {
+  id: string;
+  first_name: string;
+  last_name: string;
+  matricule: string;
+  pin: string;
+}
 
 const classrooms = ref<Classroom[]>([]);
 const loading = ref(true);
@@ -218,5 +313,84 @@ function formatDate(iso: string): string {
   } catch { return iso; }
 }
 
+// --- Identifiants eleves (matricule + PIN) ---
+const modal = ref<{ mode: 'add' | 'sheet'; classroom: Classroom; sheet: CredentialRow[] } | null>(null);
+const namesText = ref('');
+const busy = ref(false);
+
+// "Prenom ; Nom", tabulation (copie de tableur) ou, a defaut, premier mot = prenom.
+const parsed = computed(() => {
+  const students: { first_name: string; last_name: string }[] = [];
+  const lines = namesText.value.split('\n').map((l) => l.trim()).filter(Boolean);
+  for (const [i, line] of lines.entries()) {
+    const parts = /[;\t]/.test(line) ? line.split(/[;\t]/) : [line.split(/\s+/)[0], line.split(/\s+/).slice(1).join(' ')];
+    const [first_name, last_name] = parts.map((p) => (p || '').trim());
+    if (!first_name || !last_name) return { students, error: `Ligne ${i + 1} : prénom et nom requis` };
+    students.push({ first_name, last_name });
+  }
+  if (students.length > 100) return { students, error: '100 élèves maximum à la fois' };
+  return { students, error: '' };
+});
+const parsedStudents = computed(() => parsed.value.students);
+const parsedError = computed(() => parsed.value.error);
+
+function openAdd(c: Classroom) {
+  namesText.value = '';
+  modal.value = { mode: 'add', classroom: c, sheet: [] };
+}
+
+async function onAddStudents() {
+  if (!modal.value) return;
+  busy.value = true;
+  error.value = null;
+  try {
+    const { data } = await apiFetch<{ students: CredentialRow[] }>(`/crns-classrooms/${modal.value.classroom._id}/students`, {
+      method: 'POST',
+      body: JSON.stringify({ students: parsedStudents.value }),
+    });
+    modal.value = { ...modal.value, mode: 'sheet', sheet: data.students };
+  } catch (e: any) {
+    error.value = e?.data?.error || e?.message || 'Création des élèves impossible';
+    modal.value = null;
+  } finally {
+    busy.value = false;
+  }
+}
+
+async function onRegenerate(c: Classroom) {
+  if (!confirm(`Régénérer les PIN des ${c.student_ids.length} élève(s) de "${c.name}" ? Les anciens PIN ne fonctionneront plus.`)) return;
+  busy.value = true;
+  error.value = null;
+  try {
+    const { data } = await apiFetch<{ students: CredentialRow[] }>(`/crns-classrooms/${c._id}/credentials`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+    modal.value = { mode: 'sheet', classroom: c, sheet: data.students };
+  } catch (e: any) {
+    error.value = e?.data?.error || e?.message || 'Régénération impossible';
+  } finally {
+    busy.value = false;
+  }
+}
+
+function printSheet() {
+  window.print();
+}
+
+async function closeSheet() {
+  modal.value = null;
+  await load();
+}
+
 onMounted(load);
 </script>
+
+<style>
+/* Impression : seule la fiche des identifiants. */
+@media print {
+  body * { visibility: hidden; }
+  .print-sheet, .print-sheet * { visibility: visible; }
+  .print-sheet { position: absolute; left: 0; top: 0; width: 100%; padding: 16px; }
+}
+</style>

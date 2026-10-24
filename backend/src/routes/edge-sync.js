@@ -76,7 +76,7 @@ router.post('/pull', async (req, res, next) => {
       tenant_id: center.tenant_id,
       role: 'student',
       isActive: true,
-    }).select('firstName lastName updatedAt').lean();
+    }).select('firstName lastName matricule +pin_hash updatedAt').lean();
 
     const rosterUpdates = students
       .filter((s) => !since || changedClassStudents.has(String(s._id)) || s.updatedAt > since)
@@ -88,7 +88,10 @@ router.post('/pull', async (req, res, next) => {
           last_name: s.lastName,
           classroom_id: classIds[0],
           classroom_ids: classIds,
-          access_pin_hash: null, // identifiants eleves : etape E4
+          // Connexion hors ligne (E4) : matricule + empreinte bcrypt du PIN ; null tant que
+          // l'enseignant n'a pas genere d'identifiants. Un nouveau PIN change updatedAt.
+          matricule: s.matricule || null,
+          access_pin_hash: s.pin_hash || null,
           action: 'UPSERT',
         };
       });
