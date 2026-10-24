@@ -14,6 +14,7 @@
   "assets": [
     {
       "id": "hot_plate",
+      "material": "painted_metal",
       "type": "primitive",
       "primitive": "cube",
       "label": "Plaque Chauffante",
@@ -42,6 +43,7 @@
     },
     {
       "id": "beaker",
+      "material": "glass",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Bécher en verre (style cuisine)",
@@ -67,6 +69,7 @@
     },
     {
       "id": "water",
+      "material": "water",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Eau",
@@ -89,6 +92,7 @@
     },
     {
       "id": "thermo_body",
+      "material": "glass",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Thermomètre (corps)",
@@ -114,6 +118,7 @@
     },
     {
       "id": "alcohol_column",
+      "material": "water",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Colonne d'alcool",
@@ -136,6 +141,7 @@
     },
     {
       "id": "temp_display",
+      "material": "plastic",
       "type": "primitive",
       "primitive": "plane",
       "label": "Afficheur de Température",

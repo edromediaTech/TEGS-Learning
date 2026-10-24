@@ -14,6 +14,7 @@
   "assets": [
     {
       "id": "power_source",
+      "material": "painted_metal",
       "type": "primitive",
       "primitive": "cube",
       "label": "Source de Tension Fixe",
@@ -39,6 +40,7 @@
     },
     {
       "id": "potentiometer",
+      "material": "metal",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Potentiomètre (Résistance Variable)",
@@ -67,6 +69,7 @@
     },
     {
       "id": "led",
+      "material": "plastic",
       "type": "primitive",
       "primitive": "uv_sphere",
       "label": "Diode Électroluminescente (LED)",
@@ -93,6 +96,7 @@
     },
     {
       "id": "wire_1",
+      "material": "rubber",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Fil de connexion",
@@ -120,6 +124,7 @@
     },
     {
       "id": "wire_2",
+      "material": "rubber",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Fil de connexion",
@@ -147,6 +152,7 @@
     },
     {
       "id": "wire_3",
+      "material": "rubber",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Fil de connexion (retour)",

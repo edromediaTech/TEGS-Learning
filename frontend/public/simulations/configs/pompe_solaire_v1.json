@@ -14,6 +14,7 @@
   "assets": [
     {
       "id": "sol",
+      "material": "fabric",
       "type": "primitive",
       "primitive": "plane",
       "label": "Sol",
@@ -36,6 +37,7 @@
     },
     {
       "id": "panneau_solaire",
+      "material": "painted_metal",
       "type": "primitive",
       "primitive": "cube",
       "label": "Panneau Solaire",
@@ -66,6 +68,7 @@
     },
     {
       "id": "pompe",
+      "material": "metal",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Pompe à Eau",
@@ -92,6 +95,7 @@
     },
     {
       "id": "puits",
+      "material": "water",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Puits",
@@ -114,6 +118,7 @@
     },
     {
       "id": "jet_eau",
+      "material": "water",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Jet d'eau",
@@ -144,6 +149,7 @@
     },
     {
       "id": "soleil",
+      "material": "plastic",
       "type": "primitive",
       "primitive": "uv_sphere",
       "label": "Luminosité (Soleil)",

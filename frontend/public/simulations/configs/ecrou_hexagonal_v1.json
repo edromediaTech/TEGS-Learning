@@ -32,7 +32,8 @@
         0.4,
         0.2
       ],
-      "interactive": false
+      "interactive": false,
+      "material": "wood"
     },
     {
       "id": "vis_tete",
@@ -55,7 +56,8 @@
         0.7,
         0.75
       ],
-      "interactive": false
+      "interactive": false,
+      "material": "metal"
     },
     {
       "id": "vis_corps",
@@ -81,7 +83,8 @@
       "properties": {
         "is_threaded": true,
         "thread_pitch_mm": 1.5
-      }
+      },
+      "material": "metal"
     },
     {
       "id": "ecrou",
@@ -108,7 +111,8 @@
       "properties": {
         "is_tight": false,
         "rotation_angle_deg": 0.0
-      }
+      },
+      "material": "metal"
     },
     {
       "id": "cle_plate",
@@ -133,7 +137,8 @@
       "interactive": true,
       "properties": {
         "is_engaged": false
-      }
+      },
+      "material": "metal"
     }
   ],
   "physics": {

@@ -14,6 +14,7 @@
   "assets": [
     {
       "id": "paillasse",
+      "material": "wood",
       "type": "primitive",
       "primitive": "plane",
       "label": "Paillasse de laboratoire",
@@ -36,6 +37,7 @@
     },
     {
       "id": "becher",
+      "material": "glass",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Bécher",
@@ -58,6 +60,7 @@
     },
     {
       "id": "vinaigre",
+      "material": "water",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Vinaigre (Acide acétique)",
@@ -93,6 +96,7 @@
     },
     {
       "id": "bicarbonate",
+      "material": "fabric",
       "type": "primitive",
       "primitive": "cube",
       "label": "Bicarbonate de Soude (Cliquer pour ajouter)",
@@ -119,6 +123,7 @@
     },
     {
       "id": "ballon",
+      "material": "rubber",
       "type": "primitive",
       "primitive": "uv_sphere",
       "label": "Ballon de baudruche",

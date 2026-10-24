@@ -15,6 +15,7 @@
   "assets": [
     {
       "id": "chassis",
+      "material": "metal",
       "label": "Chassis arriere",
       "type": "primitive",
       "primitive": "cube",
@@ -37,6 +38,7 @@
     },
     {
       "id": "battery",
+      "material": "plastic",
       "label": "Batterie Li-ion 3.85V",
       "type": "primitive",
       "primitive": "cube",
@@ -59,6 +61,7 @@
     },
     {
       "id": "charge_connector",
+      "material": "metal",
       "label": "Connecteur de charge USB-C",
       "type": "primitive",
       "primitive": "cylinder",
@@ -86,6 +89,7 @@
     },
     {
       "id": "vibrator",
+      "material": "rubber",
       "label": "Vibreur (moteur lineaire)",
       "type": "primitive",
       "primitive": "cylinder",
@@ -113,6 +117,7 @@
     },
     {
       "id": "speaker",
+      "material": "plastic",
       "label": "Haut-parleur",
       "type": "primitive",
       "primitive": "cylinder",
@@ -140,6 +145,7 @@
     },
     {
       "id": "pmic",
+      "material": "pcb",
       "label": "Puce gestion d'energie (PMIC)",
       "type": "primitive",
       "primitive": "cube",
@@ -162,6 +168,7 @@
     },
     {
       "id": "cpu",
+      "material": "pcb",
       "label": "Processeur (CPU)",
       "type": "primitive",
       "primitive": "cube",
@@ -184,6 +191,7 @@
     },
     {
       "id": "camera",
+      "material": "metal",
       "label": "Module camera arriere",
       "type": "primitive",
       "primitive": "cylinder",
@@ -206,6 +214,7 @@
     },
     {
       "id": "screen",
+      "material": "glass",
       "label": "Ecran AMOLED + tactile",
       "type": "primitive",
       "primitive": "plane",
