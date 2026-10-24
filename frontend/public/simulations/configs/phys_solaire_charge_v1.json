@@ -14,6 +14,7 @@
   "assets": [
     {
       "id": "solar_panel",
+      "material": "painted_metal",
       "type": "primitive",
       "primitive": "cube",
       "label": "Panneau Solaire",
@@ -49,6 +50,7 @@
     },
     {
       "id": "battery",
+      "material": "plastic",
       "type": "primitive",
       "primitive": "cube",
       "label": "Batterie 12V",
@@ -77,6 +79,7 @@
     },
     {
       "id": "sun",
+      "material": "plastic",
       "type": "primitive",
       "primitive": "uv_sphere",
       "label": "Soleil",
@@ -105,6 +108,7 @@
     },
     {
       "id": "ground",
+      "material": "fabric",
       "type": "primitive",
       "primitive": "plane",
       "label": "Sol",

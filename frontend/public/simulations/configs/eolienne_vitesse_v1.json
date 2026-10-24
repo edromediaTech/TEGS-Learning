@@ -14,6 +14,7 @@
   "assets": [
     {
       "id": "ground",
+      "material": "fabric",
       "type": "primitive",
       "primitive": "plane",
       "label": "Sol",
@@ -36,6 +37,7 @@
     },
     {
       "id": "mast",
+      "material": "painted_metal",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Mât de l'éolienne",
@@ -58,6 +60,7 @@
     },
     {
       "id": "nacelle",
+      "material": "painted_metal",
       "type": "primitive",
       "primitive": "cube",
       "label": "Nacelle",
@@ -80,6 +83,7 @@
     },
     {
       "id": "rotor_assembly",
+      "material": "painted_metal",
       "type": "primitive",
       "primitive": "cylinder",
       "label": "Rotor (Pales)",
@@ -111,6 +115,7 @@
     },
     {
       "id": "wind_control",
+      "material": "plastic",
       "type": "primitive",
       "primitive": "uv_sphere",
       "label": "Contrôleur de Vent",
