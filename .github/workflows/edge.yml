@@ -72,7 +72,8 @@ jobs:
       - name: Verifications
         run: |
           set -e
-          check() { code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost$1"); echo "$1 -> $code"; [ "$code" = 200 ]; }
+          # -L : les pages generees en dossier (/login -> /login/) redirigent, comme sur Firebase.
+          check() { code=$(curl -sL -o /dev/null -w '%{http_code}' "http://localhost$1"); echo "$1 -> $code"; [ "$code" = 200 ]; }
           check /login
           check /eleve
           check /api/health
@@ -80,7 +81,7 @@ jobs:
           check /vendor/draco/draco_decoder.wasm
           check /simulations/manifest.json
           curl -s -D - -o /dev/null http://localhost/vendor/draco/draco_decoder.wasm | grep -i 'access-control-allow-origin'
-          curl -s http://localhost/login | grep -q 'apiBase:"/api"'
+          curl -sL http://localhost/login | grep -q 'apiBase:"/api"'
           echo "API relative dans le build"
           sleep 10
           docker compose -f docker-compose.edge.yml logs backend > /tmp/edge-backend.log
