@@ -82,10 +82,19 @@ Le corps accepte aussi `last_course_sync`. La reponse contient en plus :
 |---|---|
 | `institution` | `{ id, name, code }` de l'etablissement (recree localement avec le meme `_id`) |
 | `center` | `{ center_id, name }` |
-| `teachers` | enseignants des classes (references locales, sans mot de passe) |
+| `teachers` | enseignants des classes du centre, avec `email` et `password_hash` (bcrypt) : ils se connectent sur le noeud avec leurs identifiants du cloud (E6) ; les autres comptes du personnel restent inactifs sur le noeud |
 | `classrooms[].teacher_id`, `classrooms[].student_ids` | proprietaire et effectif actif de chaque classe |
 | `course_updates` | documents complets des modules de cours modifies depuis `last_course_sync` |
 | `course_active_ids`, `course_cursor` | modules a garder (les autres sont retires du noeud), curseur suivant |
+
+Medias des modules (E6) : le noeud copie toute URL d'image, video, son, PDF ou GLB presente
+dans un module (champs et HTML des blocs) et la remplace par `/media/<sha1>.<ext>`, servi par
+nginx. Echec de copie : l'URL d'origine est gardee. Les videos YouTube/Vimeo ne sont pas copiees.
+
+Integrite (E6) : les traces de fin (`completed`, `passed`, `failed`, `terminated`) portent
+`context.extensions.integrity` (version, level ok/attention/suspect, duree, pertes de focus,
+temps hors page, sorties du plein ecran, copier/coller, evenements en ms relatives au debut).
+Rapport enseignant : `GET /api/crns-classrooms/:id/integrity`.
 
 ## 4. `POST /api/v1/edge/sync/push` (signe)
 

@@ -260,7 +260,7 @@ async function onMultimeterMeasure(payload: { redKey: string; blackKey: string; 
       degraded: payload.degraded,
     },
   } as any;
-  await tracker.value.sendEvent(synthetic);
+  await tracker.value.sendEvent(synthetic, undefined, integrityExtra(synthetic));
   // Pas de notify classroom -- trop verbeux, mesure repetee. Le diagnostic submit suffit.
 }
 function labelOf(id: string): string {
@@ -296,7 +296,7 @@ async function onDiagnosticSubmit(payload: {
       expected_keywords: payload.score.expectedKeywords,
     },
   } as any;
-  const result = await tracker.value.sendEvent(synthetic);
+  const result = await tracker.value.sendEvent(synthetic, undefined, integrityExtra(synthetic));
   lastStatus.value = `${verb} (diagnostic) ${payload.score.total}/100 -> ${result.status}`;
   classroomSocket.notifyEvent(
     props.simulationId,
@@ -349,7 +349,7 @@ async function onAssemblyPlace(payload: { assetId: string; correct: boolean; ste
     xapi_description: description,
     runtime: { step_index: payload.stepIndex, correct: payload.correct },
   } as any;
-  await tracker.value.sendEvent(synthetic);
+  await tracker.value.sendEvent(synthetic, undefined, integrityExtra(synthetic));
   classroomSocket.notifyEvent(props.simulationId, synthetic.id, verb, description);
 }
 
@@ -369,7 +369,7 @@ async function onAssemblyFinish(payload: { totalErrors: number; elapsedMs: numbe
       score_max: 100,
     },
   } as any;
-  const result = await tracker.value.sendEvent(synthetic);
+  const result = await tracker.value.sendEvent(synthetic, undefined, integrityExtra(synthetic));
   lastStatus.value = `${verb} (assemblage) ${payload.score}/100 -> ${result.status}`;
   classroomSocket.notifyEvent(props.simulationId, 'evt_assembly_finish', verb, description);
 }
@@ -465,7 +465,15 @@ function resetVisualState() {
   stateController.reset();
 }
 
+// Integrite du TP (E6) : resume joint aux traces de fin et a la fermeture.
+const integrity = useIntegrityMonitor();
+const FINAL_VERBS = new Set(['completed', 'passed', 'failed']);
+function integrityExtra(ev: { xapi_verb?: string }) {
+  return FINAL_VERBS.has(ev.xapi_verb || '') ? { integrity: integrity.summary() } : undefined;
+}
+
 onMounted(async () => {
+  integrity.start();
   tracker.value = useXapiTracker(activityId.value);
   const result = await tracker.value.initialize(`Demarrage simulation ${props.title}`);
   initialized.value = true;
@@ -474,8 +482,9 @@ onMounted(async () => {
 
 onBeforeUnmount(async () => {
   stateController.detach();
+  integrity.stop();
   if (!tracker.value || !initialized.value) return;
-  await tracker.value.terminate(`Fermeture simulation ${props.title}`);
+  await tracker.value.terminate(`Fermeture simulation ${props.title}`, { integrity: integrity.summary() });
 });
 
 async function triggerEvent(ev: XapiEventConfig & Record<string, any>) {
@@ -485,7 +494,7 @@ async function triggerEvent(ev: XapiEventConfig & Record<string, any>) {
     if (stateAttached.value) {
       stateController.applyEvent(ev);
     }
-    const result = await tracker.value.sendEvent(ev);
+    const result = await tracker.value.sendEvent(ev, undefined, integrityExtra(ev));
     lastStatus.value = `${ev.xapi_verb || 'experienced'} (${ev.id}) -> ${result.status}`;
     // Echo live au moniteur enseignant (best-effort, sans bloquer l'UX)
     classroomSocket.notifyEvent(

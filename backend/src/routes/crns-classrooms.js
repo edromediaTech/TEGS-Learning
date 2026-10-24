@@ -271,4 +271,71 @@ router.post('/:id/credentials', cloudOnly, async (req, res, next) => {
   }
 });
 
+// === GET /:id/integrity : rapport d'integrite des copies (E6) ===
+// Derniere tentative par eleve et par activite, d'apres le resume joint aux traces de fin
+// (context.extensions.integrity). Des indices pour l'enseignant, pas une sanction.
+const LEVEL_RANK = { suspect: 0, attention: 1, ok: 2 };
+const FINAL_VERBS = ['completed', 'passed', 'failed', 'terminated'].map((v) => `http://adlnet.gov/expapi/verbs/${v}`);
+
+router.get('/:id/integrity', async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) return res.status(404).json({ error: 'Classe introuvable' });
+    const classroom = await CrnsClassroom.findOne({ _id: req.params.id, ...req.tenantFilter() }).lean();
+    if (!classroom) return res.status(404).json({ error: 'Classe introuvable' });
+    const isOwner = String(classroom.teacher_id) === String(req.user.id);
+    if (!isOwner && !['admin_ddene', 'superadmin'].includes(req.user.role)) {
+      return res.status(403).json({ error: "Seul l'enseignant de la classe peut voir ce rapport" });
+    }
+
+    const students = await User.find({ _id: { $in: classroom.student_ids } }).select('firstName lastName matricule').lean();
+    const byId = new Map(students.map((u) => [String(u._id), u]));
+    const stmts = await Statement.find({
+      tenant_id: classroom.tenant_id,
+      'actor.user_id': { $in: classroom.student_ids },
+      'verb.id': { $in: FINAL_VERBS },
+      'context.extensions.integrity': { $exists: true },
+      voided: false,
+    }).sort({ timestamp: -1 }).limit(5000).lean();
+
+    // Derniere tentative par (eleve, activite) ; "completed" prefere a "terminated".
+    const latest = new Map();
+    for (const st of stmts) {
+      const key = `${st.actor.user_id}|${st.object.id}`;
+      const cur = latest.get(key);
+      const isTerminated = st.verb.id.endsWith('/terminated');
+      if (!cur || (cur.terminated && !isTerminated && Math.abs(cur.at - st.timestamp) < 60000)) {
+        latest.set(key, { st, terminated: isTerminated, at: st.timestamp });
+      }
+    }
+
+    const rows = [...latest.values()].map(({ st }) => {
+      const integ = st.context.extensions.integrity || {};
+      const u = byId.get(String(st.actor.user_id));
+      const name = st.object.definition?.name || {};
+      return {
+        student_id: st.actor.user_id,
+        student: u ? `${u.lastName} ${u.firstName}` : st.actor.name,
+        matricule: u?.matricule || null,
+        activity: Object.values(name)[0] || st.object.id,
+        at: st.timestamp,
+        level: integ.level || 'ok',
+        duration_ms: integ.duration_ms ?? null,
+        focus_loss_count: integ.focus_loss_count ?? 0,
+        focus_lost_ms: integ.focus_lost_ms ?? 0,
+        tab_hidden_count: integ.tab_hidden_count ?? 0,
+        hidden_ms: integ.hidden_ms ?? 0,
+        fullscreen_exit_count: integ.fullscreen_exit_count ?? 0,
+        copy_paste_count: (integ.copy_count ?? 0) + (integ.paste_count ?? 0),
+        center_id: st.context.extensions.edge?.center_id || null,
+      };
+    }).sort((a, b) => (LEVEL_RANK[a.level] ?? 3) - (LEVEL_RANK[b.level] ?? 3) || new Date(b.at) - new Date(a.at));
+
+    const counts = { ok: 0, attention: 0, suspect: 0 };
+    for (const r of rows) counts[r.level] = (counts[r.level] || 0) + 1;
+    res.json({ classroom: { id: classroom._id, name: classroom.name }, counts, rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
