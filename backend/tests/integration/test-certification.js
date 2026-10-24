@@ -534,24 +534,12 @@ async function runAudit() {
   // ═══════════════════════════════════════════════════════════
   section('5. INFRASTRUCTURE — GCP & Secrets');
 
-  // Vérifier cloudbuild.yaml
-  const cloudbuild = fs.readFileSync(path.join(__dirname, '..', 'cloudbuild.yaml'), 'utf8');
-  assert(cloudbuild.includes('--memory=1Gi'), 'Cloud Run: 1Gi RAM');
-  assert(cloudbuild.includes('--cpu=2'), 'Cloud Run: 2 CPU');
-  assert(cloudbuild.includes('--concurrency=80'), 'Cloud Run: concurrency=80');
-  assert(cloudbuild.includes('NODE_ENV=production'), 'Cloud Run: NODE_ENV=production');
-  assert(cloudbuild.includes('FRONTEND_URL='), 'Cloud Run: FRONTEND_URL configuré');
-  assert(cloudbuild.includes('MONCASH_CLIENT_ID=tegs-moncash-client-id'), 'Secret: MONCASH_CLIENT_ID');
-  assert(cloudbuild.includes('MONCASH_CLIENT_SECRET=tegs-moncash-client-secret'), 'Secret: MONCASH_CLIENT_SECRET');
-  assert(cloudbuild.includes('NATCASH_MERCHANT_ID=tegs-natcash-merchant-id'), 'Secret: NATCASH_MERCHANT_ID');
-  assert(cloudbuild.includes('NATCASH_API_KEY=tegs-natcash-api-key'), 'Secret: NATCASH_API_KEY');
-  assert(cloudbuild.includes('nuxi generate'), 'Frontend build: nuxi generate (SPA)');
-
-  // Vérifier deploy-manual.sh
-  const deployManual = fs.readFileSync(path.join(__dirname, '..', 'deploy', 'deploy-manual.sh'), 'utf8');
-  assert(deployManual.includes('--memory=1Gi'), 'deploy-manual: 1Gi RAM');
-  assert(deployManual.includes('MONCASH_CLIENT_ID'), 'deploy-manual: secrets MonCash');
-  assert(deployManual.includes('NATCASH_API_KEY'), 'deploy-manual: secrets Natcash');
+  // Vérifier deploy-manual.sh (deploiement manuel : pas de trigger Cloud Build)
+  const deployManual = fs.readFileSync(path.join(__dirname, '..', '..', '..', 'deploy', 'deploy-manual.sh'), 'utf8');
+  assert(deployManual.includes('--source backend'), 'deploy-manual: Cloud Run --source (garde la config)');
+  assert(!deployManual.includes('--set-env-vars'), 'deploy-manual: pas de --set-env-vars (ecrase la config)');
+  assert(deployManual.includes('nuxi generate'), 'deploy-manual: frontend nuxi generate (SPA)');
+  assert(deployManual.includes('NUXT_PUBLIC_CRNS_MANIFEST_URL'), 'deploy-manual: manifest CRNS GCS');
 
   // Vérifier gcloud-setup.sh
   const gcloudSetup = fs.readFileSync(path.join(__dirname, '..', 'deploy', 'gcloud-setup.sh'), 'utf8');
