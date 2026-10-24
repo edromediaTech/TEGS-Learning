@@ -34,6 +34,8 @@ const centerSchema = new mongoose.Schema(
     classroom_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: 'CrnsClassroom' }],
     // Simulations CRNS installees sur le noeud ; vide = tout le catalogue.
     simulation_ids: [{ type: String, trim: true }],
+    // Modules de cours (quiz, TP) installes sur le noeud ; vide = modules publies de l'etablissement.
+    module_ids: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Module' }],
 
     token_hash: { type: String, required: true, select: false },
     token_prefix: { type: String, default: '' }, // debut du jeton, pour l'identifier sans le reveler

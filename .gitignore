@@ -9,6 +9,8 @@ dist/
 # Environment
 .env
 .env.*
+# Modeles sans secret (ex. deploy/edge/.env.edge.example)
+!.env*.example
 !.env.example
 
 # OS

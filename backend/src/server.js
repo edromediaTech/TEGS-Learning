@@ -113,7 +113,11 @@ app.use('/api/agent', agentRoutes);
 app.use('/api/knowledge-to-form', knowledgeToFormRoutes);
 app.use('/api/tegscreen', tegscreenRoutes);
 app.use('/api/centers', require('./routes/centers'));
+app.use('/api/student', require('./routes/student'));
 app.use('/api/v1/edge/sync', require('./routes/edge-sync'));
+// Noeud TEGS-Edge (salle hors ligne) : page d'etat et worker de synchronisation.
+const EDGE_MODE = process.env.EDGE_MODE === '1';
+if (EDGE_MODE) app.use('/api/edge', require('./routes/edge-status'));
 
 // --- Gestion d'erreurs globale ---
 app.use((err, _req, res, _next) => {
@@ -130,7 +134,8 @@ connectDB()
   .then(() => {
     initSocket(server);
     server.listen(PORT, '0.0.0.0', () => {
-      console.log(`[SERVER] TEGS-Learning backend demarre sur le port ${PORT}`);
+      console.log(`[SERVER] TEGS-Learning backend demarre sur le port ${PORT}${EDGE_MODE ? ' (mode edge)' : ''}`);
+      if (EDGE_MODE) require('./edge/syncWorker').start();
     });
   })
   .catch((err) => {

@@ -188,6 +188,14 @@ Identifiants eleves (E4) : matricule + PIN a 6 chiffres generes par l'enseignant
 bcrypt), connexion `POST /api/auth/login-pin` (verrouillage 5 echecs / 15 min, 30 echecs
 par IP / 10 min, `trust proxy` = 1). Page de connexion : onglets Eleve / Personnel.
 Tests : `node backend/tests/integration/test-student-pin.js`.
+Noeud de salle (E5) : `EDGE_MODE=1` demarre `backend/src/edge/syncWorker.js` (pull -> miroir local
+des classes, eleves, modules, paquets de simulations verifies sha256 ; push de l'outbox =
+`Statement.edge_sync` PENDING/RETRY ; repli exponentiel 5 s -> 15 min). Etat : `/api/edge/status`,
+page `/admin/edge`. Sur un noeud, classes et identifiants se gerent sur le cloud (409).
+Deploiement : `deploy/edge/` (Docker Compose nginx + backend + mongo), guide
+`docs/edge-deploiement.md`. Test de bout en bout : `node backend/tests/integration/test-edge-node.js`
+(lance un cloud :3200 et un noeud :3100). CI GitHub : `.github/workflows/edge.yml`.
+Espace eleve : `/eleve` (`GET /api/student/home`).
 
 ## 6. Conventions
 

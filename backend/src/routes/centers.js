@@ -12,6 +12,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Center = require('../models/Center');
 const CrnsClassroom = require('../models/CrnsClassroom');
+const Module = require('../models/Module');
 const { authenticate, authorize } = require('../middleware/auth');
 const tenantIsolation = require('../middleware/tenantIsolation');
 const { generateToken, hashToken } = require('../middleware/edgeAuth');
@@ -29,6 +30,7 @@ function publicView(c) {
     tenant_id: c.tenant_id,
     classroom_ids: c.classroom_ids,
     simulation_ids: c.simulation_ids,
+    module_ids: c.module_ids,
     token_prefix: c.token_prefix,
     token_rotated_at: c.token_rotated_at,
     isActive: c.isActive,
@@ -53,6 +55,14 @@ async function checkClassrooms(ids, tenantId) {
   return n === new Set(ids.map(String)).size ? null : "classroom_ids : classe inconnue dans l'etablissement";
 }
 
+// Les modules de cours installes doivent appartenir a l'etablissement du centre.
+async function checkModules(ids, tenantId) {
+  if (!Array.isArray(ids)) return 'module_ids doit etre un tableau';
+  if (!ids.every((id) => mongoose.isValidObjectId(id))) return 'module_ids : identifiants invalides';
+  const n = await Module.countDocuments({ _id: { $in: ids }, tenant_id: tenantId });
+  return n === new Set(ids.map(String)).size ? null : "module_ids : module inconnu dans l'etablissement";
+}
+
 router.get('/', async (req, res, next) => {
   try {
     const centers = await Center.find(req.tenantFilter()).sort({ center_id: 1 }).lean();
@@ -64,17 +74,17 @@ router.get('/', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const { center_id, name, classroom_ids = [], simulation_ids = [] } = req.body || {};
+    const { center_id, name, classroom_ids = [], simulation_ids = [], module_ids = [] } = req.body || {};
     const tenantId = req.isSuperAdmin ? req.body?.tenant_id : req.tenantId;
     if (!tenantId || !mongoose.isValidObjectId(tenantId)) {
       return res.status(400).json({ error: 'tenant_id (etablissement parent) requis' });
     }
-    const classErr = await checkClassrooms(classroom_ids, tenantId);
+    const classErr = (await checkClassrooms(classroom_ids, tenantId)) || (await checkModules(module_ids, tenantId));
     if (classErr) return res.status(400).json({ error: classErr });
 
     const { token, fields } = newToken();
     const center = await Center.create({
-      center_id, name, tenant_id: tenantId, classroom_ids, simulation_ids, ...fields,
+      center_id, name, tenant_id: tenantId, classroom_ids, simulation_ids, module_ids, ...fields,
     });
     res.status(201).json({
       center: publicView(center),
@@ -93,7 +103,12 @@ router.patch('/:id', async (req, res, next) => {
     const center = await Center.findOne({ _id: req.params.id, ...req.tenantFilter() });
     if (!center) return res.status(404).json({ error: 'Centre introuvable' });
 
-    const { name, classroom_ids, simulation_ids, isActive } = req.body || {};
+    const { name, classroom_ids, simulation_ids, module_ids, isActive } = req.body || {};
+    if (module_ids !== undefined) {
+      const modErr = await checkModules(module_ids, center.tenant_id);
+      if (modErr) return res.status(400).json({ error: modErr });
+      center.module_ids = module_ids;
+    }
     if (classroom_ids !== undefined) {
       const classErr = await checkClassrooms(classroom_ids, center.tenant_id);
       if (classErr) return res.status(400).json({ error: classErr });

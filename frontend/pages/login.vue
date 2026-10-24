@@ -175,8 +175,7 @@ async function handleLogin() {
         return;
       }
       await auth.loginPin(form.tenant_id, form.matricule.trim().toUpperCase(), form.pin.trim());
-      // Pas encore de page d'accueil eleve : catalogue des simulations.
-      router.push('/simulations');
+      router.push('/eleve');
       return;
     }
     const tenantId = isSuperAdmin.value ? undefined : form.tenant_id;

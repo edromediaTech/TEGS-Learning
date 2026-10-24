@@ -265,6 +265,9 @@ definePageMeta({ layout: false })
 const route = useRoute()
 const config = useRuntimeConfig()
 const apiBase = config.public.apiBase as string
+// Eleve connecte (matricule + PIN) : ses traces xAPI sont authentifiees et lui sont
+// attribuees. Sans session (lien public anonyme), la route xAPI les refuse.
+const session = useCookie<{ token?: string } | null>('__session')
 const shareToken = route.params.token as string
 
 // --- State ---
@@ -440,8 +443,11 @@ function xapiActor() {
 
 async function sendXapiStatement(verb: string, verbDisplay: string, extras: any = {}) {
   try {
+    const token = session.value?.token
+    if (!token) return
     await $fetch(`${apiBase}/xapi/statements`, {
       method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
       body: {
         actor: xapiActor(),
         verb: { id: `http://adlnet.gov/expapi/verbs/${verb}`, display: { 'fr-HT': verbDisplay } },

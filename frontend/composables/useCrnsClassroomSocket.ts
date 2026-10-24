@@ -63,7 +63,8 @@ export function useCrnsClassroomSocket(opts: { name?: string } = {}) {
       _error.value = 'session token manquant';
       return false;
     }
-    const baseURL = config.public.apiBase?.replace('/api', '') || 'http://localhost:3000';
+    // API relative (noeud edge derriere nginx) : sockets sur la meme origine.
+    const baseURL = config.public.apiBase?.replace('/api', '') || window.location.origin;
     _socket = io(`${baseURL}/crns`, {
       path: '/socket.io',
       auth: { token, name: opts.name || null },
