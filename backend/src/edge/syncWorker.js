@@ -85,14 +85,22 @@ async function applyRoster(data) {
     { upsert: true }
   );
 
+  // Enseignants : memes identifiants que sur le cloud (empreinte bcrypt recopiee telle
+  // quelle ; updateOne ne la re-hache pas). Les autres comptes locaux restent inactifs.
+  const teacherIds = [];
   for (const t of data.teachers || []) {
-    await User.updateOne(
-      { _id: oid(t.id) },
-      { $set: { firstName: t.first_name, lastName: t.last_name, role: t.role, tenant_id: tenantId },
-        $setOnInsert: { email: `${t.id}@enseignants.edge.local`, password: placeholderPassword() } },
-      { upsert: true }
-    );
+    teacherIds.push(oid(t.id));
+    const set = { firstName: t.first_name, lastName: t.last_name, role: t.role, tenant_id: tenantId, isActive: true };
+    if (t.email) set.email = t.email;
+    if (t.password_hash) set.password = t.password_hash;
+    const update = { $set: set };
+    if (!t.password_hash) update.$setOnInsert = { password: placeholderPassword(), email: `${t.id}@enseignants.edge.local` };
+    await User.updateOne({ _id: oid(t.id) }, update, { upsert: true });
   }
+  await User.updateMany(
+    { tenant_id: tenantId, role: { $ne: 'student' }, _id: { $nin: teacherIds } },
+    { $set: { isActive: false } }
+  );
 
   for (const s of data.roster_updates || []) {
     const set = { firstName: s.first_name, lastName: s.last_name, role: 'student', tenant_id: tenantId, isActive: true };
@@ -128,12 +136,65 @@ async function applyRoster(data) {
   );
 }
 
-async function applyCourses(data) {
+// --- Medias des modules : copies locales servies par nginx (/media/), E6 ---
+// Toute URL de media (image, video, son, PDF, GLB) presente dans un module, y compris dans
+// le HTML des blocs texte, est telechargee une fois et remplacee par /media/<empreinte>.<ext>.
+// En cas d'echec, l'URL d'origine est gardee (le media marchera quand la liaison reviendra).
+const MEDIA_RE = /https?:\/\/[^\s"'<>()]+?\.(png|jpe?g|gif|webp|svg|mp4|webm|mp3|ogg|wav|m4a|pdf|glb)(\?[^\s"'<>()]*)?(?=$|[\s"'<>().,;:!?])/gi;
+const MAX_MEDIA_BYTES = 50 * 1024 * 1024;
+
+async function localizeMedia(cfg, value, stats) {
+  if (typeof value === 'string') {
+    const urls = [...new Set(value.match(MEDIA_RE) || [])];
+    let out = value;
+    for (const url of urls) {
+      const local = await fetchMedia(cfg, url, stats);
+      if (local) out = out.split(url).join(local);
+    }
+    return out;
+  }
+  if (Array.isArray(value)) {
+    const out = [];
+    for (const v of value) out.push(await localizeMedia(cfg, v, stats));
+    return out;
+  }
+  if (value && typeof value === 'object' && !(value instanceof Date) && !(value instanceof mongoose.Types.ObjectId)) {
+    for (const k of Object.keys(value)) value[k] = await localizeMedia(cfg, value[k], stats);
+  }
+  return value;
+}
+
+async function fetchMedia(cfg, url, stats) {
+  const ext = (url.split('?')[0].match(/\.([a-z0-9]+)$/i)?.[1] || 'bin').toLowerCase();
+  const name = `${crypto.createHash('sha1').update(url).digest('hex')}.${ext}`;
+  const target = path.join(cfg.storage, 'media', name);
+  try {
+    await fs.access(target);
+    return `/media/${name}`; // deja copie
+  } catch { /* a telecharger */ }
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(2 * 60 * 1000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length > MAX_MEDIA_BYTES) throw new Error('trop volumineux');
+    await fs.mkdir(path.dirname(target), { recursive: true });
+    await fs.writeFile(`${target}.tmp`, buf);
+    await fs.rename(`${target}.tmp`, target);
+    stats.media += 1;
+    return `/media/${name}`;
+  } catch (err) {
+    stats.mediaErrors += 1;
+    log(`media non copie (${err.message}) : ${url.slice(0, 120)}`);
+    return null;
+  }
+}
+
+async function applyCourses(cfg, data, stats) {
   const tenantId = oid(data.institution.id);
   for (const m of data.course_updates || []) {
     // Passage par le modele : sections, ecrans et blocs retrouvent leurs ObjectId et dates
     // (le JSON les transporte en texte). Ecriture brute pour garder updatedAt du cloud.
-    const doc = new Module(m).toObject({ depopulate: true });
+    const doc = await localizeMedia(cfg, new Module(m).toObject({ depopulate: true }), stats);
     doc.createdAt = m.createdAt ? new Date(m.createdAt) : new Date();
     doc.updatedAt = m.updatedAt ? new Date(m.updatedAt) : new Date();
     await Module.collection.replaceOne({ _id: doc._id }, doc, { upsert: true });
@@ -226,7 +287,8 @@ async function pull(cfg, state) {
 
   await applyRoster(data);
   state.roster_cursor = data.roster_cursor;
-  await applyCourses(data);
+  const mediaStats = { media: 0, mediaErrors: 0 };
+  await applyCourses(cfg, data, mediaStats);
   state.course_cursor = data.course_cursor;
 
   let simErrors = 0;
@@ -247,6 +309,8 @@ async function pull(cfg, state) {
   return {
     roster: (data.roster_updates || []).length,
     courses: (data.course_updates || []).length,
+    media: mediaStats.media,
+    mediaErrors: mediaStats.mediaErrors,
     sims: (data.module_updates || []).length - simErrors,
     simErrors,
   };
@@ -322,7 +386,9 @@ async function runCycle() {
     state.last_error = undefined;
     state.next_attempt_at = new Date(Date.now() + cfg.intervalMs);
     await state.save();
-    log(`sync OK en ${Date.now() - t0} ms : eleves ${p.roster}, cours ${p.courses}, simulations ${p.sims}`
+    log(`sync OK en ${Date.now() - t0} ms : eleves ${p.roster}, cours ${p.courses}`
+      + `${p.media || p.mediaErrors ? ` (medias copies ${p.media}${p.mediaErrors ? `, en echec ${p.mediaErrors}` : ''})` : ''}`
+      + `, simulations ${p.sims}`
       + `${p.simErrors ? ` (${p.simErrors} en echec)` : ''}, traces envoyees ${q.sent}${q.failed ? `, rejetees ${q.failed}` : ''}`);
     return cfg.intervalMs;
   } catch (err) {

@@ -211,14 +211,14 @@ export function useXapiTracker(activityId: string) {
     return send(buildStatement('initialized', description));
   }
 
-  function terminate(description = 'Session terminee') {
-    return send(buildStatement('terminated', description));
+  function terminate(description = 'Session terminee', extensions?: Record<string, any>) {
+    return send(buildStatement('terminated', description, extensions ? { extensions } : {}));
   }
 
-  function sendEvent(eventCfg: XapiEventConfig, runtime?: Record<string, any>) {
+  function sendEvent(eventCfg: XapiEventConfig, runtime?: Record<string, any>, extra?: Record<string, any>) {
     const verb = eventCfg.xapi_verb || 'experienced';
     const desc = eventCfg.xapi_description || eventCfg.id || 'event';
-    const extensions: Record<string, any> = { [EVENT_ID_EXT]: eventCfg.id };
+    const extensions: Record<string, any> = { [EVENT_ID_EXT]: eventCfg.id, ...(extra || {}) };
     if (runtime) extensions[RUNTIME_EXT] = runtime;
     return send(buildStatement(verb, desc, { extensions }));
   }

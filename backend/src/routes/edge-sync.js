@@ -134,8 +134,12 @@ router.post('/pull', async (req, res, next) => {
 
     // --- Etablissement et enseignants des classes (references locales du noeud) ---
     const tenant = await Tenant.findById(center.tenant_id).select('name code').lean();
-    const teachers = await User.find({ _id: { $in: classrooms.map((c) => c.teacher_id) }, tenant_id: center.tenant_id })
-      .select('firstName lastName role').lean();
+    // Enseignants des classes du centre, avec l'empreinte bcrypt de leur mot de passe : ils se
+    // connectent sur le noeud avec leurs identifiants habituels (E6). Seuls eux, pas tout le
+    // personnel de l'etablissement ; disque du noeud chiffre (docs/edge-deploiement.md).
+    const teachers = await User.find({
+      _id: { $in: classrooms.map((c) => c.teacher_id) }, tenant_id: center.tenant_id, isActive: true,
+    }).select('firstName lastName role email +password updatedAt').lean();
     const activeIds = new Set(students.map((s) => String(s._id)));
 
     center.last_pull_at = now;
@@ -149,7 +153,10 @@ router.post('/pull', async (req, res, next) => {
       roster_cursor: now.toISOString(), // a renvoyer en last_roster_sync au prochain pull
       institution: { id: String(center.tenant_id), name: tenant?.name || '', code: tenant?.code || '' },
       center: { center_id: center.center_id, name: center.name },
-      teachers: teachers.map((t) => ({ id: String(t._id), first_name: t.firstName, last_name: t.lastName, role: t.role })),
+      teachers: teachers.map((t) => ({
+        id: String(t._id), first_name: t.firstName, last_name: t.lastName, role: t.role,
+        email: t.email, password_hash: t.password || null,
+      })),
       classrooms: classrooms.map((c) => ({
         id: String(c._id), name: c.name, code: c.code, course_id: c.course_id, course_label: c.course_label || '',
         teacher_id: String(c.teacher_id),

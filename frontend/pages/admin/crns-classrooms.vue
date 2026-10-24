@@ -141,6 +141,60 @@
             Régénérer les PIN
           </button>
         </div>
+        <button
+          @click="openIntegrity(c)"
+          class="w-full mt-2 text-xs px-2 py-1.5 bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50"
+        >
+          Rapport d'intégrité des copies
+        </button>
+      </div>
+    </div>
+
+    <!-- Fenetre : rapport d'integrite (E6) -->
+    <div v-if="report" class="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div class="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <h2 class="text-lg font-bold text-gray-900">Intégrité des copies — {{ report.name }}</h2>
+            <p class="text-xs text-gray-500">
+              Dernière tentative par élève et par activité. Ce sont des indices à vérifier avec l'élève, pas une sanction.
+            </p>
+          </div>
+          <button @click="report = null" class="text-sm text-gray-500 hover:text-gray-800">Fermer</button>
+        </div>
+        <p v-if="report.loading" class="text-gray-500 text-sm">Chargement...</p>
+        <p v-else-if="!report.rows.length" class="text-gray-500 text-sm">Aucune copie avec données d'intégrité pour cette classe.</p>
+        <template v-else>
+          <div class="flex gap-3 text-xs mb-3">
+            <span class="px-2 py-1 rounded bg-red-100 text-red-800">{{ report.counts.suspect }} suspecte(s)</span>
+            <span class="px-2 py-1 rounded bg-amber-100 text-amber-800">{{ report.counts.attention }} à vérifier</span>
+            <span class="px-2 py-1 rounded bg-green-100 text-green-800">{{ report.counts.ok }} sans alerte</span>
+          </div>
+          <table class="w-full text-xs border-collapse">
+            <thead>
+              <tr class="text-left uppercase text-gray-500 border-b">
+                <th class="py-1.5">Niveau</th><th>Élève</th><th>Activité</th><th>Date</th>
+                <th title="Pertes de focus de la fenêtre">Focus</th><th title="Temps passé hors de la page">Hors page</th>
+                <th title="Sorties du plein écran">Plein écran</th><th title="Copier / coller">Copier-coller</th><th>Salle</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="r in report.rows" :key="`${r.student_id}-${r.activity}`" class="border-b border-gray-100">
+                <td class="py-1.5">
+                  <span :class="levelClass(r.level)" class="px-1.5 py-0.5 rounded font-bold">{{ levelLabel(r.level) }}</span>
+                </td>
+                <td>{{ r.student }} <span v-if="r.matricule" class="text-gray-400 font-mono">{{ r.matricule }}</span></td>
+                <td class="max-w-[180px] truncate" :title="r.activity">{{ r.activity }}</td>
+                <td class="whitespace-nowrap">{{ formatDateTime(r.at) }}</td>
+                <td>{{ r.focus_loss_count }}</td>
+                <td>{{ seconds(r.hidden_ms) }}</td>
+                <td>{{ r.fullscreen_exit_count }}</td>
+                <td>{{ r.copy_paste_count }}</td>
+                <td class="font-mono text-gray-500">{{ r.center_id || 'en ligne' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </template>
       </div>
     </div>
 
@@ -372,6 +426,37 @@ async function onRegenerate(c: Classroom) {
   } finally {
     busy.value = false;
   }
+}
+
+// --- Rapport d'integrite des copies (E6) ---
+interface IntegrityRow {
+  student_id: string; student: string; matricule: string | null; activity: string; at: string; level: string;
+  focus_loss_count: number; hidden_ms: number; fullscreen_exit_count: number; copy_paste_count: number; center_id: string | null;
+}
+const report = ref<{ name: string; loading: boolean; rows: IntegrityRow[]; counts: Record<string, number> } | null>(null);
+
+async function openIntegrity(c: Classroom) {
+  report.value = { name: c.name, loading: true, rows: [], counts: {} };
+  try {
+    const { data } = await apiFetch<{ rows: IntegrityRow[]; counts: Record<string, number> }>(`/crns-classrooms/${c._id}/integrity`, { method: 'GET' });
+    report.value = { name: c.name, loading: false, rows: data.rows, counts: data.counts };
+  } catch (e: any) {
+    report.value = null;
+    error.value = e?.data?.error || e?.message || 'Rapport indisponible';
+  }
+}
+
+function levelLabel(l: string) {
+  return l === 'suspect' ? 'Suspecte' : l === 'attention' ? 'À vérifier' : 'OK';
+}
+function levelClass(l: string) {
+  return l === 'suspect' ? 'bg-red-100 text-red-800' : l === 'attention' ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800';
+}
+function seconds(ms: number) {
+  return ms >= 60000 ? `${Math.round(ms / 60000)} min` : `${Math.round(ms / 1000)} s`;
+}
+function formatDateTime(iso: string) {
+  try { return new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch { return iso; }
 }
 
 function printSheet() {

@@ -1,4 +1,5 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const Module = require('../models/Module');
 const LiveSession = require('../models/LiveSession');
 
@@ -2004,12 +2005,31 @@ router.get('/public/:shareToken', async (req, res, next) => {
 // GET /api/modules/public/:shareToken/json
 // Retourne les donnees JSON du module (pour integration iframe avancee)
 // ---------------------------------------------------------------------------
+// Module ouvert dans le lecteur : partage public actif, ou eleve / enseignant connecte du
+// meme etablissement (module publie ; tous les modules installes sur un noeud edge).
+// Un cours n'a donc pas besoin d'un lien public pour etre suivi en classe (E6).
+function sessionUser(req) {
+  const auth = req.headers.authorization || '';
+  if (!auth.startsWith('Bearer ')) return null;
+  try {
+    return jwt.verify(auth.slice(7), process.env.JWT_SECRET);
+  } catch {
+    return null;
+  }
+}
+
+async function findPlayerModule(req, shareToken) {
+  const mod = await Module.findOne({ shareToken }).lean();
+  if (!mod) return null;
+  if (mod.shareEnabled) return mod;
+  const user = sessionUser(req);
+  const sameTenant = user && String(user.tenant_id) === String(mod.tenant_id);
+  return sameTenant && (mod.status === 'published' || process.env.EDGE_MODE === '1') ? mod : null;
+}
+
 router.get('/public/:shareToken/json', async (req, res, next) => {
   try {
-    const mod = await Module.findOne({
-      shareToken: req.params.shareToken,
-      shareEnabled: true,
-    }).lean();
+    const mod = await findPlayerModule(req, req.params.shareToken);
 
     if (!mod) {
       return res.status(404).json({ error: 'Module introuvable ou partage desactive' });
@@ -2076,10 +2096,7 @@ router.get('/public/:shareToken/json', async (req, res, next) => {
 // ---------------------------------------------------------------------------
 router.post('/public/:shareToken/session', async (req, res, next) => {
   try {
-    const mod = await Module.findOne({
-      shareToken: req.params.shareToken,
-      shareEnabled: true,
-    }).lean();
+    const mod = await findPlayerModule(req, req.params.shareToken);
 
     if (!mod) return res.status(404).json({ error: 'Module introuvable' });
 
@@ -2201,10 +2218,7 @@ router.post('/public/:shareToken/session/tick', async (req, res, next) => {
     const { sessionKey, clientElapsed } = req.body;
     if (!sessionKey) return res.status(400).json({ error: 'sessionKey requis' });
 
-    const mod = await Module.findOne({
-      shareToken: req.params.shareToken,
-      shareEnabled: true,
-    }).lean();
+    const mod = await findPlayerModule(req, req.params.shareToken);
 
     if (!mod) return res.status(404).json({ error: 'Module introuvable' });
 
@@ -2268,10 +2282,7 @@ router.post('/public/:shareToken/session/close', async (req, res, next) => {
     const { sessionKey } = req.body;
     if (!sessionKey) return res.status(400).json({ error: 'sessionKey requis' });
 
-    const mod = await Module.findOne({
-      shareToken: req.params.shareToken,
-      shareEnabled: true,
-    }).lean();
+    const mod = await findPlayerModule(req, req.params.shareToken);
 
     if (!mod) return res.status(404).json({ error: 'Module introuvable' });
 
