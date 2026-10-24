@@ -166,6 +166,102 @@ router.post(
 );
 
 // ---------------------------------------------------------------------------
+// POST /api/auth/login-pin
+// Connexion eleve par matricule + PIN (E4, identifiants distribues par l'enseignant).
+// Verrouillage du compte apres 5 PIN errones (15 min) et limite des ECHECS par adresse IP
+// (30 / 10 min) contre le balayage des matricules. Les succes ne comptent pas : une classe
+// entiere derriere la connexion de l'ecole doit pouvoir se connecter en meme temps.
+// ---------------------------------------------------------------------------
+const bcrypt = require('bcryptjs');
+const { MAX_FAILED_ATTEMPTS, LOCK_MINUTES } = require('../services/studentCredentials');
+
+const PIN_IP_LIMIT = 30;
+const PIN_IP_WINDOW_MS = 10 * 60 * 1000;
+const pinFailuresByIp = new Map();
+
+function pinIpBlocked(ip) {
+  const entry = pinFailuresByIp.get(ip);
+  return Boolean(entry && entry.resetAt > Date.now() && entry.count >= PIN_IP_LIMIT);
+}
+
+function recordPinFailure(ip) {
+  const now = Date.now();
+  const entry = pinFailuresByIp.get(ip);
+  if (!entry || entry.resetAt <= now) {
+    pinFailuresByIp.set(ip, { count: 1, resetAt: now + PIN_IP_WINDOW_MS });
+    if (pinFailuresByIp.size > 10000) {
+      for (const [k, v] of pinFailuresByIp) if (v.resetAt <= now) pinFailuresByIp.delete(k);
+    }
+  } else {
+    entry.count += 1;
+  }
+}
+
+router.post(
+  '/login-pin',
+  [
+    body('tenant_id').isMongoId().withMessage('Ecole requise'),
+    body('matricule').isString().trim().notEmpty().withMessage('Matricule requis'),
+    body('pin').isString().matches(/^[0-9]{6}$/).withMessage('Le PIN compte 6 chiffres'),
+  ],
+  async (req, res, next) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+      if (pinIpBlocked(req.ip)) {
+        return res.status(429).json({ error: 'Trop de tentatives depuis ce poste, reessayez dans quelques minutes' });
+      }
+
+      const { tenant_id, pin } = req.body;
+      const matricule = String(req.body.matricule).trim().toUpperCase();
+      const user = await User.findOne({ tenant_id, matricule, role: 'student' }).select('+pin_hash');
+      if (!user || !user.pin_hash) {
+        recordPinFailure(req.ip);
+        return res.status(401).json({ error: 'Matricule ou PIN invalide' });
+      }
+      if (!user.isActive) return res.status(401).json({ error: 'Compte desactive' });
+      if (user.pin_locked_until && user.pin_locked_until > new Date()) {
+        return res.status(423).json({
+          error: 'Compte verrouille apres plusieurs PIN errones : demandez a votre enseignant ou reessayez plus tard',
+          locked_until: user.pin_locked_until,
+        });
+      }
+
+      if (!(await bcrypt.compare(pin, user.pin_hash))) {
+        user.pin_failed_attempts = (user.pin_failed_attempts || 0) + 1;
+        if (user.pin_failed_attempts >= MAX_FAILED_ATTEMPTS) {
+          user.pin_locked_until = new Date(Date.now() + LOCK_MINUTES * 60 * 1000);
+          user.pin_failed_attempts = 0;
+        }
+        await user.save();
+        recordPinFailure(req.ip);
+        return res.status(401).json({ error: 'Matricule ou PIN invalide' });
+      }
+
+      if (user.pin_failed_attempts || user.pin_locked_until) {
+        user.pin_failed_attempts = 0;
+        user.pin_locked_until = undefined;
+        await user.save();
+      }
+      res.json({
+        message: 'Connexion reussie',
+        user: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          matricule: user.matricule,
+          role: user.role,
+          tenant_id: user.tenant_id,
+        },
+        token: generateToken(user),
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
 // GET /api/auth/me
 // Retourne le profil de l'utilisateur connecte (route protegee).
 // ---------------------------------------------------------------------------

@@ -52,7 +52,8 @@ Reponse :
   "classrooms": [{ "id": "...", "name": "9e A", "code": "CL-1A2B", "course_id": "..." }],
   "roster_updates": [{ "id": "...", "first_name": "Jean", "last_name": "Baptiste",
                        "classroom_id": "...", "classroom_ids": ["..."],
-                       "access_pin_hash": null, "action": "UPSERT" }],
+                       "matricule": "K7QM-3P9X", "access_pin_hash": "$2a$12$...",
+                       "action": "UPSERT" }],
   "roster_active_ids": ["..."],
   "module_updates": [{ "id": "ecrou_hexagonal_v1", "title": "...", "version": "1.0.0",
                        "download_url": "https://storage.googleapis.com/.../ecrou_hexagonal_v1_cmi5.zip",
@@ -67,7 +68,11 @@ Reponse :
   supprimes : leurs copies en attente doivent pouvoir partir).
 - **Simulations** : `installed_modules[id]` = sha256 du paquet installe (recommande) ou sa
   version. Verifier `sha256` apres telechargement avant d'installer.
-- `access_pin_hash` : `null` jusqu'a l'etape E4 (identifiants eleves).
+- **Identifiants eleves (E4)** : `matricule` + `access_pin_hash` (bcrypt, cout 12) ; `null`
+  tant que l'enseignant n'a pas genere d'identifiants. Le noeud verifie le PIN en local
+  (`bcrypt.compare`) et applique le meme verrouillage que le cloud (5 echecs -> 15 min).
+  Un nouveau PIN modifie l'eleve : il repart au pull suivant. Chiffrer le disque du noeud :
+  un PIN a 6 chiffres hache peut etre retrouve hors ligne si le disque est vole.
 
 ## 4. `POST /api/v1/edge/sync/push` (signe)
 
