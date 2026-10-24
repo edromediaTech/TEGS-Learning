@@ -54,7 +54,13 @@ app.use(cors({
   ].filter(Boolean),
   credentials: true,
 }));
-app.use(express.json({ limit: '5mb' }));
+app.use(express.json({
+  limit: '5mb',
+  // Corps brut conserve pour verifier la signature HMAC des lots TEGS-Edge.
+  verify: (req, _res, buf) => {
+    if (req.originalUrl.startsWith('/api/v1/edge/')) req.rawBody = buf;
+  },
+}));
 
 // --- Cache headers CDN pour fichiers statiques ---
 app.use('/public', express.static(path.join(__dirname, '..', 'public'), {
@@ -102,6 +108,8 @@ app.use('/api/queue', queueRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/knowledge-to-form', knowledgeToFormRoutes);
 app.use('/api/tegscreen', tegscreenRoutes);
+app.use('/api/centers', require('./routes/centers'));
+app.use('/api/v1/edge/sync', require('./routes/edge-sync'));
 
 // --- Gestion d'erreurs globale ---
 app.use((err, _req, res, _next) => {
