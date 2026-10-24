@@ -8,8 +8,8 @@
  *   chiffrement du disque du noeud limitent le risque d'attaque hors ligne.
  */
 const crypto = require('crypto');
-const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const hashPool = require('./hashPool');
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const PIN_LENGTH = 6;
@@ -42,7 +42,7 @@ async function uniqueMatricule(tenantId) {
 async function issueCredentials(user) {
   if (!user.matricule) user.matricule = await uniqueMatricule(user.tenant_id);
   const pin = randomPin();
-  user.pin_hash = await bcrypt.hash(pin, BCRYPT_COST);
+  user.pin_hash = await hashPool.hash(pin, BCRYPT_COST);
   user.pin_set_at = new Date();
   user.pin_failed_attempts = 0;
   user.pin_locked_until = undefined;

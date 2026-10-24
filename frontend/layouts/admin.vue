@@ -109,6 +109,8 @@ const initials = computed(() => {
   return name.split(' ').map((p: string) => p[0]).join('').toUpperCase().slice(0, 2) || '?';
 });
 
+const edgeMode = Boolean(useRuntimeConfig().public.edgeMode);
+
 const navItems = computed(() => {
   const items = [];
   if (auth.isSuperAdmin) {
@@ -121,6 +123,14 @@ const navItems = computed(() => {
   }
   if (auth.isSuperAdmin || auth.isAdmin || auth.isTeacher) {
     items.push({ to: '/admin/simulations-stats', label: 'Stats Simulations', icon: '\uD83D\uDCC8' });
+    items.push({ to: '/admin/crns-classrooms', label: 'Mes Classes CRNS', icon: '\uD83C\uDF93' });
+  }
+  // TEGS-Edge : centres de salle (cloud) et etat du noeud (interface d'un noeud).
+  if (!edgeMode && (auth.isSuperAdmin || auth.isAdmin)) {
+    items.push({ to: '/admin/centers', label: 'Centres de salle', icon: '\uD83D\uDCE1' });
+  }
+  if (edgeMode && (auth.isSuperAdmin || auth.isAdmin || auth.isTeacher)) {
+    items.push({ to: '/admin/edge', label: 'Noeud de salle', icon: '\uD83D\uDCE1' });
   }
   items.push(
     { to: '/admin/modules', label: 'Studio', icon: '\uD83C\uDFA8' },

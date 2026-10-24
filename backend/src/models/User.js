@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+// bcrypt hors du fil principal (une salle entiere se connecte a la meme seconde).
+const hashPool = require('../services/hashPool');
 
 /**
  * Schema User.
@@ -146,7 +147,7 @@ userSchema.index(
 
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 12);
+  this.password = await hashPool.hash(this.password, 12);
   next();
 });
 
@@ -154,7 +155,7 @@ userSchema.pre('save', async function (next) {
  * Compare un mot de passe candidat au hash stocke.
  */
 userSchema.methods.comparePassword = async function (candidatePassword) {
-  return bcrypt.compare(candidatePassword, this.password);
+  return hashPool.compare(candidatePassword, this.password);
 };
 
 module.exports = mongoose.model('User', userSchema);

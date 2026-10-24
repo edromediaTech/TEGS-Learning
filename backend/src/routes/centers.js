@@ -2,6 +2,7 @@
  * Gestion des centres TEGS-Edge (une salle / un noeud par centre), etape E3.
  *
  * GET    /api/centers                   - centres de l'etablissement (superadmin : ?tenant_id=)
+ * GET    /api/centers/options           - classes, modules et simulations proposes au choix
  * POST   /api/centers                   - creer un centre ; renvoie le jeton du noeud UNE fois
  * PATCH  /api/centers/:id               - nom, classes servies, simulations, activation
  * POST   /api/centers/:id/rotate-token  - nouveau jeton (l'ancien cesse de fonctionner)
@@ -16,6 +17,8 @@ const Module = require('../models/Module');
 const { authenticate, authorize } = require('../middleware/auth');
 const tenantIsolation = require('../middleware/tenantIsolation');
 const { generateToken, hashToken } = require('../middleware/edgeAuth');
+const User = require('../models/User');
+const { getSimulations } = require('../services/simulationCatalog');
 
 const router = express.Router();
 router.use(authenticate);
@@ -62,6 +65,32 @@ async function checkModules(ids, tenantId) {
   const n = await Module.countDocuments({ _id: { $in: ids }, tenant_id: tenantId });
   return n === new Set(ids.map(String)).size ? null : "module_ids : module inconnu dans l'etablissement";
 }
+
+// Choix proposes dans la page d'administration des centres (superadmin : ?tenant_id=).
+router.get('/options', async (req, res, next) => {
+  try {
+    const tenantId = req.isSuperAdmin ? req.query.tenant_id : req.tenantId;
+    if (!tenantId || !mongoose.isValidObjectId(tenantId)) return res.status(400).json({ error: 'tenant_id requis' });
+    const classrooms = await CrnsClassroom.find({ tenant_id: tenantId, archived_at: null })
+      .select('name code teacher_id student_ids').sort({ name: 1 }).lean();
+    const teachers = new Map((await User.find({ _id: { $in: classrooms.map((c) => c.teacher_id) } })
+      .select('firstName lastName').lean()).map((u) => [String(u._id), `${u.firstName} ${u.lastName}`]));
+    const modules = await Module.find({ tenant_id: tenantId }).select('title status').sort({ title: 1 }).lean();
+    let simulations = [];
+    try {
+      simulations = (await getSimulations()).map((s) => ({ id: s.simulation_id, title: s.title }));
+    } catch { /* catalogue injoignable : liste vide, le centre recevra tout le catalogue */ }
+    res.json({
+      classrooms: classrooms.map((c) => ({
+        id: c._id, name: c.name, code: c.code, students: (c.student_ids || []).length, teacher: teachers.get(String(c.teacher_id)) || '',
+      })),
+      modules: modules.map((m) => ({ id: m._id, title: m.title, status: m.status })),
+      simulations,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.get('/', async (req, res, next) => {
   try {

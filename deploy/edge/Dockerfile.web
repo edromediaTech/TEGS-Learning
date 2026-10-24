@@ -10,7 +10,8 @@ COPY . .
 # (/simulations/manifest.json, alimente par la synchro) ; pas de recherche d'images en ligne.
 ENV NUXT_PUBLIC_API_BASE=/api \
     NUXT_PUBLIC_CRNS_MANIFEST_URL= \
-    NUXT_PUBLIC_PIXABAY_KEY=
+    NUXT_PUBLIC_PIXABAY_KEY= \
+    NUXT_PUBLIC_EDGE_MODE=1
 RUN npx nuxi generate
 
 FROM nginx:1.27-alpine

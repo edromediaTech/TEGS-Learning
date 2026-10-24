@@ -46,6 +46,9 @@ jobs:
       - run: node tests/integration/test-edge-sync.js
       - run: node tests/integration/test-student-pin.js
       - run: node tests/integration/test-edge-node.js
+      - run: node tests/integration/test-edge-multicenter.js
+      - name: Charge d'une salle (20 eleves simultanes)
+        run: node tests/load/edge-classroom-load.js 20
       - name: Journal du backend en cas d'echec
         if: ${{ failure() }}
         run: tail -100 /tmp/backend.log
@@ -89,6 +92,8 @@ jobs:
           grep -q 'cloud injoignable' /tmp/edge-backend.log
           echo "Backend en mode edge ; cloud injoignable signale, noeud toujours en service"
           check /api/health
+      - name: Bilan du noeud (check.sh)
+        run: bash check.sh
       - name: Journaux en cas d'echec
         if: ${{ failure() }}
         run: docker compose -f docker-compose.edge.yml logs --tail 100
