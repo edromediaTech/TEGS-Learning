@@ -29,7 +29,7 @@
         ]
       },
       {
-        "source": "/simulations/**",
+        "source": "/@(simulations|vendor)/**",
         "headers": [
           {
             "key": "Access-Control-Allow-Origin",
