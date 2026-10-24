@@ -154,25 +154,19 @@ Servis directement par Firebase Hosting a la racine du domaine.
 
 ## 5. Deploiement
 
-### CI/CD (`cloudbuild.yaml`)
-Pipeline sur push master :
-1. `test-backend` — `npm ci && npm test` (fail fast)
-2. `build-backend` — Docker build + push GCR
-3. `deploy-backend` — Cloud Run (min-instances=1 en CI, override manuel a 0 en pre-prod)
-4. `build-and-deploy-frontend` — Nuxt generate + Firebase Hosting
-
-### Deploiement manuel
+### Deploiement (manuel, aucun CI de deploiement)
+Aucun trigger Cloud Build : un merge sur `master` ne deploie rien. Depuis `master` a jour :
 ```bash
-# Backend → Cloud Run
-gcloud builds submit ./backend --tag gcr.io/luminous-mesh-459718-p4/tegs-backend:TAG
-gcloud run deploy tegs-backend --image=gcr.io/luminous-mesh-459718-p4/tegs-backend:TAG \
-  --region=us-central1 --port=3000 --memory=1Gi --cpu=2 --min-instances=0
-
-# Frontend → Firebase Hosting
-cd frontend
-NUXT_PUBLIC_API_BASE="https://tegs-backend-746425674533.us-central1.run.app/api" npx nuxi generate
-npx firebase-tools deploy --only hosting --project=luminous-mesh-459718-p4
+bash deploy/deploy-manual.sh            # ou : backend | frontend
 ```
+- Backend : `gcloud run deploy tegs-backend --source backend` (construit `backend/Dockerfile`,
+  conserve variables et secrets du service). Ne jamais utiliser `--set-env-vars` /
+  `--set-secrets` (remplacent toute la config) ; changer une variable avec
+  `gcloud run services update tegs-backend --update-env-vars CLE=valeur`.
+  `FRONTEND_URL=https://tegslearning.com` (QR codes, page de partage).
+- Frontend : `nuxi generate` avec `NUXT_PUBLIC_API_BASE`, `NUXT_PUBLIC_CRNS_MANIFEST_URL`
+  (manifest GCS) et la cle Pixabay de `frontend/.env`, puis `firebase deploy` sur le site
+  `tegs-learning` (domaine `tegslearning.com`).
 
 ### Secrets (Secret Manager)
 - Backend Cloud Run : `tegs-mongo-uri` `tegs-jwt-secret` `tegs-gcs-jwt-secret` `tegs-moncash-client-id` `tegs-moncash-client-secret` `tegs-natcash-merchant-id` `tegs-natcash-api-key`

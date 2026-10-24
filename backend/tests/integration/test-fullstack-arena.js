@@ -429,14 +429,6 @@ async function run() {
   // ══════════════════════════════════════════════════════════
   section('6. INFRASTRUCTURE (GCP & Secrets)');
 
-  const cloudbuild = fs.readFileSync(path.join(__dirname, '..', 'cloudbuild.yaml'), 'utf8');
-  assert(cloudbuild.includes('--memory=1Gi'), 'Cloud Run: 1Gi');
-  assert(cloudbuild.includes('--cpu=2'), 'Cloud Run: 2 CPU');
-  assert(cloudbuild.includes('MONCASH_CLIENT_ID'), 'Secret: MonCash');
-  assert(cloudbuild.includes('NATCASH_API_KEY'), 'Secret: Natcash');
-  assert(cloudbuild.includes('NODE_ENV=production'), 'NODE_ENV=production');
-  assert(cloudbuild.includes('FRONTEND_URL='), 'FRONTEND_URL configuré');
-
   const serverCode = fs.readFileSync(path.join(__dirname, 'src', 'server.js'), 'utf8');
   assert(serverCode.includes('sponsorRoutes'), 'server.js: sponsors montées');
   assert(serverCode.includes('sponsorshipRoutes'), 'server.js: sponsorship montées');

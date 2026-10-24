@@ -1,82 +1,73 @@
 #!/usr/bin/env bash
 # ==============================================================
-# TEGS-Learning - Deploiement Backend (Cloud Run) + Frontend (Firebase)
-# Usage: bash deploy/deploy-manual.sh
+# TEGS-Learning - Deploiement production (manuel : aucun trigger Cloud Build)
+# Usage : bash deploy/deploy-manual.sh [all|backend|frontend]   (defaut : all)
+#
+# Prerequis :
+#   - gcloud auth login  +  gcloud auth application-default login
+#   - firebase-tools     (npm install -g firebase-tools)
+#   - frontend/.env avec la vraie NUXT_PUBLIC_PIXABAY_KEY
 # ==============================================================
 
 set -euo pipefail
 
 PROJECT_ID="luminous-mesh-459718-p4"
 REGION="us-central1"
-TAG=$(date +%Y%m%d-%H%M%S)
+SERVICE="tegs-backend"
+API_BASE="https://tegs-backend-746425674533.us-central1.run.app/api"
+CRNS_MANIFEST_URL="https://storage.googleapis.com/crns-simulations-luminous/simulations/manifest.json"
+TARGET="${1:-all}"
 
-echo "=== TEGS-Learning - Deploiement Production ==="
-echo "Project: $PROJECT_ID | Region: $REGION | Tag: $TAG"
-echo ""
+case "$TARGET" in all|backend|frontend) ;; *) echo "Cible inconnue : $TARGET (all|backend|frontend)"; exit 1 ;; esac
+cd "$(dirname "$0")/.."
 
-# ============================================================
-# 1. BACKEND -> Cloud Run
-# ============================================================
-echo "--- [1/3] Build & Deploy Backend (Cloud Run) ---"
+# --- Garde-fous : on deploie master, propre et a jour ---
+git fetch -q origin
+[ "$(git rev-parse --abbrev-ref HEAD)" = "master" ] || { echo "Deployer depuis la branche master."; exit 1; }
+[ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "Modifications non commitees."; exit 1; }
+[ "$(git rev-parse HEAD)" = "$(git rev-parse origin/master)" ] || { echo "master local != origin/master : git pull."; exit 1; }
 
-gcloud builds submit ./backend \
-  --tag "gcr.io/$PROJECT_ID/tegs-backend:$TAG" \
-  --project="$PROJECT_ID"
-
-gcloud run deploy tegs-backend \
-  --image="gcr.io/$PROJECT_ID/tegs-backend:$TAG" \
-  --region="$REGION" \
-  --platform=managed \
-  --allow-unauthenticated \
-  --port=3000 \
-  --memory=1Gi \
-  --cpu=2 \
-  --min-instances=1 \
-  --max-instances=10 \
-  --concurrency=80 \
-  --timeout=300 \
-  --set-env-vars="NODE_ENV=production,GCS_ENABLED=true,GCS_SERVICE_URL=https://dp-storage-service-746425674533.us-central1.run.app,JWT_EXPIRES_IN=24h,FRONTEND_URL=https://${PROJECT_ID}.web.app,MONCASH_MODE=sandbox,NATCASH_MODE=sandbox" \
-  --set-secrets="MONGODB_URI=tegs-mongo-uri:latest,JWT_SECRET=tegs-jwt-secret:latest,GCS_JWT_SECRET=tegs-gcs-jwt-secret:latest,MONCASH_CLIENT_ID=tegs-moncash-client-id:latest,MONCASH_CLIENT_SECRET=tegs-moncash-client-secret:latest,NATCASH_MERCHANT_ID=tegs-natcash-merchant-id:latest,NATCASH_API_KEY=tegs-natcash-api-key:latest" \
-  --project="$PROJECT_ID"
-
-BACKEND_URL=$(gcloud run services describe tegs-backend \
-  --region="$REGION" \
-  --format='value(status.url)' \
-  --project="$PROJECT_ID")
-
-echo ""
-echo "Backend deploye: $BACKEND_URL"
+COMMIT=$(git rev-parse --short HEAD)
+PREV_REVISION=$(gcloud run services describe "$SERVICE" --region="$REGION" --project="$PROJECT_ID" \
+  --format='value(status.latestReadyRevisionName)')
+echo "=== TEGS-Learning : deploiement '$TARGET' du commit $COMMIT ==="
+echo "Revision backend actuelle : $PREV_REVISION"
+read -r -p "Deployer en production ? [o/N] " answer
+[ "$answer" = "o" ] || { echo "Annule."; exit 1; }
 
 # ============================================================
-# 2. FRONTEND -> Build Nuxt avec l'URL backend
+# BACKEND -> Cloud Run
 # ============================================================
-echo ""
-echo "--- [2/3] Build Frontend (Nuxt 3) ---"
-
-cd frontend
-NUXT_PUBLIC_API_BASE="${BACKEND_URL}/api" npx nuxi generate
+if [ "$TARGET" != "frontend" ]; then
+  echo "--- Backend (Cloud Run, construit avec backend/Dockerfile) ---"
+  # --source conserve les variables et secrets deja configures sur le service.
+  # Ne JAMAIS ajouter --set-env-vars / --set-secrets ici : ils REMPLACENT toute la
+  # configuration (GATEWAY_AUTH_TOKEN, FRONTEND_URL=https://tegslearning.com...).
+  # Pour changer une variable : gcloud run services update tegs-backend --update-env-vars CLE=valeur
+  gcloud run deploy "$SERVICE" --source backend --region="$REGION" --project="$PROJECT_ID" --quiet
+  curl -fsS "$API_BASE/health" && echo
+  echo "Retour arriere backend :"
+  echo "  gcloud run services update-traffic $SERVICE --to-revisions=$PREV_REVISION=100 --region=$REGION --project=$PROJECT_ID"
+fi
 
 # ============================================================
-# 3. FRONTEND -> Firebase Hosting
+# FRONTEND -> Firebase Hosting (site tegs-learning = tegslearning.com)
 # ============================================================
-echo ""
-echo "--- [3/3] Deploy Frontend (Firebase Hosting) ---"
+if [ "$TARGET" != "backend" ]; then
+  echo "--- Frontend (Nuxt generate + Firebase Hosting) ---"
+  if ! grep -qE '^NUXT_PUBLIC_PIXABAY_KEY=[0-9]+-[0-9a-f]+' frontend/.env 2>/dev/null; then
+    echo "Cle Pixabay absente de frontend/.env : la recherche d'images serait cassee en prod."
+    exit 1
+  fi
+  cd frontend
+  npm ci --no-audit --no-fund
+  # Les variables explicites priment sur frontend/.env (qui pointe sur localhost en dev).
+  NUXT_PUBLIC_API_BASE="$API_BASE" NUXT_PUBLIC_CRNS_MANIFEST_URL="$CRNS_MANIFEST_URL" npx nuxi generate
+  # Sans `firebase login`, firebase-tools utilise les identifiants gcloud (ADC).
+  GOOGLE_APPLICATION_CREDENTIALS="${GOOGLE_APPLICATION_CREDENTIALS:-$HOME/.config/gcloud/application_default_credentials.json}" \
+    firebase deploy --only hosting --project="$PROJECT_ID" -m "master $COMMIT"
+  cd ..
+  echo "Retour arriere frontend : console Firebase > Hosting > historique des versions > Rollback"
+fi
 
-npx firebase-tools deploy --only hosting --project="$PROJECT_ID"
-
-FRONTEND_URL="https://${PROJECT_ID}.web.app"
-
-cd ..
-
-echo ""
-echo "======================================================="
-echo "  TEGS-Learning deploye avec succes !"
-echo ""
-echo "  Backend  (Cloud Run):      $BACKEND_URL"
-echo "  Frontend (Firebase):       $FRONTEND_URL"
-echo "  Alt URL:                   https://${PROJECT_ID}.firebaseapp.com"
-echo ""
-echo "  Pour un domaine personnalise (ex: learning.ddene.edu.ht):"
-echo "    firebase hosting:channel:deploy --project=$PROJECT_ID"
-echo "    Ou: Console Firebase > Hosting > Domaines personnalises"
-echo "======================================================="
+echo "=== Deploiement termine : https://tegslearning.com ==="
