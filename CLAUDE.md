@@ -175,6 +175,15 @@ bash deploy/deploy-manual.sh            # ou : backend | frontend
 
 ---
 
+### TEGS-Edge (noeuds hors ligne)
+Un centre = une salle / un noeud (`Center`, `center_id`), rattache a un etablissement. Admin :
+`/api/centers` (jeton du noeud montre une fois, seule son empreinte sha256 est stockee).
+Synchro : `POST /api/v1/edge/sync/pull` et `/push` (push signe HMAC, ACK/PARTIAL/REJECT par
+copie, horodatage corrige par l'ecart d'horloge). Contrat : `docs/edge-sync-api.md`. Tests :
+`node backend/tests/integration/test-edge-sync.js`. Catalogue des simulations : manifeste CRNS
+v2 (`CRNS_MANIFEST_URL`, GCS par defaut). `model-viewer` et Draco sont servis depuis
+`frontend/public/vendor/` (`useModelViewer()`), jamais depuis un CDN.
+
 ## 6. Conventions
 
 ### Commits (SIGEPRO — OBLIGATOIRE)
