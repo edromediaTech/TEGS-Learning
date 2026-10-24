@@ -173,11 +173,13 @@ function renderLiveGatePage(mod, theme, status) {
 // Simulation 3D injectee par CRNS : le GLB est servi par le frontend (/simulations/...),
 // donc on resout l'URL sur FRONTEND_URL et on l'affiche avec <model-viewer>, meme
 // version que SimulationViewer. Une iframe sur un .glb ne montrerait rien.
-// Le module script n'est execute qu'une fois par page meme s'il est repete.
+// model-viewer et son decodeur Draco viennent aussi du frontend (/vendor/), jamais d'un
+// CDN : la page doit fonctionner hors ligne en mode edge.
+// Les scripts ne sont executes qu'une fois par page meme s'ils sont repetes.
 function renderCrnsSimulation(d) {
   const front = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
   const src = /^https?:\/\//i.test(d.url) ? d.url : `${front}${d.url.startsWith('/') ? '' : '/'}${d.url}`;
-  return `<div style="margin:16px 0">${d.title ? `<p style="font-weight:600;margin-bottom:8px">${escapeHtml(d.title)}</p>` : ''}<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script><model-viewer src="${escapeHtml(src)}" alt="${escapeHtml(d.title || 'Simulation 3D')}" camera-controls touch-action="pan-y" auto-rotate shadow-intensity="1" max-camera-orbit="auto 90deg auto" style="width:100%;height:480px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px"></model-viewer></div>`;
+  return `<div style="margin:16px 0">${d.title ? `<p style="font-weight:600;margin-bottom:8px">${escapeHtml(d.title)}</p>` : ''}<script>self.ModelViewerElement=Object.assign(self.ModelViewerElement||{},{dracoDecoderLocation:${JSON.stringify(`${front}/vendor/draco/`)}})</script><script type="module" src="${escapeHtml(`${front}/vendor/model-viewer/3.5.0/model-viewer.min.js`)}"></script><model-viewer src="${escapeHtml(src)}" alt="${escapeHtml(d.title || 'Simulation 3D')}" camera-controls touch-action="pan-y" auto-rotate shadow-intensity="1" max-camera-orbit="auto 90deg auto" style="width:100%;height:480px;background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px"></model-viewer></div>`;
 }
 
 function renderBlock(block, theme) {

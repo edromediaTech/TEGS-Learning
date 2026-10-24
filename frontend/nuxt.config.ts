@@ -5,17 +5,19 @@ export default defineNuxtConfig({
   // En prod, meme en-tete dans firebase.json.
   routeRules: {
     '/simulations/**': { headers: { 'Access-Control-Allow-Origin': '*' } },
+    // model-viewer et Draco embarques, charges aussi par la page de partage du backend.
+    '/vendor/**': { headers: { 'Access-Control-Allow-Origin': '*' } },
   },
   modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt', '@vite-pwa/nuxt'],
 
   // === PWA / Service Worker (Phase 1.3 offline-first pour Fort-Liberte) ===
-  // Cache GLB GCS + manifest + shell Nuxt + model-viewer CDN.
+  // Cache GLB GCS + manifest + shell Nuxt (model-viewer et Draco embarques, precaches).
   // Strategies:
   //   - shell statique : precache au build (autoUpdate sur nouvelle version)
   //   - GLB GCS : CacheFirst, expiry 7 jours, max 50 entrees (~250 Mo cap)
   //   - manifest.json : NetworkFirst (5s timeout) + fallback cache
   //   - configs JSON : CacheFirst, expiry 7 jours
-  //   - model-viewer CDN : CacheFirst, expiry 30 jours
+  //   - model-viewer + Draco : servis par le site (public/vendor), precache au build
   pwa: {
     registerType: 'autoUpdate',
     // devOptions: desactive en dev pour eviter les bugs vite-plugin-pwa
@@ -35,7 +37,8 @@ export default defineNuxtConfig({
       ],
     },
     workbox: {
-      globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+      // wasm : decodeur Draco embarque (public/vendor/draco), precache avec model-viewer.
+      globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,wasm}'],
       navigateFallback: '/',
       navigateFallbackDenylist: [/^\/api\//, /^\/socket\.io\//],
       runtimeCaching: [
@@ -67,16 +70,6 @@ export default defineNuxtConfig({
             cacheName: 'crns-manifest',
             networkTimeoutSeconds: 5,
             expiration: { maxEntries: 5, maxAgeSeconds: 30 * 60 },
-            cacheableResponse: { statuses: [0, 200] },
-          },
-        },
-        {
-          // model-viewer CDN
-          urlPattern: /^https:\/\/cdn\.jsdelivr\.net\/npm\/@google\/model-viewer/,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'model-viewer-cdn',
-            expiration: { maxEntries: 5, maxAgeSeconds: 30 * 24 * 3600 },
             cacheableResponse: { statuses: [0, 200] },
           },
         },

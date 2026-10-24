@@ -364,16 +364,8 @@ const tabs = [
 
 const rawJson = computed(() => config.value ? JSON.stringify(config.value, null, 2) : '');
 
-useHead({
-  title: 'Simulations CRNS | TEGS-Learning',
-  script: [
-    {
-      src: 'https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js',
-      type: 'module',
-      defer: true,
-    },
-  ],
-});
+useHead({ title: 'Simulations CRNS | TEGS-Learning' });
+useModelViewer();
 
 async function loadManifest() {
   loading.value = true;

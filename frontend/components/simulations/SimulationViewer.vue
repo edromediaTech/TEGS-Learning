@@ -184,16 +184,7 @@ const props = withDefaults(
   { tutorEnabled: true }
 );
 
-useHead({
-  script: [
-    {
-      src: 'https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js',
-      type: 'module',
-      defer: true,
-      key: 'model-viewer-script',
-    },
-  ],
-});
+useModelViewer();
 
 const activityBase = computed(
   () => props.activityIdBase || 'https://crns.tegs-learning.edu.ht/sim'
