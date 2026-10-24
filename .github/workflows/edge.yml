@@ -1,0 +1,96 @@
+# TEGS-Edge : tests de l'API de synchro, des identifiants eleves et d'un noeud complet,
+# puis demarrage reel du Docker Compose du noeud (deploy/edge/).
+name: TEGS-Edge
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: edge-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    services:
+      mongo:
+        image: mongo:7
+        ports: ["27017:27017"]
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - name: Backend (cloud de test)
+        run: |
+          cat > .env <<EOF
+          PORT=3000
+          MONGODB_URI=mongodb://localhost:27017/tegs_learning
+          JWT_SECRET=$(openssl rand -hex 32)
+          FRONTEND_URL=http://localhost:3002
+          GCS_ENABLED=false
+          EOF
+          nohup node src/server.js > /tmp/backend.log 2>&1 &
+          npx --yes wait-on -t 60000 http://localhost:3000/api/health
+      - run: npm test
+      - run: node tests/integration/test-edge-sync.js
+      - run: node tests/integration/test-student-pin.js
+      - run: node tests/integration/test-edge-node.js
+      - name: Journal du backend en cas d'echec
+        if: ${{ failure() }}
+        run: tail -100 /tmp/backend.log
+
+  compose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: deploy/edge
+    steps:
+      - uses: actions/checkout@v7
+      - name: Configuration du noeud (cloud volontairement injoignable)
+        run: |
+          cat > .env.edge <<EOF
+          TEGS_CENTER_ID=CI-EDGE-01
+          TEGS_CLOUD_GATEWAY_URL=http://127.0.0.1:9
+          TEGS_EDGE_API_KEY=tegs_edge_ci
+          JWT_SECRET=$(openssl rand -hex 32)
+          SYNC_INTERVAL_SECONDS=30
+          EOF
+      - name: Construction et demarrage
+        run: docker compose -f docker-compose.edge.yml up -d --build --wait --wait-timeout 300
+      - name: Verifications
+        run: |
+          set -e
+          check() { code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost$1"); echo "$1 -> $code"; [ "$code" = 200 ]; }
+          check /login
+          check /eleve
+          check /api/health
+          check /vendor/model-viewer/3.5.0/model-viewer.min.js
+          check /vendor/draco/draco_decoder.wasm
+          check /simulations/manifest.json
+          curl -s -D - -o /dev/null http://localhost/vendor/draco/draco_decoder.wasm | grep -i 'access-control-allow-origin'
+          curl -s http://localhost/login | grep -q 'apiBase:"/api"'
+          echo "API relative dans le build"
+          sleep 10
+          docker compose -f docker-compose.edge.yml logs backend > /tmp/edge-backend.log
+          grep -q '(mode edge)' /tmp/edge-backend.log
+          grep -q 'cloud injoignable' /tmp/edge-backend.log
+          echo "Backend en mode edge ; cloud injoignable signale, noeud toujours en service"
+          check /api/health
+      - name: Journaux en cas d'echec
+        if: ${{ failure() }}
+        run: docker compose -f docker-compose.edge.yml logs --tail 100
+      - name: Arret
+        if: ${{ always() }}
+        run: docker compose -f docker-compose.edge.yml down -v

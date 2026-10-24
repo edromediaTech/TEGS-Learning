@@ -22,6 +22,15 @@ const router = express.Router();
 router.use(authenticate);
 router.use(tenantIsolation);
 
+// Noeud TEGS-Edge : classes et identifiants viennent du cloud (sinon le cloud rejetterait
+// les traces d'eleves qu'il ne connait pas). Lecture et inscription restent possibles.
+function cloudOnly(req, res, next) {
+  if (process.env.EDGE_MODE === '1') {
+    return res.status(409).json({ error: 'Sur un noeud de salle, classes et identifiants se gerent sur le cloud TEGS' });
+  }
+  next();
+}
+
 const TEACHER_ROLES = new Set(['teacher', 'admin_ddene', 'superadmin']);
 
 function isTeacher(role) {
@@ -52,7 +61,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // === POST / : creer une classe ===
-router.post('/', async (req, res, next) => {
+router.post('/', cloudOnly, async (req, res, next) => {
   try {
     if (!isTeacher(req.user.role)) {
       return res.status(403).json({ error: 'Role enseignant requis' });
@@ -163,7 +172,7 @@ router.get('/:id', async (req, res, next) => {
 });
 
 // === DELETE /:id : archiver ===
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', cloudOnly, async (req, res, next) => {
   try {
     const classroom = await CrnsClassroom.findOne({
       _id: req.params.id,
@@ -210,7 +219,7 @@ function sheetRow(user, pin) {
 
 // === POST /:id/students : { students: [{ first_name, last_name }] } ===
 // Renvoie les PIN en clair UNE seule fois (fiche a imprimer et distribuer).
-router.post('/:id/students', async (req, res, next) => {
+router.post('/:id/students', cloudOnly, async (req, res, next) => {
   try {
     const classroom = await ownedClassroom(req, res);
     if (!classroom) return;
@@ -240,7 +249,7 @@ router.post('/:id/students', async (req, res, next) => {
 
 // === POST /:id/credentials : { student_ids?: [...] } (defaut : toute la classe) ===
 // Nouveau PIN (l'ancien cesse de fonctionner), matricule attribue s'il manquait.
-router.post('/:id/credentials', async (req, res, next) => {
+router.post('/:id/credentials', cloudOnly, async (req, res, next) => {
   try {
     const classroom = await ownedClassroom(req, res);
     if (!classroom) return;

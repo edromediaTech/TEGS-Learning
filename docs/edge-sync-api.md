@@ -12,7 +12,7 @@ ou `superadmin` :
 
 | Requete | Effet |
 |---|---|
-| `POST /api/centers` `{ center_id, name, classroom_ids, simulation_ids, tenant_id* }` | Cree le centre, renvoie `token` **une seule fois** (`*tenant_id` : superadmin seulement) |
+| `POST /api/centers` `{ center_id, name, classroom_ids, simulation_ids, module_ids, tenant_id* }` | Cree le centre, renvoie `token` **une seule fois** (`*tenant_id` : superadmin seulement) ; `module_ids` vide = modules publies |
 | `GET /api/centers` | Liste (sans jeton ni empreinte) + etat du noeud |
 | `PATCH /api/centers/:id` | `name`, `classroom_ids`, `simulation_ids` (vide = tout le catalogue), `isActive` |
 | `POST /api/centers/:id/rotate-token` | Nouveau jeton ; l'ancien est refuse immediatement |
@@ -74,6 +74,19 @@ Reponse :
   Un nouveau PIN modifie l'eleve : il repart au pull suivant. Chiffrer le disque du noeud :
   un PIN a 6 chiffres hache peut etre retrouve hors ligne si le disque est vole.
 
+### Complements E5 (noeud complet)
+
+Le corps accepte aussi `last_course_sync`. La reponse contient en plus :
+
+| Champ | Contenu |
+|---|---|
+| `institution` | `{ id, name, code }` de l'etablissement (recree localement avec le meme `_id`) |
+| `center` | `{ center_id, name }` |
+| `teachers` | enseignants des classes (references locales, sans mot de passe) |
+| `classrooms[].teacher_id`, `classrooms[].student_ids` | proprietaire et effectif actif de chaque classe |
+| `course_updates` | documents complets des modules de cours modifies depuis `last_course_sync` |
+| `course_active_ids`, `course_cursor` | modules a garder (les autres sont retires du noeud), curseur suivant |
+
 ## 4. `POST /api/v1/edge/sync/push` (signe)
 
 ```json
@@ -93,7 +106,13 @@ Reponse :
 }
 ```
 
-- 1 a 500 copies par lot (`413` au-dela) ; `submission_payload` + `anti_fraud_logs` <= 64 Ko.
+- 1 a 500 elements par lot, `submissions` et `statements` confondus (`413` au-dela) ;
+  `submission_payload` + `anti_fraud_logs` <= 64 Ko.
+- **`statements`** (E5) : traces xAPI brutes du noeud (outbox), meme idempotence :
+  `{ statementId, actor: { user_id }, verb: { id, display }, object, result, context, timestamp }`.
+  Auteur : tout utilisateur de l'etablissement ; `timestamp` corrige de l'ecart d'horloge ;
+  `context.extensions.edge` ajoute (centre, lot, heure du noeud, ecart). Rejets avec
+  `statement_id` au lieu de `submission_id`.
 - `module_id` : identifiant de simulation CRNS ou `_id` d'un module de cours de l'etablissement.
 - **Horodatage par duree relative** : `edge_sent_at` = horloge du noeud a l'envoi. Le cloud
   mesure l'ecart (heure de reception - `edge_sent_at`) et l'ajoute a `completed_at`.

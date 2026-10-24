@@ -136,8 +136,30 @@ const statementSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // Outbox TEGS-Edge : etat de remontee vers le cloud (noeud en EDGE_MODE uniquement).
+    // PENDING -> SYNCED ; RETRY (erreur passagere) ; FAILED (rejet definitif, garde pour examen).
+    edge_sync: {
+      status: { type: String, enum: ['PENDING', 'RETRY', 'SYNCED', 'FAILED'] },
+      attempts: { type: Number, default: 0 },
+      last_error: { type: String },
+      synced_at: { type: Date },
+    },
   },
   { timestamps: true }
+);
+
+// Sur un noeud edge, toute trace creee localement part dans l'outbox.
+statementSchema.pre('save', function (next) {
+  if (process.env.EDGE_MODE === '1' && this.isNew && !this.edge_sync?.status) {
+    this.edge_sync = { status: 'PENDING', attempts: 0 };
+  }
+  next();
+});
+// Index partiel : seules les traces d'un noeud edge ont un edge_sync.status.
+statementSchema.index(
+  { 'edge_sync.status': 1, createdAt: 1 },
+  { partialFilterExpression: { 'edge_sync.status': { $exists: true } } }
 );
 
 // Index compose pour les requetes courantes (traces par user dans un tenant)

@@ -20,8 +20,8 @@ COPY package.json ./
 COPY src ./src
 COPY public ./public
 
-# Create uploads directory
-RUN mkdir -p public/uploads && chown -R tegs:tegs /app
+# Create uploads directory (+ /data/modules : simulations synchronisees d'un noeud TEGS-Edge)
+RUN mkdir -p public/uploads /data/modules && chown -R tegs:tegs /app /data/modules
 
 USER tegs
 

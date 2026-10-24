@@ -17,6 +17,8 @@ const Statement = require('../models/Statement');
 const User = require('../models/User');
 const Module = require('../models/Module');
 const CrnsClassroom = require('../models/CrnsClassroom');
+const Tenant = require('../models/Tenant');
+const { VALID_VERB_IDS } = require('../models/Statement');
 const { authenticateEdge, requireEdgeSignature } = require('../middleware/edgeAuth');
 const { getSimulations } = require('../services/simulationCatalog');
 
@@ -55,6 +57,7 @@ router.post('/pull', async (req, res, next) => {
     const center = req.center;
     const now = new Date();
     const since = parseDate(req.body?.last_roster_sync);
+    const courseSince = parseDate(req.body?.last_course_sync);
     const installed = req.body?.installed_modules && typeof req.body.installed_modules === 'object'
       ? req.body.installed_modules : {};
 
@@ -119,6 +122,22 @@ router.post('/pull', async (req, res, next) => {
     const catalogIds = new Set(catalog.map((s) => s.simulation_id));
     const modulesRemoved = Object.keys(installed).filter((id) => !catalogIds.has(id));
 
+    // --- Modules de cours (quiz, TP) : documents complets, delta par curseur ---
+    const courseFilter = center.module_ids?.length
+      ? { _id: { $in: center.module_ids }, tenant_id: center.tenant_id }
+      : { tenant_id: center.tenant_id, status: 'published' };
+    const courseIds = (await Module.find(courseFilter).select('_id').lean()).map((m) => String(m._id));
+    const courseUpdates = await Module.find({
+      _id: { $in: courseIds },
+      ...(courseSince ? { updatedAt: { $gt: courseSince } } : {}),
+    }).lean();
+
+    // --- Etablissement et enseignants des classes (references locales du noeud) ---
+    const tenant = await Tenant.findById(center.tenant_id).select('name code').lean();
+    const teachers = await User.find({ _id: { $in: classrooms.map((c) => c.teacher_id) }, tenant_id: center.tenant_id })
+      .select('firstName lastName role').lean();
+    const activeIds = new Set(students.map((s) => String(s._id)));
+
     center.last_pull_at = now;
     center.last_seen_at = now;
     if (req.body?.edge_version) center.edge_version = String(req.body.edge_version).slice(0, 32);
@@ -128,11 +147,21 @@ router.post('/pull', async (req, res, next) => {
       status: 'SUCCESS',
       server_time: now.toISOString(),
       roster_cursor: now.toISOString(), // a renvoyer en last_roster_sync au prochain pull
-      classrooms: classrooms.map((c) => ({ id: String(c._id), name: c.name, code: c.code, course_id: c.course_id })),
+      institution: { id: String(center.tenant_id), name: tenant?.name || '', code: tenant?.code || '' },
+      center: { center_id: center.center_id, name: center.name },
+      teachers: teachers.map((t) => ({ id: String(t._id), first_name: t.firstName, last_name: t.lastName, role: t.role })),
+      classrooms: classrooms.map((c) => ({
+        id: String(c._id), name: c.name, code: c.code, course_id: c.course_id, course_label: c.course_label || '',
+        teacher_id: String(c.teacher_id),
+        student_ids: (c.student_ids || []).map(String).filter((id) => activeIds.has(id)),
+      })),
       roster_updates: rosterUpdates,
       roster_active_ids: students.map((s) => String(s._id)), // les autres sont a desactiver en local
       module_updates: moduleUpdates,
       modules_removed: modulesRemoved,
+      course_cursor: now.toISOString(), // a renvoyer en last_course_sync
+      course_updates: courseUpdates,
+      course_active_ids: courseIds,
     });
   } catch (err) {
     next(err);
@@ -142,21 +171,26 @@ router.post('/pull', async (req, res, next) => {
 // ---------------------------------------------------------------------------
 // PUSH
 // ---------------------------------------------------------------------------
-function reject(rejected, submissionId, code, message, retryable = false) {
-  rejected.push({ submission_id: submissionId ?? null, code, message, retryable });
+const ID_RE = /^[A-Za-z0-9_.:-]{8,128}$/;
+
+// kind : 'submission' (copie au format CDC) ou 'statement' (trace xAPI brute du noeud).
+function reject(rejected, id, code, message, retryable = false, kind = 'submission') {
+  rejected.push({ [kind === 'statement' ? 'statement_id' : 'submission_id']: id ?? null, code, message, retryable });
 }
 
 router.post('/push', requireEdgeSignature, async (req, res, next) => {
   try {
     const center = req.center;
     const receivedAt = new Date();
-    const { batch_id: batchId, submissions } = req.body || {};
+    const batchId = req.body?.batch_id;
+    const submissions = Array.isArray(req.body?.submissions) ? req.body.submissions : [];
+    const statements = Array.isArray(req.body?.statements) ? req.body.statements : [];
 
-    if (!Array.isArray(submissions) || submissions.length === 0) {
-      return res.status(400).json({ status: 'REJECT', error: 'submissions doit etre un tableau non vide' });
+    if (submissions.length + statements.length === 0) {
+      return res.status(400).json({ status: 'REJECT', error: 'submissions ou statements : tableau non vide requis' });
     }
-    if (submissions.length > MAX_BATCH) {
-      return res.status(413).json({ status: 'REJECT', error: `Maximum ${MAX_BATCH} copies par lot` });
+    if (submissions.length + statements.length > MAX_BATCH) {
+      return res.status(413).json({ status: 'REJECT', error: `Maximum ${MAX_BATCH} elements par lot` });
     }
 
     // Ecart d'horloge serveur - noeud ; 0 si le noeud n'envoie pas son heure.
@@ -179,13 +213,42 @@ router.post('/push', requireEdgeSignature, async (req, res, next) => {
         .map((m) => [String(m._id), m])
     );
 
+    // Auteurs des traces brutes : tout utilisateur de l'etablissement (eleve ou enseignant).
+    const actorIds = statements.map((st) => st?.actor?.user_id).filter((id) => mongoose.isValidObjectId(id));
+    const actors = new Map(
+      (await User.find({ _id: { $in: actorIds }, tenant_id: center.tenant_id }).select('firstName lastName email').lean())
+        .map((u) => [String(u._id), u])
+    );
+
     const processed = [];
     const rejected = [];
     let duplicates = 0;
 
+    // Insertion idempotente : un renvoi apres coupure est accepte sans doublon.
+    async function store(doc, id, kind) {
+      try {
+        await Statement.create(doc);
+        processed.push(id);
+      } catch (err) {
+        if (err?.code === 11000) {
+          const existing = await Statement.findOne({ statementId: id }).select('tenant_id').lean();
+          if (existing && String(existing.tenant_id) === String(center.tenant_id)) {
+            processed.push(id);
+            duplicates += 1;
+          } else {
+            reject(rejected, id, 'id_conflict', 'identifiant deja utilise par un autre etablissement', false, kind);
+          }
+        } else if (err?.name === 'ValidationError') {
+          reject(rejected, id, 'invalid_payload', err.message.slice(0, 200), false, kind);
+        } else {
+          reject(rejected, id, 'server_error', 'Erreur serveur, a renvoyer', true, kind);
+        }
+      }
+    }
+
     for (const sub of submissions) {
       const id = typeof sub?.submission_id === 'string' ? sub.submission_id.trim() : '';
-      if (!/^[A-Za-z0-9_.:-]{8,128}$/.test(id)) {
+      if (!ID_RE.test(id)) {
         reject(rejected, sub?.submission_id, 'invalid_submission_id', 'submission_id : 8 a 128 caracteres [A-Za-z0-9_.:-]');
         continue;
       }
@@ -263,25 +326,40 @@ router.post('/push', requireEdgeSignature, async (req, res, next) => {
         timestamp: new Date(completedAt.getTime() + clockOffsetMs),
       };
 
-      try {
-        await Statement.create(doc);
-        processed.push(id);
-      } catch (err) {
-        if (err?.code === 11000) {
-          // Deja recu (renvoi apres coupure) : ACK si c'est bien la meme copie du meme etablissement.
-          const existing = await Statement.findOne({ statementId: id }).select('tenant_id').lean();
-          if (existing && String(existing.tenant_id) === String(center.tenant_id)) {
-            processed.push(id);
-            duplicates += 1;
-          } else {
-            reject(rejected, id, 'id_conflict', 'submission_id deja utilise par un autre etablissement');
-          }
-        } else if (err?.name === 'ValidationError') {
-          reject(rejected, id, 'invalid_payload', err.message.slice(0, 200));
-        } else {
-          reject(rejected, id, 'server_error', 'Erreur serveur, a renvoyer', true);
-        }
+      await store(doc, id, 'submission');
+    }
+
+    // --- Traces xAPI brutes enregistrees sur le noeud (outbox du mode edge) ---
+    for (const st of statements) {
+      const id = typeof st?.statementId === 'string' ? st.statementId.trim() : '';
+      const no = (code, message) => reject(rejected, st?.statementId, code, message, false, 'statement');
+      if (!ID_RE.test(id)) { no('invalid_submission_id', 'statementId : 8 a 128 caracteres [A-Za-z0-9_.:-]'); continue; }
+      const actor = actors.get(String(st?.actor?.user_id));
+      if (!actor) { no('unknown_student', "Auteur inconnu dans l'etablissement du centre"); continue; }
+      if (!VALID_VERB_IDS.includes(st?.verb?.id)) { no('invalid_payload', 'verbe xAPI non reconnu'); continue; }
+      if (typeof st?.object?.id !== 'string' || !st.object.id) { no('invalid_payload', 'object.id requis'); continue; }
+      const ts = parseDate(st.timestamp);
+      if (!ts) { no('invalid_completed_at', 'timestamp doit etre une date ISO 8601'); continue; }
+      if (Buffer.byteLength(JSON.stringify({ r: st.result ?? null, c: st.context ?? null })) > MAX_PAYLOAD_BYTES) {
+        no('payload_too_large', `result + context > ${MAX_PAYLOAD_BYTES} octets`);
+        continue;
       }
+      await store({
+        statementId: id,
+        actor: { user_id: actor._id, name: `${actor.firstName} ${actor.lastName}`.trim(), mbox: `mailto:${actor.email}` },
+        verb: { id: st.verb.id, display: st.verb.display || { 'fr-FR': st.verb.id.split('/').pop() } },
+        object: st.object,
+        result: st.result,
+        context: {
+          ...(st.context || {}),
+          extensions: {
+            ...(st.context?.extensions || {}),
+            edge: { center_id: center.center_id, batch_id: batchId ?? null, edge_timestamp: ts.toISOString(), clock_offset_ms: clockOffsetMs },
+          },
+        },
+        tenant_id: center.tenant_id,
+        timestamp: new Date(ts.getTime() + clockOffsetMs),
+      }, id, 'statement');
     }
 
     center.last_push_at = receivedAt;

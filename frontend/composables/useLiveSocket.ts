@@ -120,7 +120,8 @@ export function useLiveSocket(moduleId: string) {
   let socket: Socket | null = null
 
   function connect() {
-    const baseURL = config.public.apiBase?.replace('/api', '') || 'http://localhost:3000'
+    // API relative (noeud edge derriere nginx) : sockets sur la meme origine.
+    const baseURL = config.public.apiBase?.replace('/api', '') || window.location.origin
     const session = useCookie<{ token: string; tenant_id: string } | null>('__session').value
     const token = session?.token || useCookie('auth_token').value
 

@@ -1,0 +1,18 @@
+# Interface TEGS d'un noeud de salle : SPA Nuxt compilee + nginx (aucun CDN a l'execution).
+# Contexte de build : frontend/ (voir docker-compose.edge.yml).
+
+FROM node:24-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci --no-audit --no-fund
+COPY . .
+# API sur la meme origine (nginx relaie /api) ; manifeste des simulations local
+# (/simulations/manifest.json, alimente par la synchro) ; pas de recherche d'images en ligne.
+ENV NUXT_PUBLIC_API_BASE=/api \
+    NUXT_PUBLIC_CRNS_MANIFEST_URL= \
+    NUXT_PUBLIC_PIXABAY_KEY=
+RUN npx nuxi generate
+
+FROM nginx:1.27-alpine
+COPY --from=build /app/.output/public /usr/share/nginx/html
+COPY --from=edge nginx.edge.conf /etc/nginx/conf.d/default.conf
