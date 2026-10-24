@@ -11,18 +11,12 @@ Fichiers : `deploy/edge/` (Docker Compose, nginx, modele `.env.edge`). Contrat d
 
 1. Les classes de la salle existent dans **Mes Classes CRNS**, avec leurs eleves et leurs
    identifiants (matricule + PIN imprimes et distribues par l'enseignant).
-2. Creer le centre (admin DDENE de l'etablissement) :
-   ```bash
-   curl -X POST https://tegs-backend-746425674533.us-central1.run.app/api/centers \
-     -H "Authorization: Bearer <jeton admin>" -H "Content-Type: application/json" \
-     -d '{"center_id":"CRNS-NORD-EST-01","name":"Centre Pilote Fort-Liberte",
-          "classroom_ids":["<id classe>"],"module_ids":["<id module>"],"simulation_ids":[]}'
-   ```
-   - `module_ids` : modules de cours (quiz, TP) a installer ; vide = modules **publies**.
-     Pour qu'un eleve ouvre un module, son **partage doit etre actif**.
-   - `simulation_ids` : simulations CRNS ; vide = tout le catalogue.
-3. **Noter le jeton** renvoye (`token`) : il n'est affiche qu'une fois. Perdu -> 
-   `POST /api/centers/<id>/rotate-token`.
+2. Creer le centre : page **Centres de salle** du cloud (admin DDENE) > « + Nouveau centre »
+   (identifiant, nom, classes servies, modules de cours, simulations).
+   - Modules : aucune case = modules **publies** de l'etablissement.
+   - Simulations : aucune case = tout le catalogue CRNS.
+3. **Noter le jeton** affiche une seule fois (bloc de configuration a copier). Perdu ->
+   « Nouveau jeton » sur la meme page.
 
 ## 2. Le serveur
 
@@ -41,7 +35,11 @@ Fichiers : `deploy/edge/` (Docker Compose, nginx, modele `.env.edge`). Contrat d
 
 ## 3. Le noeud
 
-Avec Internet (construction des images) :
+**Le plus simple** : `bash deploy/edge/install.sh [--dnsmasq <interface> <ip>] [--ufw <reseau>]`
+fait les etapes 2.3, 2.4, 3 et 4 (verifications, Docker, `.env.edge`, dnsmasq, pare-feu,
+demarrage) puis lance `check.sh`. Protocole du pilote : `docs/pilote-fort-liberte.md`.
+
+A la main, avec Internet (construction des images) :
 ```bash
 git clone https://github.com/edromediaTech/TEGS-Learning.git && cd TEGS-Learning/deploy/edge
 cp .env.edge.example .env.edge && chmod 600 .env.edge
@@ -90,4 +88,6 @@ onglet utilise est retenu).
   arrivent a la synchro suivante. Un eleve retire d'une classe est desactive, pas supprime.
 - **Mise a jour** : `git pull && docker compose -f docker-compose.edge.yml up -d --build`.
 - **Sauvegarde** : `docker compose -f docker-compose.edge.yml exec -T mongo mongodump --archive > tegs-edge-$(date +%F).archive`.
+- **Bilan en une commande** : `bash deploy/edge/check.sh` (services, API, derniere synchro,
+  resultats en attente, disque).
 - **Diagnostic** : `docker compose -f docker-compose.edge.yml ps` et `... logs --tail 100 backend`.

@@ -203,6 +203,11 @@ dans Mes Classes CRNS). Lecteur `/share/[token]` : un eleve/enseignant connecte 
 etablissement ouvre un module publie sans partage public (`findPlayerModule`, share.js).
 Noeud : medias des modules copies en `/media/`, enseignants des classes du centre recus
 avec leur empreinte de mot de passe.
+Pilote (E7) : page cloud `/admin/centers` (centres, jeton une fois, etat des noeuds) ;
+`deploy/edge/install.sh` et `check.sh` ; protocole `docs/pilote-fort-liberte.md`. bcrypt passe
+par `services/hashPool.js` (worker_threads) : une salle entiere se connecte sans bloquer le
+serveur. Tests : `test-edge-multicenter.js` (2 centres), `tests/load/edge-classroom-load.js 20`.
+Menu : `Mes Classes CRNS` ; `Centres de salle` (cloud) / `Noeud de salle` (`NUXT_PUBLIC_EDGE_MODE`).
 
 ## 6. Conventions
 

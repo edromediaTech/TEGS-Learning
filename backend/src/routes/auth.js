@@ -172,7 +172,7 @@ router.post(
 // (30 / 10 min) contre le balayage des matricules. Les succes ne comptent pas : une classe
 // entiere derriere la connexion de l'ecole doit pouvoir se connecter en meme temps.
 // ---------------------------------------------------------------------------
-const bcrypt = require('bcryptjs');
+const hashPool = require('../services/hashPool');
 const { MAX_FAILED_ATTEMPTS, LOCK_MINUTES } = require('../services/studentCredentials');
 
 const PIN_IP_LIMIT = 30;
@@ -227,7 +227,7 @@ router.post(
         });
       }
 
-      if (!(await bcrypt.compare(pin, user.pin_hash))) {
+      if (!(await hashPool.compare(pin, user.pin_hash))) {
         user.pin_failed_attempts = (user.pin_failed_attempts || 0) + 1;
         if (user.pin_failed_attempts >= MAX_FAILED_ATTEMPTS) {
           user.pin_locked_until = new Date(Date.now() + LOCK_MINUTES * 60 * 1000);

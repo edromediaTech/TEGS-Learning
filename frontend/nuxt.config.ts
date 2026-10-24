@@ -102,6 +102,8 @@ export default defineNuxtConfig({
     public: {
       apiBase: process.env.NUXT_PUBLIC_API_BASE || 'http://127.0.0.1:3000/api',
       pixabayKey: process.env.NUXT_PUBLIC_PIXABAY_KEY || '',
+      // Interface servie par un noeud de salle TEGS-Edge (deploy/edge/Dockerfile.web).
+      edgeMode: process.env.NUXT_PUBLIC_EDGE_MODE === '1',
       // CRNS - URL absolue d'un manifest hebergee (typiquement GCS public).
       // Si vide, on fallback sur /simulations/manifest.json (bundle frontend).
       crnsManifestUrl: process.env.NUXT_PUBLIC_CRNS_MANIFEST_URL || '',
