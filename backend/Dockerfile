@@ -27,8 +27,9 @@ USER tegs
 
 EXPOSE 3000
 
-# Health check for Cloud Run / Docker
+# Health check Docker (Cloud Run l'ignore). 127.0.0.1 et non localhost : sur Alpine,
+# localhost resout d'abord en ::1, or le serveur n'ecoute qu'en IPv4.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget -qO- http://localhost:3000/api/health || exit 1
+  CMD wget -qO- http://127.0.0.1:3000/api/health || exit 1
 
 CMD ["node", "src/server.js"]
