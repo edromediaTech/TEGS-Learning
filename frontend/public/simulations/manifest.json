@@ -1,5 +1,6 @@
 {
-  "generated_at": "2026-10-24T12:10:11.352156+00:00",
+  "schema_version": 2,
+  "generated_at": "2026-10-24T12:39:00.582461+00:00",
   "count": 14,
   "simulations": [
     {
@@ -12,9 +13,12 @@
       "objective": "Observer la production de dioxyde de carbone (CO2) lors d'une réaction acido-basique et visualiser le concept de production de gaz.",
       "asset_url": "/simulations/chim_neutralisation_vinaigre_bicarbonate_v1.glb",
       "config_url": "/simulations/configs/chim_neutralisation_vinaigre_bicarbonate_v1.json",
-      "size_bytes": 21428,
       "n_events": 4,
-      "n_assets": 5
+      "n_assets": 5,
+      "version": "1.0.0",
+      "sha256": "c5067f8fe28868a3591816f492066ffd7f4f0b73ffb1eb924ed823a76f337b85",
+      "size_bytes": 21428,
+      "config_sha256": "2a9ddc4e5731a13230afdf009b14c07a385b03e61a573314ab22b9b781b1b229"
     },
     {
       "simulation_id": "ecrou_hexagonal_v1",
@@ -26,9 +30,12 @@
       "objective": "Identifier les composants d'un assemblage vis-écrou (filetage, forme hexagonale) et simuler l'action de serrage avec une clé plate.",
       "asset_url": "/simulations/ecrou_hexagonal_v1.glb",
       "config_url": "/simulations/configs/ecrou_hexagonal_v1.json",
-      "size_bytes": 13584,
       "n_events": 5,
-      "n_assets": 5
+      "n_assets": 5,
+      "version": "1.0.0",
+      "sha256": "e864d844a0fb394f2dcd015be199d57f179f4420f233fef266d42f6614e26c54",
+      "size_bytes": 13584,
+      "config_sha256": "a67d10a8aa3b77094b1c1a07dbc6728ada346209b09291f78f464bd0f224d5f5"
     },
     {
       "simulation_id": "eolienne_vitesse_v1",
@@ -40,9 +47,12 @@
       "objective": "Comprendre l'impact de la vitesse du vent sur la rotation d'une éolienne et identifier le seuil de rupture mécanique de ses pales.",
       "asset_url": "/simulations/eolienne_vitesse_v1.glb",
       "config_url": "/simulations/configs/eolienne_vitesse_v1.json",
-      "size_bytes": 68188,
       "n_events": 3,
-      "n_assets": 5
+      "n_assets": 5,
+      "version": "1.0.0",
+      "sha256": "b4f78167aac3f321cfeae51fc6a16d97cf61f14489672ca1eb3d293dbe47ac9c",
+      "size_bytes": 68188,
+      "config_sha256": "4c5fec087ac81cdc3e782928921847659c3bc3617cbca4a42f544b8ad6b1aaf9"
     },
     {
       "simulation_id": "intensite_courant_v1",
@@ -54,9 +64,12 @@
       "objective": "Comprendre le branchement en série de l'ampèremètre, le choix du calibre, et vérifier expérimentalement la loi des nœuds dans un circuit en dérivation.",
       "asset_url": "/simulations/intensite_courant_v1.glb",
       "config_url": "/simulations/configs/intensite_courant_v1.json",
-      "size_bytes": 26468,
       "n_events": 8,
-      "n_assets": 8
+      "n_assets": 8,
+      "version": "1.0.0",
+      "sha256": "7e3b34c1f1fdc5efc0a07f0afe29a4d20968b03c3b108a3a1c6b33dc28a4898e",
+      "size_bytes": 26468,
+      "config_sha256": "c6aaa7ccc639f65edd8cca3bda5fa1069d92e481b8afd106e07b740640f8dd55"
     },
     {
       "simulation_id": "loi_ohm_resistance_v1",
@@ -68,9 +81,12 @@
       "objective": "Illustrer la loi d'Ohm (U=RxI) en permettant à l'élève de faire varier la résistance d'un potentiomètre pour contrôler l'intensité du courant dans un circuit et protéger une LED contre la surintensité.",
       "asset_url": "/simulations/loi_ohm_resistance_v1.glb",
       "config_url": "/simulations/configs/loi_ohm_resistance_v1.json",
-      "size_bytes": 18876,
       "n_events": 6,
-      "n_assets": 6
+      "n_assets": 6,
+      "version": "1.0.0",
+      "sha256": "76d5d733e6ae8b9b57fe14d1ac999f239116e5e6e9ad11c03f40bddaf85f2f2d",
+      "size_bytes": 18876,
+      "config_sha256": "d2df7cb9fc0029e85e6adfb428f381e812b0ad0bb983385b032e4314a7a3aa78"
     },
     {
       "simulation_id": "montage_panneau_solaire_v1",
@@ -82,9 +98,12 @@
       "objective": "Démontrer l'effet des montages série et parallèle sur la tension et le courant d'un système photovoltaïque, et comprendre le rôle du régulateur de charge et l'importance du respect des polarités.",
       "asset_url": "/simulations/montage_panneau_solaire_v1.glb",
       "config_url": "/simulations/configs/montage_panneau_solaire_v1.json",
-      "size_bytes": 41348,
       "n_events": 6,
-      "n_assets": 9
+      "n_assets": 9,
+      "version": "1.0.0",
+      "sha256": "8fba1b734b2b728e85627a1aa6ed9014aaeda0469cb98ed3557936733b8e4111",
+      "size_bytes": 41348,
+      "config_sha256": "1b0949b0a6bedce87bc4b5ed198550ebf98deb97876883d86e0f17199530ce37"
     },
     {
       "simulation_id": "phys_ohm_law_v1",
@@ -96,9 +115,12 @@
       "objective": "Comprendre la relation U = R x I et identifier le seuil de rupture d'une ampoule lorsque la tension dépasse sa tolerance.",
       "asset_url": "/simulations/ohm_law_v1.glb",
       "config_url": "/simulations/configs/phys_ohm_law_v1.json",
-      "size_bytes": 36656,
       "n_events": 5,
-      "n_assets": 4
+      "n_assets": 4,
+      "version": "1.0.0",
+      "sha256": "ce96cb324331830eafe00eda287afe325f1309f4bec2560d92da016f94594e92",
+      "size_bytes": 36656,
+      "config_sha256": "8e581fbb984e5f1b28e5e030ce50ddb7e98968171b7f9a47fad70c6c748ba3c5"
     },
     {
       "simulation_id": "phys_dilatation_liquides_v1",
@@ -110,9 +132,12 @@
       "objective": "Observer et comprendre le phénomène de dilatation thermique d'un liquide (alcool) en fonction de la température de l'eau, et visualiser le point d'ébullition.",
       "asset_url": "/simulations/phys_dilatation_liquides_v1.glb",
       "config_url": "/simulations/configs/phys_dilatation_liquides_v1.json",
-      "size_bytes": 19224,
       "n_events": 5,
-      "n_assets": 6
+      "n_assets": 6,
+      "version": "1.0.0",
+      "sha256": "01aed472afea2c9585feb87652e9fffad9952de8696977c136a197ef77aca123",
+      "size_bytes": 19224,
+      "config_sha256": "9d53461b1758434a0ba062c04e269999a5c8237b3bb2848fb23b9eefb903e457"
     },
     {
       "simulation_id": "phys_solaire_charge_v1",
@@ -124,9 +149,12 @@
       "objective": "Comprendre l'influence de l'inclinaison d'un panneau solaire et de l'intensité lumineuse sur l'efficacité de charge d'une batterie et le risque de surchauffe.",
       "asset_url": "/simulations/phys_solaire_charge_v1.glb",
       "config_url": "/simulations/configs/phys_solaire_charge_v1.json",
-      "size_bytes": 18128,
       "n_events": 4,
-      "n_assets": 4
+      "n_assets": 4,
+      "version": "1.0.0",
+      "sha256": "39e49a8545404514697dbc93b865803a34cd1a5082f5076d28d902d4eb657844",
+      "size_bytes": 18128,
+      "config_sha256": "561404c76ad916207f56393068e2574f536a593b278211b04e6ae1993e0a95fe"
     },
     {
       "simulation_id": "pompe_solaire_v1",
@@ -138,9 +166,12 @@
       "objective": "Comprendre le fonctionnement d'un système photovoltaïque simple et la dépendance de la pompe à eau à l'ensoleillement.",
       "asset_url": "/simulations/pompe_solaire_v1.glb",
       "config_url": "/simulations/configs/pompe_solaire_v1.json",
-      "size_bytes": 17456,
       "n_events": 3,
-      "n_assets": 6
+      "n_assets": 6,
+      "version": "1.0.0",
+      "sha256": "c0865ee3c5094d642d195de12fdd96f2059201e6c40df8eb38fa9c971e5839bb",
+      "size_bytes": 17456,
+      "config_sha256": "e1307a23d50566327cf2f94058fe2e6193897c9ca1ab642706a25f811f2a9ecf"
     },
     {
       "simulation_id": "tech_smartphone_anatomie_hd_v1",
@@ -152,9 +183,12 @@
       "objective": "Version HD : matériaux PBR (verre, métal, plastique) avec coins arrondis. Plus lourd à charger (~200 Ko vs 30 Ko) mais beaucoup plus réaliste pour la démonstration en classe.",
       "asset_url": "/simulations/tech_smartphone_anatomie_hd_v1.glb",
       "config_url": "/simulations/configs/tech_smartphone_anatomie_hd_v1.json",
-      "size_bytes": 55552,
       "n_events": 2,
-      "n_assets": 9
+      "n_assets": 9,
+      "version": "1.0.0",
+      "sha256": "9f919bbdefe88684daa3abb93ebe5a10ded5cc336eed44adff2024d6dcbdf262",
+      "size_bytes": 55552,
+      "config_sha256": "54f90226ceed2c0b6f58d296547b81e137bb9ca4a87061323daee7a9205e770f"
     },
     {
       "simulation_id": "tech_smartphone_anatomie_v1",
@@ -166,9 +200,12 @@
       "objective": "Identifier les 8 composants principaux d'un smartphone (chassis, batterie, CPU, PMIC, ecran, connecteur de charge, haut-parleur, camera, vibreur) et reconnaitre les signes de defaillance de chacun. Module 2 du parcours Depannage.",
       "asset_url": "/simulations/tech_smartphone_anatomie_v1.glb",
       "config_url": "/simulations/configs/tech_smartphone_anatomie_v1.json",
-      "size_bytes": 55552,
       "n_events": 2,
-      "n_assets": 9
+      "n_assets": 9,
+      "version": "1.0.0",
+      "sha256": "9f919bbdefe88684daa3abb93ebe5a10ded5cc336eed44adff2024d6dcbdf262",
+      "size_bytes": 55552,
+      "config_sha256": "fd7441bdd8ae02a0ed0420665f986f64f2f1a584837e23167dda6cbee603300b"
     },
     {
       "simulation_id": "tech_smartphone_assemblage_v1",
@@ -180,9 +217,12 @@
       "objective": "Maitriser l'ordre de montage d'un smartphone : du chassis nu au telephone complet, en respectant la sequence batterie -> connecteur -> nappes -> circuits -> ecran. Module 3 du parcours Depannage.",
       "asset_url": "/simulations/tech_smartphone_assemblage_v1.glb",
       "config_url": "/simulations/configs/tech_smartphone_assemblage_v1.json",
-      "size_bytes": 28040,
       "n_events": 0,
-      "n_assets": 9
+      "n_assets": 9,
+      "version": "1.0.0",
+      "sha256": "20630c39bafc3d1242ead842db018afbc685ee5378e1ebc29da7b8f2a6d464cd",
+      "size_bytes": 28040,
+      "config_sha256": "f3bba7b8c1c85ea6396299d02d167379c198470b9a862e4083469f7589159fd8"
     },
     {
       "simulation_id": "tension_electrique_v1",
@@ -194,9 +234,12 @@
       "objective": "Comprendre et mesurer la tension résultante de l'association de piles en série et en parallèle à l'aide d'un voltmètre virtuel.",
       "asset_url": "/simulations/tension_electrique_v1.glb",
       "config_url": "/simulations/configs/tension_electrique_v1.json",
-      "size_bytes": 11632,
       "n_events": 5,
-      "n_assets": 4
+      "n_assets": 4,
+      "version": "1.0.0",
+      "sha256": "2ca44d6daf5be9f8096cc7a1f65dbdae91b7cd44d3930121ff9ccb18d55dcbd1",
+      "size_bytes": 11632,
+      "config_sha256": "b1755723d912a48c605439e2b0ee4d6fbe7893cf6ac11a01377a93ecc884e6bf"
     }
   ]
 }
