@@ -196,6 +196,13 @@ Deploiement : `deploy/edge/` (Docker Compose nginx + backend + mongo), guide
 `docs/edge-deploiement.md`. Test de bout en bout : `node backend/tests/integration/test-edge-node.js`
 (lance un cloud :3200 et un noeud :3100). CI GitHub : `.github/workflows/edge.yml`.
 Espace eleve : `/eleve` (`GET /api/student/home`).
+Integrite (E6) : `useIntegrityMonitor()` (focus, onglet masque, plein ecran, copier/coller,
+dates en ms relatives) joint `context.extensions.integrity` aux traces de fin du lecteur de
+modules et de `SimulationViewer` ; rapport `GET /api/crns-classrooms/:id/integrity` (bouton
+dans Mes Classes CRNS). Lecteur `/share/[token]` : un eleve/enseignant connecte du meme
+etablissement ouvre un module publie sans partage public (`findPlayerModule`, share.js).
+Noeud : medias des modules copies en `/media/`, enseignants des classes du centre recus
+avec leur empreinte de mot de passe.
 
 ## 6. Conventions
 

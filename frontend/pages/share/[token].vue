@@ -268,6 +268,11 @@ const apiBase = config.public.apiBase as string
 // Eleve connecte (matricule + PIN) : ses traces xAPI sont authentifiees et lui sont
 // attribuees. Sans session (lien public anonyme), la route xAPI les refuse.
 const session = useCookie<{ token?: string } | null>('__session')
+// Integrite de la copie (E6) : resume joint aux traces de fin.
+const integrity = useIntegrityMonitor()
+function authHeaders(): Record<string, string> {
+  return session.value?.token ? { Authorization: `Bearer ${session.value.token}` } : {}
+}
 const shareToken = route.params.token as string
 
 // --- State ---
@@ -482,6 +487,7 @@ async function initSession() {
   try {
     const res = await $fetch<any>(`${apiBase}/share/public/${shareToken}/session`, {
       method: 'POST',
+      headers: authHeaders(),
       body: { sessionKey: sessionKey.value },
     })
 
@@ -514,6 +520,7 @@ function startTimer() {
     try {
       const res = await $fetch<any>(`${apiBase}/share/public/${shareToken}/session/tick`, {
         method: 'POST',
+        headers: authHeaders(),
         body: { sessionKey: sessionKey.value },
       })
       if (res.forceSubmit || res.status === 'expired') {
@@ -541,6 +548,7 @@ async function forceSubmit() {
 // --- Start module ---
 async function startModule() {
   identified.value = true
+  integrity.start()
   sendXapiStatement('initialized', 'a initialise')
   await initSession()
 }
@@ -555,16 +563,21 @@ async function submitModule() {
     ? earnedPoints.value / (moduleData.value?.totalPoints || totalQuestions.value)
     : 0
 
+  integrity.stop()
+  const integrityExt = { context: { extensions: { integrity: integrity.summary() } } }
+
   await sendXapiStatement(scaled >= 0.5 ? 'passed' : 'failed', scaled >= 0.5 ? 'a reussi' : 'a echoue', {
     result: {
       score: { scaled, raw: earnedPoints.value, max: moduleData.value?.totalPoints || totalQuestions.value },
       success: scaled >= 0.5,
       completion: true,
     },
+    ...integrityExt,
   })
 
   await sendXapiStatement('completed', 'a termine', {
     result: { completion: true },
+    ...integrityExt,
   })
 
   await sendXapiStatement('terminated', 'a mis fin')
@@ -574,6 +587,7 @@ async function submitModule() {
     try {
       await $fetch(`${apiBase}/share/public/${shareToken}/session/close`, {
         method: 'POST',
+        headers: authHeaders(),
         body: { sessionKey: sessionKey.value },
       })
     } catch { /* best-effort */ }
@@ -614,9 +628,19 @@ function initSurveillance() {
 // --- Fetch module ---
 onMounted(async () => {
   try {
-    const res = await $fetch<any>(`${apiBase}/share/public/${shareToken}/json`)
+    // Eleve connecte : ouvre aussi les modules publies sans lien public (E6).
+    const res = await $fetch<any>(`${apiBase}/share/public/${shareToken}/json`, { headers: authHeaders() })
     moduleData.value = res
     nextTick(() => initSurveillance())
+    // Eleve connecte : identite pre-remplie depuis sa session.
+    if (session.value?.token && !studentInfo.firstName) {
+      try {
+        const me = await $fetch<any>(`${apiBase}/auth/me`, { headers: authHeaders() })
+        const u = me?.user || me
+        studentInfo.firstName = u?.firstName || ''
+        studentInfo.lastName = u?.lastName || ''
+      } catch { /* saisie manuelle */ }
+    }
   } catch (err: any) {
     const data = err?.data || err?.response?._data || {}
     error.value = data.error || 'Module introuvable ou partage desactive'
@@ -633,7 +657,10 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(() => stopTimer())
+onUnmounted(() => {
+  stopTimer()
+  integrity.stop()
+})
 
 useHead({
   title: computed(() => moduleData.value?.title ? `${moduleData.value.title} | TEGS-Learning` : 'TEGS-Learning'),

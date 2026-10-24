@@ -75,6 +75,13 @@ onglet utilise est retenu).
 
 ## 6. Exploitation
 
+- **Enseignants** : ils se connectent sur le noeud (onglet Personnel) avec leur e-mail et
+  mot de passe du cloud, s'ils enseignent dans une classe du centre.
+- **Eleves** : `http://tegs.local/eleve` liste les cours ; un module **publie** s'ouvre sans
+  lien public. Images et PDF des modules sont copies sur le noeud a la synchro.
+- **Integrite des copies** : Mes Classes CRNS > « Rapport d'integrite des copies » (pertes
+  de focus, temps hors page, plein ecran, copier-coller). Des indices, pas une sanction.
+
 - **Etat du noeud** : `http://tegs.local/admin/edge` (compte enseignant) — derniere synchro,
   resultats en attente / envoyes / refuses, simulations installees, bouton « Synchroniser ».
 - **Coupure d'Internet** : rien a faire. La salle continue ; les resultats attendent dans

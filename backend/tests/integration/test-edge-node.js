@@ -8,7 +8,9 @@
  *  - connexion eleve par PIN sur le noeud, traces xAPI en outbox ;
  *  - coupure du cloud : la salle continue (connexion, traces), echec de synchro sans perte ;
  *  - retour du cloud : outbox remontee, traces presentes dans le cloud ;
- *  - eleve retire de sa classe -> desactive sur le noeud.
+ *  - eleve retire de sa classe -> desactive sur le noeud ;
+ *  - E6 : medias des modules copies sur le noeud, module publie non partage ouvert par un
+ *    eleve connecte, enseignant connecte avec son mot de passe du cloud, rapport d'integrite.
  *
  * Pre-requis : MongoDB local, manifeste CRNS v2 accessible (GCS) pour la simulation.
  * Usage : node tests/integration/test-edge-node.js
@@ -97,18 +99,30 @@ async function run() {
     const teacher = await C(User).create({ email: `prof-${uid.toLowerCase()}@edge.test`, password: 'Edge-Test-123!', firstName: 'Prof', lastName: 'Edge', role: 'teacher', tenant_id: tenant._id });
     const admin = await C(User).create({ email: `admin-${uid.toLowerCase()}@edge.test`, password: 'Edge-Test-123!', firstName: 'Admin', lastName: 'Edge', role: 'admin_ddene', tenant_id: tenant._id });
     const classroom = await C(CrnsClassroom).create({ course_id: SIM_ID, name: '9e Edge', code: `CL-${uid.slice(-4)}`, teacher_id: teacher._id, tenant_id: tenant._id, student_ids: [] });
+    // Image servie par le cloud de test : doit etre copiee sur le noeud (E6).
+    const mediaName = `edge-test-${uid.toLowerCase()}.png`;
+    const mediaPath = path.join(BACKEND, 'public', 'uploads', mediaName);
+    fs.writeFileSync(mediaPath, Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64'));
+    created.media = mediaPath;
+    const mediaUrl = `http://127.0.0.1:3200/public/uploads/${mediaName}`;
     const course = await C(Module).create({
       title: `TP tension ${uid}`, tenant_id: tenant._id, created_by: teacher._id, status: 'published',
       shareEnabled: true, shareToken: `edge${uid.toLowerCase()}tok`,
       sections: [{ title: 'Chapitre 1', order: 0, screens: [{ title: 'Quiz', order: 0, contentBlocks: [
         { type: 'quiz', order: 0, data: { question: 'Unite de la tension ?', options: [{ text: 'Volt', isCorrect: true }, { text: 'Ampere', isCorrect: false }] } },
+        { type: 'text', order: 1, data: { content: `<p>Schema : <img src="${mediaUrl}"></p>` } },
       ] }] }],
+    });
+    // Module publie mais jamais partage : un eleve connecte doit pouvoir l'ouvrir (E6).
+    const course2 = await C(Module).create({
+      title: `Cours non partage ${uid}`, tenant_id: tenant._id, created_by: teacher._id, status: 'published',
+      sections: [{ title: 'S', order: 0, screens: [{ title: 'E', order: 0, contentBlocks: [] }] }],
     });
 
     if (!(await startCloud())) throw new Error('le cloud de test ne demarre pas');
     let r = await api(CLOUD, 'POST', `/crns-classrooms/${classroom._id}/students`, { students: [{ first_name: 'Ana', last_name: 'Edge' }, { first_name: 'Bel', last_name: 'Edge' }] }, tok(teacher, CLOUD_SECRET));
     const [ana, bel] = r.data.students;
-    r = await api(CLOUD, 'POST', '/centers', { center_id: `TEST-NODE-${uid}`, name: 'Salle test', classroom_ids: [classroom._id], simulation_ids: [SIM_ID], module_ids: [course._id] }, tok(admin, CLOUD_SECRET));
+    r = await api(CLOUD, 'POST', '/centers', { center_id: `TEST-NODE-${uid}`, name: 'Salle test', classroom_ids: [classroom._id], simulation_ids: [SIM_ID], module_ids: [course._id, course2._id] }, tok(admin, CLOUD_SECRET));
     const nodeToken = r.data.token;
     assert(r.status === 201 && nodeToken, 'Cloud : centre cree, jeton du noeud');
 
@@ -135,6 +149,10 @@ async function run() {
     assert(manifest.count === 1 && manifest.simulations[0].simulation_id === SIM_ID, 'Manifeste local : 1 simulation');
     assert(fs.existsSync(path.join(storage, 'packages', SIM_ID, 'launch.html')) && fs.existsSync(path.join(storage, 'simulations', manifest.simulations[0].asset_url.split('/').pop())), 'Paquet extrait et GLB servi');
 
+    const textBlock = lm.sections[0].screens[0].contentBlocks.find((b) => b.type === 'text');
+    const localSrc = textBlock?.data?.content?.match(/src="([^"]+)"/)?.[1] || '';
+    assert(localSrc.startsWith('/media/') && fs.existsSync(path.join(storage, localSrc)), 'Media du module copie sur le noeud, URL reecrite en /media/');
+
     // --- La salle, en ligne ---
     console.log('\n--- Activite en salle ---');
     r = await api(EDGE, 'POST', '/auth/login-pin', { tenant_id: String(tenant._id), matricule: ana.matricule, pin: ana.pin });
@@ -142,13 +160,27 @@ async function run() {
     const anaTok = r.data.token;
     r = await api(EDGE, 'GET', `/share/public/${course.shareToken}/json`);
     assert(r.status === 200, 'Module de cours servi par le noeud');
+    r = await api(EDGE, 'GET', '/student/home', null, anaTok);
+    const home2 = r.data?.modules?.find((m) => String(m.id) === String(course2._id));
+    assert(r.status === 200 && home2?.share_token, "Espace eleve : le module non partage est liste");
+    r = await api(EDGE, 'GET', `/share/public/${home2?.share_token}/json`, null, anaTok);
+    assert(r.status === 200, 'Module non partage ouvert par l\'eleve connecte');
+    r = await api(EDGE, 'GET', `/share/public/${home2?.share_token}/json`);
+    assert(r.status === 404, 'Module non partage refuse sans connexion');
+    r = await api(EDGE, 'POST', '/auth/login', { email: teacher.email, password: 'Edge-Test-123!', tenant_id: String(tenant._id) });
+    assert(r.status === 200 && r.data?.token, "Enseignant connecte sur le noeud avec son mot de passe du cloud");
     const xapi = (verb) => api(EDGE, 'POST', '/xapi/statements', {
       verb: { id: `http://adlnet.gov/expapi/verbs/${verb}`, display: { 'fr-FR': verb } },
       object: { id: `https://tegs-learning.edu.ht/courses/${course._id}`, definition: { name: { 'fr-FR': 'TP tension' } } },
       result: { success: true, score: { raw: 1, max: 1 } },
     }, anaTok);
-    r = await xapi('passed');
-    assert(r.status === 201, 'Trace xAPI enregistree sur le noeud');
+    r = await api(EDGE, 'POST', '/xapi/statements', {
+      verb: { id: 'http://adlnet.gov/expapi/verbs/passed', display: { 'fr-FR': 'passed' } },
+      object: { id: `https://tegs-learning.edu.ht/courses/${course._id}`, definition: { name: { 'fr-FR': 'TP tension' } } },
+      result: { success: true, score: { raw: 1, max: 1 } },
+      context: { extensions: { integrity: { version: 1, level: 'suspect', duration_ms: 600000, focus_loss_count: 4, focus_lost_ms: 45000, tab_hidden_count: 3, hidden_ms: 42000, fullscreen_exit_count: 1, copy_count: 0, paste_count: 2, events: [] } } },
+    }, anaTok);
+    assert(r.status === 201, 'Trace xAPI (avec resume d\'integrite) enregistree sur le noeud');
     const pending = await E(Statement).countDocuments({ 'edge_sync.status': 'PENDING' });
     assert(pending === 1, 'Trace en outbox (PENDING)');
 
@@ -174,6 +206,9 @@ async function run() {
     assert(inCloud.length === 2 && inCloud.every((s) => String(s.actor.user_id) === String(ana.id)), 'Traces presentes dans le cloud, attribuees au bon eleve');
     r = await api(EDGE, 'GET', '/edge/status', null, teacherEdgeTok);
     assert(r.data?.sync?.consecutive_failures === 0 && r.data?.sync?.clock_offset_ms !== null, 'Etat du noeud revenu a la normale');
+    r = await api(CLOUD, 'GET', `/crns-classrooms/${classroom._id}/integrity`, null, tok(teacher, CLOUD_SECRET));
+    const row = r.data?.rows?.find((x) => String(x.student_id) === String(ana.id));
+    assert(r.status === 200 && row?.level === 'suspect' && row.focus_loss_count === 4 && row.center_id === `TEST-NODE-${uid}`, "Rapport d'integrite du cloud : copie faite sur le noeud, signalee suspecte");
 
     // --- Evolution du roster ---
     console.log('\n--- Roster ---');
@@ -200,6 +235,7 @@ async function run() {
     await cloud.close();
     await edgeConn.close();
     fs.rmSync(storage, { recursive: true, force: true });
+    if (created.media) fs.rmSync(created.media, { force: true });
     console.log(`  (journaux du test : ${logs})`);
   }
 
