@@ -1,0 +1,440 @@
+{
+  "schema": "crns-component/1",
+  "id": "disjoncteur_c16_1pn",
+  "version": "1.2.0",
+  "title": "Disjoncteur modulaire C16 (1P+N, 2 modules)",
+  "category": "electricite/protection",
+  "units": "m",
+  "model": {
+    "file": "component.glb",
+    "sha256": "8addbbf8f6944ccd0a40e5ab80250eefde2054e65bfe18119c74692bc58e1a74",
+    "size_bytes": 148988
+  },
+  "electrical": {
+    "tolerance_m": 0.0005,
+    "terminals": {
+      "borne_amont": "Cage_haut",
+      "borne_aval": "Cage_bas"
+    },
+    "conductors": {
+      "borne_amont": "Cage_haut",
+      "liaison_haute": "Liaison_haute",
+      "contact_fixe": "Contact_fixe",
+      "contact_mobile": "Contact_mobile",
+      "bras": "Bras",
+      "tresse": "Tresse",
+      "bobine": "Bobine",
+      "liaison_bobine_bilame": "Liaison_bobine_bilame",
+      "bilame": "Bilame",
+      "liaison_basse": "Liaison_basse",
+      "borne_aval": "Cage_bas"
+    },
+    "links": [
+      [
+        "borne_amont",
+        "liaison_haute"
+      ],
+      [
+        "liaison_haute",
+        "contact_fixe"
+      ],
+      [
+        "contact_mobile",
+        "bras"
+      ],
+      [
+        "bras",
+        "tresse"
+      ],
+      [
+        "tresse",
+        "bobine"
+      ],
+      [
+        "bobine",
+        "liaison_bobine_bilame"
+      ],
+      [
+        "liaison_bobine_bilame",
+        "bilame"
+      ],
+      [
+        "bilame",
+        "liaison_basse"
+      ],
+      [
+        "liaison_basse",
+        "borne_aval"
+      ]
+    ],
+    "switch": {
+      "fixed": "contact_fixe",
+      "moving": "contact_mobile",
+      "actuator": "switch_lever",
+      "closed_state": "on",
+      "open_state": "off",
+      "min_open_gap_m": 0.002
+    },
+    "path": [
+      "borne_amont",
+      "liaison_haute",
+      "contact_fixe",
+      "contact_mobile",
+      "bras",
+      "tresse",
+      "bobine",
+      "liaison_bobine_bilame",
+      "bilame",
+      "liaison_basse",
+      "borne_aval"
+    ],
+    "connections": [
+      {
+        "terminal": "borne_amont",
+        "wire": "Fil_cuivre_haut",
+        "screw": "Vis_haut",
+        "cable": "Cable_arrivee"
+      },
+      {
+        "terminal": "borne_aval",
+        "wire": "Fil_cuivre_bas",
+        "screw": "Vis_bas",
+        "cable": "Cable_depart"
+      }
+    ]
+  },
+  "kinematics": {
+    "actuators": [
+      {
+        "id": "switch_lever",
+        "node": "Levier",
+        "type": "rotation",
+        "axis": "x",
+        "unit": "deg",
+        "states": {
+          "off": 35,
+          "on": -35
+        },
+        "initial": "off"
+      },
+      {
+        "id": "serrage_vis_bas",
+        "node": "Vis_bas",
+        "type": "translation",
+        "axis": "z",
+        "unit": "m",
+        "states": {
+          "serree": 0,
+          "desserree": 0.004
+        },
+        "initial": "serree"
+      }
+    ],
+    "driven": [
+      {
+        "node": "Bras",
+        "by": "switch_lever",
+        "link": "child"
+      },
+      {
+        "node": "Contact_mobile",
+        "by": "switch_lever",
+        "link": "child"
+      }
+    ]
+  },
+  "interaction": {
+    "pickable": {
+      "Levier": "switch_lever"
+    },
+    "frame": [
+      "Coque_gauche",
+      "Coque_droite",
+      "Ampoule",
+      "Cable_neutre"
+    ],
+    "focus": [
+      "Coque_gauche",
+      "Coque_droite",
+      "Levier",
+      "Cage_haut",
+      "Cage_bas",
+      "Contact_fixe"
+    ],
+    "capot": [
+      "Coque_gauche",
+      "Coque_droite",
+      "Nez_gauche",
+      "Nez_droite",
+      "Fente"
+    ],
+    "capot_min_opacity": 0.12,
+    "qa_opacity": 0.25,
+    "explode": {
+      "Coque_gauche": [
+        -0.045,
+        0,
+        0.015
+      ],
+      "Nez_gauche": [
+        -0.045,
+        0,
+        0.015
+      ],
+      "Voyant": [
+        -0.054,
+        0,
+        0.015
+      ],
+      "Marquage_C16": [
+        -0.054,
+        0,
+        0.015
+      ],
+      "Marquage_230V": [
+        -0.054,
+        0,
+        0.015
+      ],
+      "Coque_droite": [
+        0.08,
+        0,
+        0.035
+      ],
+      "Nez_droite": [
+        0.08,
+        0,
+        0.035
+      ],
+      "Marquage_I": [
+        0.08,
+        0,
+        0.035
+      ],
+      "Marquage_O": [
+        0.08,
+        0,
+        0.035
+      ],
+      "Bobine": [
+        0.022,
+        0,
+        0.008
+      ],
+      "Liaison_bobine_bilame": [
+        0.028,
+        0,
+        0.012
+      ],
+      "Bilame": [
+        0.034,
+        0,
+        0.016
+      ],
+      "Chambre_coupure": [
+        0.04,
+        0,
+        0.024
+      ],
+      "Levier": [
+        0.012,
+        0,
+        0.03
+      ],
+      "Contact_fixe": [
+        0.012,
+        0,
+        0.03
+      ],
+      "Tresse": [
+        0.012,
+        0,
+        0.03
+      ],
+      "Vis_haut": [
+        0,
+        0,
+        0.035
+      ],
+      "Vis_bas": [
+        0,
+        0,
+        0.035
+      ]
+    },
+    "explode_hide": [
+      "Fente"
+    ],
+    "labels": [
+      {
+        "node": "Cable_arrivee",
+        "text": "Phase : arrivée du réseau",
+        "dx": -170,
+        "dy": -30,
+        "point": [
+          0,
+          0.07,
+          -0.012
+        ]
+      },
+      {
+        "node": "Fil_cuivre_haut",
+        "text": "Fil de cuivre dénudé",
+        "dx": -190,
+        "dy": -70
+      },
+      {
+        "node": "Vis_haut",
+        "text": "Vis de serrage",
+        "dx": -210,
+        "dy": 10
+      },
+      {
+        "node": "Cage_haut",
+        "text": "Cage de serrage",
+        "dx": 200,
+        "dy": -90
+      },
+      {
+        "node": "Bobine",
+        "text": "Bobine (court-circuit)",
+        "dx": 230,
+        "dy": -40
+      },
+      {
+        "node": "Levier",
+        "text": "Manette + bras du contact mobile",
+        "dx": -150,
+        "dy": 80
+      },
+      {
+        "node": "Contact_fixe",
+        "text": "Contact fixe",
+        "dx": -200,
+        "dy": 130
+      },
+      {
+        "node": "Chambre_coupure",
+        "text": "Chambre de coupure",
+        "dx": 230,
+        "dy": 10
+      },
+      {
+        "node": "Bilame",
+        "text": "Bilame (surcharge)",
+        "dx": 220,
+        "dy": 70
+      },
+      {
+        "node": "Cable_depart",
+        "text": "Phase : départ vers l'ampoule",
+        "dx": 60,
+        "dy": 70,
+        "point": [
+          0.03,
+          -0.058,
+          -0.012
+        ]
+      },
+      {
+        "node": "Cable_neutre",
+        "text": "Neutre (retour)",
+        "dx": 40,
+        "dy": -60,
+        "point": [
+          0.03,
+          0.075,
+          -0.012
+        ]
+      }
+    ],
+    "states": {
+      "on": {
+        "Voyant": {
+          "color": "#d62f2f",
+          "emissive": "#d62f2f",
+          "intensity": 0.6
+        },
+        "Ampoule": {
+          "emissive": "#ffb02e",
+          "intensity": 3.5
+        }
+      },
+      "off": {
+        "Voyant": {
+          "color": "#1fa64a",
+          "emissive": "#1fa64a",
+          "intensity": 0.6
+        },
+        "Ampoule": {
+          "emissive": "#000000",
+          "intensity": 0
+        }
+      }
+    },
+    "circuit": {
+      "U_V": 230,
+      "calibre_A": 16,
+      "loads": [
+        {
+          "id": "lampe",
+          "label": "Ampoule 60 W",
+          "P_W": 60
+        },
+        {
+          "id": "forte",
+          "label": "Ampoule + chauffe-eau sur le même circuit (3 060 W)",
+          "P_W": 3060
+        }
+      ]
+    },
+    "faults": [
+      {
+        "id": "vis_bas_desserree",
+        "label": "Vis de la borne basse",
+        "actuator": "serrage_vis_bas",
+        "tight_state": "serree",
+        "loose_state": "desserree",
+        "glow": [
+          "Cage_bas",
+          "Vis_bas"
+        ],
+        "R_tight_ohm": 0.002,
+        "R_loose_ohm": 0.1,
+        "R_th_K_per_W": 4,
+        "tau_s": 6,
+        "ambient_C": 25,
+        "thresholds_C": {
+          "warm": 45,
+          "danger": 70
+        }
+      }
+    ],
+    "trip": {
+      "actuator": "switch_lever",
+      "from": "on",
+      "to": "off",
+      "duration_ms": 120
+    },
+    "xapi": {
+      "toggle": "experienced",
+      "fault": "experienced",
+      "danger": "experienced",
+      "trip": "experienced"
+    },
+    "texts": {
+      "title": "Le disjoncteur",
+      "kicker": "Travaux pratiques virtuels",
+      "intro": "Le disjoncteur protège le circuit : sur « I » il laisse passer le courant, sur « O » il l'interrompt.",
+      "hint": "Touchez la manette du disjoncteur pour la basculer. Faites glisser pour tourner autour du tableau.",
+      "on": "Fermé : l'ampoule est allumée",
+      "off": "Ouvert : l'ampoule est éteinte",
+      "on_state": "« I » (marche)",
+      "off_state": "« O » (arrêt)",
+      "inside": [
+        "La manette porte le bras du contact mobile : basculez-la sur « I » et regardez le contact mobile venir appuyer sur le contact fixe. Le courant traverse alors la bobine et le bilame.",
+        "La phase (rouge) arrive en haut et repart en bas vers l'ampoule ; le neutre (bleu) revient du réseau. Dans chaque borne, la vis plaque la cage contre le fil dénudé : mal serrée, la connexion chauffe."
+      ]
+    }
+  }
+}
