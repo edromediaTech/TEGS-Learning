@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "node tests/unit/agent.js",
+    "test": "node tests/unit/agent.js && node tests/unit/qa-linter.js",
     "test:integration": "echo 'Requires backend running on localhost:3000 and local MongoDB. Usage: node tests/integration/<name>.js'"
   },
   "dependencies": {

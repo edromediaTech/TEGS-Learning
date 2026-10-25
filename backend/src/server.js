@@ -115,6 +115,8 @@ app.use('/api/tegscreen', tegscreenRoutes);
 app.use('/api/centers', require('./routes/centers'));
 app.use('/api/student', require('./routes/student'));
 app.use('/api/v1/edge/sync', require('./routes/edge-sync'));
+// Catalogue des composants 3D CRNS et leur qualification (linter + revue humaine).
+app.use('/api/v1/components', require('./routes/components'));
 // Noeud TEGS-Edge (salle hors ligne) : page d'etat et worker de synchronisation.
 const EDGE_MODE = process.env.EDGE_MODE === '1';
 if (EDGE_MODE) app.use('/api/edge', require('./routes/edge-status'));

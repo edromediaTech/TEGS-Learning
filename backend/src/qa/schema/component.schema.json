@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "crns-component/1",
+  "title": "Manifeste d'un composant 3D CRNS (component.json)",
+  "description": "Decrit un composant interactif : modele, chaine electrique, chaine cinematique et TP. Lu par le linter QA (backend/src/qa), l'API des composants et CrnsTpPlayer. Guide : docs/crns-tp-3d.md.",
+  "type": "object",
+  "required": ["schema", "id", "version", "title", "model", "electrical", "kinematics"],
+  "properties": {
+    "schema": { "const": "crns-component/1" },
+    "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "title": { "type": "string" },
+    "category": { "type": "string" },
+    "units": { "const": "m" },
+    "model": {
+      "type": "object",
+      "required": ["file"],
+      "properties": {
+        "file": { "type": "string", "description": "GLB a cote du manifeste (component.glb)" },
+        "sha256": { "type": ["string", "null"], "description": "empreinte du GLB (ERR_MODEL_HASH si differente)" },
+        "size_bytes": { "type": ["integer", "null"] }
+      }
+    },
+    "electrical": {
+      "type": "object",
+      "required": ["conductors", "links", "path"],
+      "properties": {
+        "tolerance_m": { "type": "number", "default": 0.0005 },
+        "terminals": { "type": "object", "additionalProperties": { "type": "string" } },
+        "conductors": {
+          "type": "object",
+          "description": "id logique -> nom de noeud du GLB ; borne_amont et borne_aval obligatoires",
+          "required": ["borne_amont", "borne_aval"],
+          "additionalProperties": { "type": "string" }
+        },
+        "links": {
+          "type": "array",
+          "description": "paires de conducteurs en contact physique permanent",
+          "items": { "type": "array", "items": { "type": "string" }, "minItems": 2, "maxItems": 2 }
+        },
+        "switch": {
+          "type": "object",
+          "required": ["fixed", "moving", "actuator", "closed_state", "open_state"],
+          "properties": {
+            "fixed": { "type": "string" }, "moving": { "type": "string" }, "actuator": { "type": "string" },
+            "closed_state": { "type": "string" }, "open_state": { "type": "string" },
+            "min_open_gap_m": { "type": "number", "default": 0.002 }
+          }
+        },
+        "path": { "type": "array", "items": { "type": "string" }, "description": "chaine attendue de borne_amont a borne_aval" },
+        "connections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["terminal", "wire"],
+            "properties": { "terminal": { "type": "string" }, "wire": { "type": "string" }, "screw": { "type": "string" }, "cable": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "kinematics": {
+      "type": "object",
+      "properties": {
+        "actuators": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "node", "type", "axis", "states"],
+            "properties": {
+              "id": { "type": "string" }, "node": { "type": "string" },
+              "type": { "enum": ["rotation", "translation"] },
+              "axis": { "enum": ["x", "y", "z"], "description": "repere glTF : y vers le haut, z vers l'observateur" },
+              "unit": { "enum": ["deg", "m"] },
+              "states": { "type": "object", "additionalProperties": { "type": "number" }, "minProperties": 2 },
+              "initial": { "type": "string" }
+            }
+          }
+        },
+        "driven": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["node", "by", "link"],
+            "properties": { "node": { "type": "string" }, "by": { "type": "string" }, "link": { "enum": ["child", "declared"] } }
+          }
+        }
+      }
+    },
+    "interaction": {
+      "type": "object",
+      "description": "TP joue par CrnsTpPlayer : pickable, frame, focus, capot, explode, labels, states, circuit, faults, trip, xapi, texts (voir disjoncteur_c16_1pn)"
+    }
+  }
+}
