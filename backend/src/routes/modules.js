@@ -4,6 +4,7 @@ const Module = require('../models/Module');
 const { authenticate, authorize } = require('../middleware/auth');
 const tenantIsolation = require('../middleware/tenantIsolation');
 const { requireLimit } = require('../middleware/featureGate');
+const sanitizeHtml = require('sanitize-html');
 
 const router = express.Router();
 
@@ -294,6 +295,41 @@ function sanitizeText(str) {
     .replace(/javascript\s*:/gi, '');
 }
 
+// HTML riche des blocs texte (editeur, theorie CRNS) : analyse par un vrai parseur, liste
+// blanche de balises/attributs. Les regex de sanitizeText laissent passer des entites
+// encodees (`jav&#x61;script:`), interpretees par le navigateur.
+const SAFE_STYLE = [/^(?!.*(?:url|expression)\s*\()[^;]*$/i];
+const RICH_HTML_OPTIONS = {
+  allowedTags: sanitizeHtml.defaults.allowedTags.concat(['img', 'span', 'h1', 'h2', 'u', 's', 'font']),
+  allowedAttributes: {
+    '*': ['style'],
+    a: ['href', 'name', 'target', 'rel'],
+    img: ['src', 'alt', 'width', 'height'],
+    font: ['color', 'size', 'face'],
+    td: ['colspan', 'rowspan'],
+    th: ['colspan', 'rowspan'],
+  },
+  allowedSchemes: ['http', 'https', 'mailto', 'tel'],
+  allowedSchemesByTag: { img: ['http', 'https', 'data'] },
+  allowedStyles: {
+    '*': Object.fromEntries(['color', 'background-color', 'background', 'font-size', 'font-family',
+      'font-weight', 'font-style', 'text-align', 'text-decoration'].map((k) => [k, SAFE_STYLE])),
+  },
+  transformTags: {
+    a: (tagName, attribs) => (attribs.target === '_blank'
+      ? { tagName, attribs: { ...attribs, rel: 'noopener noreferrer' } }
+      : { tagName, attribs }),
+  },
+};
+
+function sanitizeRichHtml(str) {
+  if (typeof str !== 'string') return str;
+  // Meme test que TextBlockPreview.vue : sans balise, c'est du Markdown/texte brut, que
+  // le lecteur echappe lui-meme (l'encoder ici doublerait les entites).
+  if (!/<[a-z][\s\S]*>/i.test(str)) return sanitizeText(str);
+  return sanitizeHtml(str, RICH_HTML_OPTIONS);
+}
+
 // ---------------------------------------------------------------------------
 // PUT /api/modules/:id/screens/:screenId/content
 // Sauvegarder les blocs de contenu d'un ecran
@@ -377,7 +413,7 @@ router.put('/:id/screens/:screenId/content', async (req, res, next) => {
       const data = { ...b.data };
       // Sanitiser le contenu textuel de chaque type de bloc
       if (b.type === 'text') {
-        data.content = sanitizeText(data.content);
+        data.content = sanitizeRichHtml(data.content);
       }
       if (b.type === 'quiz') {
         data.question = sanitizeText(data.question);
