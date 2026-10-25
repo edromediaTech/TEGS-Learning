@@ -19,8 +19,9 @@ services:
   mongo:
     image: mongo:7
     restart: unless-stopped
-    # Cache WiredTiger plafonne : la machine (16 Go) sert aussi le backend et nginx.
-    command: ["--wiredTigerCacheSizeGB", "1"]
+    # Cache WiredTiger plafonne a 1,5 Go (directive du pilote) : la machine (16 Go) sert
+    # aussi le backend, nginx et le pool bcrypt des connexions de salle.
+    command: ["--wiredTigerCacheSizeGB", "1.5"]
     volumes:
       - mongo-data:/data/db
     healthcheck:
