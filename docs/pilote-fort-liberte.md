@@ -13,6 +13,7 @@ kiosque. Guides : `docs/edge-deploiement.md` (installation), `docs/edge-sync-api
 |---|---|---|---|
 | 1 | Creer la (les) classe(s) du pilote | Mes Classes CRNS | ☐ |
 | 2 | Ajouter les eleves, **imprimer la fiche** matricule + PIN | Mes Classes CRNS > Ajouter des eleves | ☐ |
+| 2 bis | Binomes (un compte par eleve, 2 eleves par poste) : fiche d'emargement par poste avec `node deploy/edge/fiche-binomes.js --classe CL-XXXX` (option `--eleves liste.csv` pour creer les eleves). Regenere les PIN de la classe : a faire avant la synchro du noeud | Poste de l'enseignant (cf. en-tete du script) | ☐ |
 | 3 | Relire et **publier** les modules du TP (quiz, simulations) | Studio | ☐ |
 | 4 | Creer le centre `CRNS-NORD-EST-01`, cocher les classes et les modules | Centres de salle | ☐ |
 | 5 | **Noter le jeton** affiche une seule fois (ou le donner au technicien sur place) | Centres de salle | ☐ |
