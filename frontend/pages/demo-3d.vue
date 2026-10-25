@@ -4,7 +4,7 @@
       <CRNSSimulationViewer
         src="/demo-3d/disjoncteur.glb"
         :pickable="['Levier']"
-        :frame="['Coque_gauche', 'Coque_droite', 'Ampoule']"
+        :frame="['Coque_gauche', 'Coque_droite', 'Ampoule', 'Cable_neutre']"
         :labels="LABELS"
         :labels-visible="capot < 0.6 || eclate > 0.5"
         background="#dfe4ea"
@@ -40,7 +40,7 @@
         <button class="rounded-lg bg-slate-700 hover:bg-slate-600 px-3 py-2 text-sm disabled:opacity-40" :disabled="!ready" @click="reset">
           Réinitialiser
         </button>
-        <button class="rounded-lg bg-slate-700 hover:bg-slate-600 px-3 py-2 text-sm disabled:opacity-40" :disabled="!ready" @click="api?.resetView()">
+        <button class="rounded-lg bg-slate-700 hover:bg-slate-600 px-3 py-2 text-sm disabled:opacity-40" :disabled="!ready" @click="api?.resetView(600)">
           Recentrer la vue
         </button>
         <button class="col-span-2 rounded-lg bg-slate-700 hover:bg-slate-600 px-3 py-2 text-sm" @click="fullscreen">
@@ -71,10 +71,17 @@
                  :value="Math.round(eclate * 100)" data-testid="ecartement"
                  @input="setEclate(+($event.target as HTMLInputElement).value / 100)">
         </label>
-        <p v-if="capot < 0.6 || eclate > 0.5" class="text-sm text-slate-300 mt-2">
-          À chaque borne, le fil de cuivre dénudé entre dans la cage de serrage ; la vis, serrée depuis la
-          face avant, plaque la cage contre le fil. Un serrage insuffisant fait chauffer la connexion.
-        </p>
+        <div v-if="capot < 0.6 || eclate > 0.5" class="text-sm text-slate-300 mt-2 space-y-2">
+          <p>
+            La manette porte le bras du contact mobile : basculez-la sur « I » et regardez le contact mobile
+            venir appuyer sur le contact fixe. Le courant traverse alors la bobine et le bilame.
+          </p>
+          <p>
+            La phase (rouge) arrive en haut et repart en bas vers l'ampoule ; le neutre (bleu) revient du
+            réseau. Dans chaque borne, la vis plaque la cage contre le fil dénudé : mal serrée, la
+            connexion chauffe.
+          </p>
+        </div>
       </div>
 
       <div class="flex-1 min-h-0 flex flex-col">
@@ -115,8 +122,9 @@ const CAPOT = ['Coque_gauche', 'Coque_droite', 'Nez_gauche', 'Nez_droite', 'Fent
 const CAPOT_MIN = 0.12;
 const capot = ref(1);
 const interieur = computed(() => capot.value < 0.6);
-// Vue eclatee : demi-coquilles ecartees, pieces internes reparties entre elles, vis et manette
-// sorties vers l'avant ; cages et fils restent en place (le cablage reste lisible).
+// Vue eclatee : demi-coquilles ecartees, pieces internes reparties entre elles, vis sorties vers
+// l'avant ; cages et fils restent en place (le cablage reste lisible). La manette (avec son bras
+// porte-contact) et le contact fixe restent ensemble : la bascule ferme toujours les contacts.
 // Decalages en metres, repere glTF : x vers la droite, y vers le haut, z vers l'observateur.
 const ECLATE: Record<string, [number, number, number]> = {
   Coque_gauche: [-0.045, 0, 0.015], Nez_gauche: [-0.045, 0, 0.015],
@@ -124,23 +132,29 @@ const ECLATE: Record<string, [number, number, number]> = {
   // Demi-coquille droite aussi avancee : sinon elle traverse le cable de phase qui longe la platine.
   Coque_droite: [0.080, 0, 0.035], Nez_droite: [0.080, 0, 0.035], Marquage_I: [0.080, 0, 0.035], Marquage_O: [0.080, 0, 0.035],
   // Pieces internes reparties dans l'espace libre entre les coquilles (visibles de face).
-  Bobine: [0.010, 0, 0.006], Liaisons_mecanisme: [0.014, 0, 0.006], Contacts: [0.020, 0, 0.010],
-  Chambre_coupure: [0.028, 0, 0.014], Bilame: [0.034, 0, 0.022],
-  Vis_haut: [0, 0, 0.035], Vis_bas: [0, 0, 0.035], Levier: [0, 0, 0.03],
+  Bobine: [0.022, 0, 0.008], Liaisons_mecanisme: [0.028, 0, 0.012], Bilame: [0.034, 0, 0.016],
+  Chambre_coupure: [0.040, 0, 0.024],
+  Levier: [0.012, 0, 0.030], Contact_fixe: [0.012, 0, 0.030], Tresse: [0.012, 0, 0.030],
+  Vis_haut: [0, 0, 0.035], Vis_bas: [0, 0, 0.035],
 };
 const eclate = ref(0);
+// Cadrage de la camera en vue interieure / eclatee : le disjoncteur et ses pieces remplissent l'ecran.
+const BREAKER = ['Coque_gauche', 'Coque_droite', 'Levier', 'Cage_haut', 'Cage_bas', 'Contact_fixe'];
 // La fente du nez n'est qu'une ouverture du boitier : elle s'efface en vue eclatee.
 const fenteOpacity = () => Math.min(capot.value, 1 - eclate.value);
 // Etiquettes : decalages (px) choisis pour la vue de face, a droite du disjoncteur sauf exceptions.
 const LABELS = [
-  { node: 'Fil_cuivre_haut', text: 'Fil de cuivre dénudé', dx: -150, dy: -120 },
-  { node: 'Cage_haut', text: 'Cage de serrage', dx: 190, dy: -80 },
-  { node: 'Vis_haut', text: 'Vis de serrage', dx: -200, dy: 10 },
-  { node: 'Contacts', text: 'Contacts', dx: 200, dy: 25 },
-  { node: 'Chambre_coupure', text: 'Chambre de coupure', dx: 190, dy: -45 },
-  { node: 'Bobine', text: 'Bobine (court-circuit)', dx: -180, dy: 40 },
-  { node: 'Bilame', text: 'Bilame (surcharge)', dx: 200, dy: 80 },
-  { node: 'Cage_bas', text: 'Borne inférieure', dx: 190, dy: 150 },
+  { node: 'Cable_arrivee', text: 'Phase : arrivée du réseau', dx: -170, dy: -30, point: [0, 0.07, -0.012] },
+  { node: 'Fil_cuivre_haut', text: 'Fil de cuivre dénudé', dx: -190, dy: -70 },
+  { node: 'Vis_haut', text: 'Vis de serrage', dx: -210, dy: 10 },
+  { node: 'Cage_haut', text: 'Cage de serrage', dx: 200, dy: -90 },
+  { node: 'Bobine', text: 'Bobine (court-circuit)', dx: 230, dy: -40 },
+  { node: 'Levier', text: 'Manette + bras du contact mobile', dx: -150, dy: 80 },
+  { node: 'Contact_fixe', text: 'Contact fixe', dx: -200, dy: 130 },
+  { node: 'Chambre_coupure', text: 'Chambre de coupure', dx: 230, dy: 10 },
+  { node: 'Bilame', text: 'Bilame (surcharge)', dx: 220, dy: 70 },
+  { node: 'Cable_depart', text: 'Phase : départ vers l\'ampoule', dx: 60, dy: 70, point: [0.03, -0.058, -0.012] },
+  { node: 'Cable_neutre', text: 'Neutre (retour)', dx: 40, dy: -60, point: [0.03, 0.075, -0.012] },
 ];
 const events = ref<{ seq: number; time: string; label: string }[]>([]);
 let seq = 0;
@@ -190,6 +204,8 @@ async function toggleInterieur() {
     if (k < 1) requestAnimationFrame(step);
   };
   requestAnimationFrame(step);
+  if (open) a.focus(BREAKER, 900);
+  else if (eclate.value <= 0.5) a.resetView(900);
   await a.animateOpacity(CAPOT, target, 700);
   capot.value = target;
   a.setOpacity(['Fente'], fenteOpacity()); // reste effacee si la vue est eclatee
@@ -210,8 +226,11 @@ async function toggleEclate() {
   };
   requestAnimationFrame(step);
   a.animateOpacity(['Fente'], open ? 0 : capot.value, 900);
+  if (!open) a.resetView(900);
   await a.animateOffsets(ECLATE, from, target, 900);
   eclate.value = target;
+  if (open) await a.focus(BREAKER, 800); // cadre les pieces une fois ecartees
+  else if (capot.value < 0.6) await a.focus(BREAKER, 600);
 }
 
 function setEclate(t: number) {
@@ -242,7 +261,7 @@ async function reset() {
   await apply(false);
   count.value = 0;
   events.value = [];
-  api.value?.resetView();
+  api.value?.resetView(600);
 }
 
 function fullscreen() {

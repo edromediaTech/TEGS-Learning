@@ -26,7 +26,9 @@ export interface CrnsViewerApi {
   /** Vue eclatee : position = origine + decalage x t (decalages en metres, repere glTF : y haut, z vers l'observateur). */
   setOffsets: (offsets: Record<string, [number, number, number]>, t: number) => void;
   animateOffsets: (offsets: Record<string, [number, number, number]>, from: number, to: number, ms?: number) => Promise<void>;
-  resetView: () => void;
+  /** Cadre la camera sur des noeuds (meme direction de vue), anime. */
+  focus: (names: string[], ms?: number) => Promise<void>;
+  resetView: (ms?: number) => Promise<void>;
 }
 
 let kit: Promise<ThreeKit> | null = null;

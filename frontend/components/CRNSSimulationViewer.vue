@@ -9,7 +9,7 @@
         </g>
       </svg>
       <div v-for="(l, i) in labels" :key="l.node" :ref="(el) => (labelBoxes[i] = el as HTMLDivElement)"
-           class="absolute left-0 top-0 whitespace-nowrap rounded-md bg-slate-900/90 px-2.5 py-1 text-sm font-semibold text-white shadow">
+           class="absolute left-0 top-0 whitespace-nowrap rounded-md bg-slate-900/90 px-3 py-1.5 text-base font-semibold text-white shadow">
         {{ l.text }}
       </div>
     </div>
@@ -44,7 +44,8 @@ const props = withDefaults(defineProps<{
   /** Noeuds a cadrer dans la vue initiale (defaut : tout le modele). */
   frame?: string[];
   /** Etiquettes : nom affiche a cote du centre du noeud, decale de (dx, dy) pixels. */
-  labels?: { node: string; text: string; dx: number; dy: number }[];
+  /** `point` (repere du noeud) : ancre precise, utile pour un noeud allonge (cable en L). */
+  labels?: { node: string; text: string; dx: number; dy: number; point?: [number, number, number] }[];
   labelsVisible?: boolean;
 }>(), { pickable: () => [], background: '#e9edf2', azimuth: 18, elevation: 12, orbitLimit: 55, frame: () => [],
   labels: () => [], labelsVisible: false });
@@ -74,6 +75,27 @@ const labelNodes: any[] = []; // noeud de chaque etiquette (centre recalcule : l
 const basePositions = new Map<any, any>(); // position d'origine des noeuds deplaces (vue eclatee)
 const box3 = { b: null as any, c: null as any };
 
+// Deplacement de camera (position + cible), anime si ms > 0.
+function moveCamera(toPos: any, toTarget: any, ms: number): Promise<void> {
+  const fromPos = camera.position.clone(), fromTarget = controls.target.clone();
+  if (!ms) {
+    camera.position.copy(toPos); controls.target.copy(toTarget); controls.update(); requestRender();
+    return Promise.resolve();
+  }
+  const start = performance.now();
+  return new Promise((resolve) => {
+    animations.add((now) => {
+      const k = Math.min(1, (now - start) / ms);
+      const e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+      camera.position.lerpVectors(fromPos, toPos, e);
+      controls.target.lerpVectors(fromTarget, toTarget, e);
+      if (k >= 1) resolve();
+      return k < 1;
+    });
+    requestRender();
+  });
+}
+
 function placeLabels() {
   if (!props.labelsVisible || !labelNodes.length) return;
   const w = canvas.value!.clientWidth, h = canvas.value!.clientHeight;
@@ -81,7 +103,8 @@ function placeLabels() {
   labelNodes.forEach((node, i) => {
     const l = props.labels[i]; const g = labelLines[i]; const box = labelBoxes[i];
     if (!node || !g || !box) return;
-    box3.b.setFromObject(node).getCenter(v).project(camera);
+    if (l.point) node.localToWorld(v.set(...l.point)).project(camera);
+    else box3.b.setFromObject(node).getCenter(v).project(camera);
     const hidden = v.z > 1;
     const x = (v.x + 1) / 2 * w, y = (1 - v.y) / 2 * h, lx = x + l.dx, ly = y + l.dy;
     g.style.display = box.style.display = hidden ? 'none' : '';
@@ -260,12 +283,20 @@ const api: CrnsViewerApi = {
       requestRender();
     });
   },
-  resetView() {
-    if (!home) return;
-    camera.position.copy(home.position);
-    controls.target.copy(home.target);
-    controls.update();
-    requestRender();
+  focus(names, ms = 800) {
+    const box = new T.Box3();
+    for (const n of names) { const node = root?.getObjectByName(n); if (node) box.expandByObject(node); }
+    if (box.isEmpty()) return Promise.resolve();
+    // Meme direction de vue, distance ajustee pour que les noeuds remplissent l'ecran.
+    const center = box.getCenter(new T.Vector3());
+    const radius = box.getBoundingSphere(new T.Sphere()).radius;
+    const dist = radius / Math.sin(T.MathUtils.degToRad(camera.fov / 2)) * 1.1;
+    const dir = camera.position.clone().sub(controls.target).normalize();
+    return moveCamera(center.clone().addScaledVector(dir, dist), center, ms);
+  },
+  resetView(ms = 0) {
+    if (!home) return Promise.resolve();
+    return moveCamera(home.position, home.target, ms);
   },
 };
 
@@ -323,7 +354,7 @@ async function init() {
   controls.maxAzimuthAngle = az + lim;
   controls.minPolarAngle = Math.max(0.1, Math.PI / 2 - el - lim);
   controls.maxPolarAngle = Math.min(Math.PI - 0.1, Math.PI / 2 - el + lim);
-  controls.minDistance = dist * 0.45;
+  controls.minDistance = dist * 0.15; // assez pres pour le cadrage sur le mecanisme (focus)
   controls.maxDistance = dist * (framed.length ? 3 : 1.6);
   home = { position: camera.position.clone(), target: center.clone() };
   box3.b = new T.Box3();
