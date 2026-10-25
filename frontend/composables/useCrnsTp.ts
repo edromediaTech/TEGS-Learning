@@ -175,7 +175,9 @@ export function useCrnsTp(manifest: any) {
     for (const n of fault.glow || []) api.value?.setEmissive(n, k > 0.02 ? 0xff3b00 : 0x000000, k * 1.6);
   }
   function thermalTick(now: number) {
-    const dt = Math.min(0.1, (now - last) / 1000);
+    // Pas exact quel que soit dt (exponentielle) : pas de plafond serre, sinon l'echauffement
+    // ralentit avec la cadence d'affichage (portable modeste, TNI, enregistrement video).
+    const dt = Math.min(1, (now - last) / 1000);
     last = now;
     temperature.value = stepTemperature(temperature.value, targetTemp(), dt, fault.tau_s);
     const level = heatLevel(temperature.value, fault.thresholds_C);
