@@ -20,6 +20,9 @@ export interface CrnsViewerApi {
   animateRotation: (name: string, axis: 'x' | 'y' | 'z', toRad: number, ms?: number) => Promise<void>;
   setColor: (name: string, hex: number) => void;
   setEmissive: (name: string, hex: number, intensity?: number) => void;
+  /** Opacite des materiaux des noeuds (1 = opaque) ; l'interieur reste visible en dessous de 1. */
+  setOpacity: (names: string[], value: number) => void;
+  animateOpacity: (names: string[], to: number, ms?: number) => Promise<void>;
   resetView: () => void;
 }
 

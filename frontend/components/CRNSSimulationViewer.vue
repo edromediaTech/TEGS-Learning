@@ -1,6 +1,18 @@
 <template>
   <div ref="host" class="relative w-full h-full overflow-hidden" :style="{ background }">
     <canvas ref="canvas" class="block w-full h-full touch-none" :style="{ cursor: hovered ? 'pointer' : 'grab' }" />
+    <!-- Etiquettes ancrees sur des noeuds 3D (point + trait + nom), deplacees a chaque rendu. -->
+    <div v-show="labelsVisible && status === 'ready'" class="absolute inset-0 pointer-events-none">
+      <svg class="absolute inset-0 w-full h-full overflow-visible">
+        <g v-for="(l, i) in labels" :key="l.node" :ref="(el) => (labelLines[i] = el as SVGGElement)">
+          <line stroke="#0f172a" stroke-width="2" /><circle r="5" fill="#2563eb" stroke="#fff" stroke-width="2" />
+        </g>
+      </svg>
+      <div v-for="(l, i) in labels" :key="l.node" :ref="(el) => (labelBoxes[i] = el as HTMLDivElement)"
+           class="absolute left-0 top-0 whitespace-nowrap rounded-md bg-slate-900/90 px-2.5 py-1 text-sm font-semibold text-white shadow">
+        {{ l.text }}
+      </div>
+    </div>
     <div v-if="status !== 'ready'" class="absolute inset-0 flex items-center justify-center text-sm"
          :class="status === 'error' ? 'text-red-600' : 'text-gray-500'">
       {{ status === 'error' ? `Simulation indisponible : ${errorMessage}` : 'Chargement de la simulation...' }}
@@ -31,7 +43,11 @@ const props = withDefaults(defineProps<{
   orbitLimit?: number;
   /** Noeuds a cadrer dans la vue initiale (defaut : tout le modele). */
   frame?: string[];
-}>(), { pickable: () => [], background: '#e9edf2', azimuth: 18, elevation: 12, orbitLimit: 55, frame: () => [] });
+  /** Etiquettes : nom affiche a cote du centre du noeud, decale de (dx, dy) pixels. */
+  labels?: { node: string; text: string; dx: number; dy: number }[];
+  labelsVisible?: boolean;
+}>(), { pickable: () => [], background: '#e9edf2', azimuth: 18, elevation: 12, orbitLimit: 55, frame: () => [],
+  labels: () => [], labelsVisible: false });
 
 const emit = defineEmits<{
   (e: 'ready', api: CrnsViewerApi): void;
@@ -52,6 +68,31 @@ let frame = 0; let disposed = false;
 const animations = new Set<(now: number) => boolean>();
 const highlight = new Map<any, { color: any; intensity: number }>();
 let home: { position: any; target: any } | null = null;
+const labelLines: SVGGElement[] = [];
+const labelBoxes: HTMLDivElement[] = [];
+let anchors: any[] = []; // centre (repere monde) du noeud de chaque etiquette
+
+function placeLabels() {
+  if (!props.labelsVisible || !anchors.length) return;
+  const w = canvas.value!.clientWidth, h = canvas.value!.clientHeight;
+  const v = new T.Vector3();
+  anchors.forEach((a, i) => {
+    const l = props.labels[i]; const g = labelLines[i]; const box = labelBoxes[i];
+    if (!a || !g || !box) return;
+    v.copy(a).project(camera);
+    const hidden = v.z > 1;
+    const x = (v.x + 1) / 2 * w, y = (1 - v.y) / 2 * h, lx = x + l.dx, ly = y + l.dy;
+    g.style.display = box.style.display = hidden ? 'none' : '';
+    const [line, dot] = g.children as unknown as [SVGLineElement, SVGCircleElement];
+    line.setAttribute('x1', String(x)); line.setAttribute('y1', String(y));
+    line.setAttribute('x2', String(lx)); line.setAttribute('y2', String(ly));
+    dot.setAttribute('cx', String(x)); dot.setAttribute('cy', String(y));
+    // Boite collee a l'extremite du trait, du cote ou il part.
+    box.style.transform = `translate(${l.dx < 0 ? lx - box.offsetWidth : lx}px, ${ly - box.offsetHeight / 2}px)`;
+  });
+}
+
+watch(() => props.labelsVisible, () => nextTick(requestRender));
 
 function requestRender() {
   if (!frame && !disposed) frame = requestAnimationFrame(tick);
@@ -62,6 +103,7 @@ function tick(now: number) {
   for (const step of [...animations]) if (!step(now)) animations.delete(step);
   const moving = controls.update(); // amortissement : continue tant que la camera glisse
   renderer.render(scene, camera);
+  placeLabels();
   if (moving || animations.size) requestRender();
 }
 
@@ -169,6 +211,31 @@ const api: CrnsViewerApi = {
     }
     requestRender();
   },
+  setOpacity(names, value) {
+    for (const name of names) {
+      for (const mat of ownMaterials(name)) {
+        mat.transparent = value < 1;
+        mat.opacity = value;
+        mat.depthWrite = value >= 1; // l'interieur reste visible a travers le capot
+        mat.needsUpdate = true;
+      }
+    }
+    requestRender();
+  },
+  animateOpacity(names, to, ms = 600) {
+    const mats = names.flatMap((n) => ownMaterials(n));
+    const from = mats[0]?.opacity ?? 1;
+    const start = performance.now();
+    return new Promise((resolve) => {
+      animations.add((now) => {
+        const k = Math.min(1, (now - start) / ms);
+        api.setOpacity(names, from + (to - from) * (k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2));
+        if (k >= 1) resolve();
+        return k < 1;
+      });
+      requestRender();
+    });
+  },
   resetView() {
     if (!home) return;
     camera.position.copy(home.position);
@@ -235,6 +302,10 @@ async function init() {
   controls.minDistance = dist * 0.45;
   controls.maxDistance = dist * (framed.length ? 3 : 1.6);
   home = { position: camera.position.clone(), target: center.clone() };
+  anchors = props.labels.map((l) => {
+    const node = root.getObjectByName(l.node);
+    return node ? new T.Box3().setFromObject(node).getCenter(new T.Vector3()) : null;
+  });
 
   const c = canvas.value!;
   c.addEventListener('pointerdown', onPointerDown);

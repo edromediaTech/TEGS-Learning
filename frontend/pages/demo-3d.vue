@@ -5,6 +5,8 @@
         src="/demo-3d/disjoncteur.glb"
         :pickable="['Levier']"
         :frame="['Corps', 'Ampoule']"
+        :labels="LABELS"
+        :labels-visible="capot < 0.6"
         background="#dfe4ea"
         @ready="onReady"
         @pick="onPick"
@@ -46,6 +48,24 @@
         </button>
       </div>
 
+      <div class="rounded-xl border border-slate-700 p-4">
+        <button class="w-full rounded-lg px-4 py-3 font-semibold disabled:opacity-40"
+                :class="interieur ? 'bg-amber-400 text-slate-900 hover:bg-amber-300' : 'bg-slate-700 hover:bg-slate-600'"
+                :disabled="!ready" data-testid="interieur" @click="toggleInterieur">
+          {{ interieur ? 'Remettre le capot' : 'Voir l\'intérieur' }}
+        </button>
+        <label class="block text-sm text-slate-300 mt-3">
+          Transparence du capot : {{ Math.round((1 - capot) / (1 - CAPOT_MIN) * 100) }} %
+          <input type="range" min="0" max="100" class="w-full mt-1 accent-amber-400" :disabled="!ready"
+                 :value="Math.round((1 - capot) / (1 - CAPOT_MIN) * 100)" data-testid="transparence"
+                 @input="setTransparence(+($event.target as HTMLInputElement).value)">
+        </label>
+        <p v-if="capot < 0.6" class="text-sm text-slate-300 mt-2">
+          À chaque borne, le fil de cuivre dénudé entre dans la cage de serrage ; la vis, serrée depuis la
+          face avant, plaque la cage contre le fil. Un serrage insuffisant fait chauffer la connexion.
+        </p>
+      </div>
+
       <div class="flex-1 min-h-0 flex flex-col">
         <p class="text-sm font-semibold text-slate-300 mb-2">Journal des actions</p>
         <ol data-testid="journal" class="flex-1 overflow-y-auto space-y-1 text-sm">
@@ -79,6 +99,22 @@ const ready = ref(false);
 const on = ref(false);
 const busy = ref(false);
 const count = ref(0);
+// Vue interieure (« rayons X ») : opacite du capot (corps, nez et sa fente), 1 = opaque.
+const CAPOT = ['Corps', 'Nez', 'Fente'];
+const CAPOT_MIN = 0.12;
+const capot = ref(1);
+const interieur = computed(() => capot.value < 0.6);
+// Etiquettes : decalages (px) choisis pour la vue de face, a droite du disjoncteur sauf exceptions.
+const LABELS = [
+  { node: 'Fil_cuivre_haut', text: 'Fil de cuivre dénudé', dx: -150, dy: -120 },
+  { node: 'Cage_haut', text: 'Cage de serrage', dx: 190, dy: -80 },
+  { node: 'Vis_haut', text: 'Vis de serrage', dx: -200, dy: 10 },
+  { node: 'Contacts', text: 'Contacts', dx: 200, dy: 25 },
+  { node: 'Chambre_coupure', text: 'Chambre de coupure', dx: 190, dy: -45 },
+  { node: 'Bobine', text: 'Bobine (court-circuit)', dx: -180, dy: 40 },
+  { node: 'Bilame', text: 'Bilame (surcharge)', dx: 200, dy: 80 },
+  { node: 'Cage_bas', text: 'Borne inférieure', dx: 190, dy: 150 },
+];
 const events = ref<{ seq: number; time: string; label: string }[]>([]);
 let seq = 0;
 
@@ -111,6 +147,31 @@ async function toggle() {
   busy.value = false;
 }
 
+async function toggleInterieur() {
+  const a = api.value;
+  if (!a) return;
+  const open = !interieur.value;
+  log(open ? 'Capot rendu transparent : bornes, vis et fil dénudé visibles' : 'Capot remis en place',
+    { id: 'disjoncteur.interieur', etat: open ? 'visible' : 'masque' });
+  const target = open ? CAPOT_MIN : 1;
+  const from = capot.value;
+  const start = performance.now();
+  // Le curseur suit l'animation du capot.
+  const step = (now: number) => {
+    const k = Math.min(1, (now - start) / 700);
+    capot.value = from + (target - from) * k;
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  await a.animateOpacity(CAPOT, target, 700);
+  capot.value = target;
+}
+
+function setTransparence(percent: number) {
+  capot.value = 1 - (percent / 100) * (1 - CAPOT_MIN);
+  api.value?.setOpacity(CAPOT, capot.value);
+}
+
 function onPick(name: string) {
   if (name === 'Levier') toggle();
 }
@@ -122,6 +183,7 @@ function onReady(viewerApi: CrnsViewerApi) {
 }
 
 async function reset() {
+  setTransparence(0);
   await apply(false);
   count.value = 0;
   events.value = [];
