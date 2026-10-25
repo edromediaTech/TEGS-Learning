@@ -1,0 +1,18 @@
+# Demonstrateur 3D (jalon C1, branche feature/threejs-engine) : SPA Nuxt compilee + nginx
+# statique. Meme compilation que Dockerfile.web, sans backend ni donnees.
+# Contexte de build : frontend/ (voir docker-compose.demo.yml).
+
+FROM node:24-alpine AS build
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm ci --no-audit --no-fund
+COPY . .
+ENV NUXT_PUBLIC_API_BASE=/api \
+    NUXT_PUBLIC_CRNS_MANIFEST_URL= \
+    NUXT_PUBLIC_PIXABAY_KEY= \
+    NUXT_PUBLIC_EDGE_MODE=1
+RUN npx nuxi generate
+
+FROM nginx:1.27-alpine
+COPY --from=build /app/.output/public /usr/share/nginx/html
+COPY --from=edge nginx.demo.conf /etc/nginx/conf.d/default.conf

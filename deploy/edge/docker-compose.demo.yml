@@ -1,0 +1,22 @@
+# Demonstrateur 3D du jalon C1 sur le serveur de salle : http://tegs.local:8081/demo-3d
+# Pile SEPAREE du noeud (projet "tegs-demo", port dedie) : la demarrer ou l'arreter ne
+# touche ni au noeud de salle (port 80), ni a ses donnees.
+#   docker compose -p tegs-demo -f docker-compose.demo.yml up -d --build
+# Voir demo-3d.sh (checkout de la branche feature/threejs-engine, pare-feu, verification).
+
+services:
+  demo3d:
+    build:
+      context: ../../frontend
+      dockerfile: ../deploy/edge/Dockerfile.demo
+      additional_contexts:
+        edge: .
+    image: tegs-demo-3d:latest
+    restart: unless-stopped
+    ports:
+      - "${DEMO_PORT:-8081}:80"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
