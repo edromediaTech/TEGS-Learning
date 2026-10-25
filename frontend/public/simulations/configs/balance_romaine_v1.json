@@ -1,0 +1,281 @@
+{
+  "metadata": {
+    "simulation_id": "balance_romaine_v1",
+    "title": "Le Levier : Équilibre d'une Balance Romaine",
+    "subject": "Physique",
+    "grade_level": "Secondaire I",
+    "language": "fr",
+    "duration_minutes": 10,
+    "pedagogical_objective": "Comprendre le principe du levier et la condition d'équilibre des moments (Force × dF = Résistance × dR) en manipulant une balance romaine virtuelle pour déterminer la masse d'un sac de haricots.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-05-15"
+  },
+  "assets": [
+    {
+      "id": "fleau",
+      "material": "metal",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Fléau (barre graduée)",
+      "position": [
+        0.4,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.2,
+        0.04,
+        0.04
+      ],
+      "color": [
+        0.6,
+        0.6,
+        0.6509803921568628
+      ],
+      "interactive": false
+    },
+    {
+      "id": "pivot_anneau",
+      "material": "metal",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "vertices": 32,
+      "label": "Pivot (anneau de suspension)",
+      "position": [
+        0.0,
+        0.0,
+        0.15
+      ],
+      "scale": [
+        0.08,
+        0.08,
+        0.01
+      ],
+      "rotation_euler": [
+        1.5708,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.5019607843137255,
+        0.5019607843137255,
+        0.5019607843137255
+      ],
+      "interactive": false
+    },
+    {
+      "id": "crochet",
+      "material": "metal",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "vertices": 16,
+      "label": "Crochet de charge",
+      "position": [
+        -0.1,
+        0.0,
+        -0.08
+      ],
+      "scale": [
+        0.01,
+        0.01,
+        0.08
+      ],
+      "color": [
+        0.6980392156862745,
+        0.6980392156862745,
+        0.7215686274509804
+      ],
+      "interactive": false
+    },
+    {
+      "id": "sac_pwa",
+      "material": "fabric",
+      "type": "primitive",
+      "primitive": "uv_sphere",
+      "label": "Sac de haricots (Résistance)",
+      "position": [
+        -0.1,
+        0.0,
+        -0.25
+      ],
+      "scale": [
+        0.12,
+        0.12,
+        0.15
+      ],
+      "color": [
+        0.5019607843137255,
+        0.34901960784313724,
+        0.25098039215686274
+      ],
+      "interactive": false,
+      "properties": {
+        "mass_kg": 6.0
+      }
+    },
+    {
+      "id": "pilon",
+      "material": "metal",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "vertices": 32,
+      "label": "Pilon / Contrepoids (Force)",
+      "position": [
+        0.6,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.05,
+        0.05,
+        0.08
+      ],
+      "rotation_euler": [
+        1.5708,
+        0.0,
+        0.0
+      ],
+      "color": [
+        0.8509803921568627,
+        0.6980392156862745,
+        0.34901960784313724
+      ],
+      "interactive": true,
+      "properties": {
+        "mass_kg": 1.0,
+        "drag_axis": "x",
+        "drag_min": 0.0,
+        "drag_max": 0.95
+      }
+    },
+    {
+      "id": "sol",
+      "material": "concrete",
+      "type": "primitive",
+      "primitive": "plane",
+      "label": "Sol",
+      "position": [
+        0.0,
+        0.0,
+        -1.0
+      ],
+      "scale": [
+        10.0,
+        10.0,
+        1.0
+      ],
+      "color": [
+        0.4,
+        0.4,
+        0.4
+      ],
+      "interactive": false
+    }
+  ],
+  "physics": {
+    "engine": "custom_torque",
+    "variables": {
+      "g": 9.81,
+      "mass_R": "sac_pwa.mass_kg",
+      "dist_R": 0.1,
+      "torque_R": "mass_R * g * dist_R",
+      "mass_F": "pilon.mass_kg",
+      "dist_F": "pilon.position.x",
+      "torque_F": "mass_F * g * dist_F",
+      "net_torque": "torque_F - torque_R",
+      "equilibrium_pos": "(mass_R * dist_R) / mass_F"
+    },
+    "gravity": [
+      0.0,
+      0.0,
+      -9.81
+    ]
+  },
+  "events": [
+    {
+      "id": "evt_tilt_resistance",
+      "trigger": "net_torque < -0.1",
+      "action": "rotate_to",
+      "target": "fleau",
+      "params": {
+        "rotation_z_deg": -8.0,
+        "duration_s": 0.5
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Déséquilibre : le moment de la résistance est supérieur."
+    },
+    {
+      "id": "evt_tilt_force",
+      "trigger": "net_torque > 0.1",
+      "action": "rotate_to",
+      "target": "fleau",
+      "params": {
+        "rotation_z_deg": 8.0,
+        "duration_s": 0.5
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Déséquilibre : le moment de la force (pilon) est supérieur."
+    },
+    {
+      "id": "evt_equilibrium_reached",
+      "trigger": "abs(net_torque) <= 0.1",
+      "action": "rotate_to",
+      "target": "fleau",
+      "params": {
+        "rotation_z_deg": 0.0,
+        "duration_s": 0.5
+      },
+      "xapi_verb": "passed",
+      "xapi_description": "L'élève a trouvé la position d'équilibre de la balance."
+    },
+    {
+      "id": "evt_show_pilon_distance",
+      "trigger": "pilon.is_dragged == true",
+      "action": "set_display_text",
+      "target": "pilon",
+      "params": {
+        "value": "dist_F",
+        "unit": "m",
+        "label": "dF =",
+        "precision": 2,
+        "color": "#FFFFFF",
+        "background": "#0b0f14"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Affiche la distance du pilon au pivot (dF)."
+    },
+    {
+      "id": "evt_show_equilibrium_feedback",
+      "trigger": "abs(pilon.position.x - equilibrium_pos) < 0.01",
+      "action": "set_outline_color",
+      "target": "fleau",
+      "params": {
+        "color": [
+          0.1,
+          1.0,
+          0.1
+        ],
+        "intensity": 2.0
+      },
+      "xapi_verb": "completed",
+      "xapi_description": "L'élève a correctement positionné le pilon pour l'équilibre."
+    }
+  ],
+  "export": {
+    "format": "glb",
+    "filename": "balance_romaine_v1.glb",
+    "compression": true,
+    "target_size_mb": 5
+  },
+  "schema_version": "1.0",
+  "scoring": {
+    "success_criteria": "evt_equilibrium_reached triggered AND abs(pilon.position.x - equilibrium_pos) < 0.01",
+    "max_score": 100,
+    "penalty_per_attempt": 0
+  },
+  "rendering_hints": {
+    "future_engine": "babylonjs",
+    "max_polycount": 20000,
+    "texture_resolution": 1024
+  }
+}

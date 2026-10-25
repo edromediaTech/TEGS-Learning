@@ -4,7 +4,7 @@
     "simulation_id": "intensite_courant_v1",
     "title": "L'Intensité du Courant et la Loi des Nœuds",
     "subject": "Physique",
-    "grade_level": "Secondaire IV (2nde)",
+    "grade_level": "Secondaire II",
     "language": "fr",
     "duration_minutes": 20,
     "pedagogical_objective": "Comprendre le branchement en série de l'ampèremètre, le choix du calibre, et vérifier expérimentalement la loi des nœuds dans un circuit en dérivation.",

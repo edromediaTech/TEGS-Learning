@@ -4,7 +4,7 @@
     "simulation_id": "montage_panneau_solaire_v1",
     "title": "Montage d'un Système Solaire : Série et Parallèle",
     "subject": "Physique",
-    "grade_level": "Secondaire IV (2nde)",
+    "grade_level": "Secondaire II",
     "language": "fr",
     "duration_minutes": 15,
     "pedagogical_objective": "Démontrer l'effet des montages série et parallèle sur la tension et le courant d'un système photovoltaïque, et comprendre le rôle du régulateur de charge et l'importance du respect des polarités.",

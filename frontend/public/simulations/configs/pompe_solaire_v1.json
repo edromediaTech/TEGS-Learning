@@ -4,7 +4,7 @@
     "simulation_id": "pompe_solaire_v1",
     "title": "Simulation d'une Pompe à Eau Solaire",
     "subject": "Physique",
-    "grade_level": "Secondaire II (4e)",
+    "grade_level": "Secondaire II",
     "language": "fr",
     "duration_minutes": 10,
     "pedagogical_objective": "Comprendre le fonctionnement d'un système photovoltaïque simple et la dépendance de la pompe à eau à l'ensoleillement.",
