@@ -26,6 +26,9 @@ async function request(method, path, body, token) {
   return { status: res.status, data };
 }
 
+// Creation d'organisations et de comptes : jeton superadmin fourni (cf. _superadmin.js).
+request = require('./_superadmin').withSuperAdmin(request);
+
 // Compteurs de test
 let passed = 0;
 let failed = 0;

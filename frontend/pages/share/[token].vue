@@ -411,15 +411,7 @@ function headingSize(level: number) { return { 1: '28px', 2: '22px', 3: '18px' }
 function imgSize(size: string) { return { small: '50%', medium: '75%', large: '100%' }[size] || '100%' }
 function youtubeId(url: string) { const m = url?.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/); return m ? m[1] : null }
 
-function sanitizeHtml(html: string) {
-  if (!html) return ''
-  return html
-    .replace(/<!--[\s\S]*?-->/g, '').replace(/<\?xml[\s\S]*?\?>/gi, '')
-    .replace(/<\/?\w+:[^>]*>/gi, '')
-    .replace(/<script[\s>][\s\S]*?<\/script>/gi, '')
-    .replace(/<\/?(?:script|iframe|object|embed|form|input|button|link|meta|base)[^>]*>/gi, '')
-    .replace(/\bon\w+\s*=/gi, '')
-}
+// sanitizeHtml : utils/sanitizeHtml.ts (DOMPurify, auto-importe).
 
 function calloutStyle(data: any) {
   const c: Record<string, { bg: string; border: string }> = {

@@ -10,10 +10,17 @@ const router = express.Router();
 // ---------------------------------------------------------------------------
 // POST /api/auth/register
 // Cree un nouvel utilisateur lie a un tenant existant.
-// Seul un admin_ddene peut creer des comptes (sauf le tout premier admin bootstrap).
+// Seul un admin_ddene (dans son organisation) ou un superadmin peut creer des comptes,
+// sauf le tout premier superadmin (bootstrap, sans token).
 // ---------------------------------------------------------------------------
+function authenticateUnlessBootstrap(req, res, next) {
+  if (req.body?.role === 'superadmin') return next();
+  return authenticate(req, res, next);
+}
+
 router.post(
   '/register',
+  authenticateUnlessBootstrap,
   [
     body('email').isEmail().withMessage('Email invalide'),
     body('password')
@@ -55,19 +62,26 @@ router.post(
         });
       }
 
-      // Pour les autres roles, tenant_id est obligatoire
-      if (!tenant_id) {
+      // Autres roles : createur authentifie, superadmin (toute organisation) ou admin_ddene (la sienne)
+      if (!req.user || !['superadmin', 'admin_ddene'].includes(req.user.role)) {
+        return res.status(403).json({ error: 'Acces refuse : seul un administrateur peut creer des comptes' });
+      }
+      const targetTenant = req.isSuperAdmin ? tenant_id : req.tenantId;
+      if (!targetTenant) {
         return res.status(400).json({ error: 'tenant_id requis pour ce role' });
+      }
+      if (!req.isSuperAdmin && tenant_id && String(tenant_id) !== String(req.tenantId)) {
+        return res.status(403).json({ error: 'Acces refuse : organisation differente de la votre' });
       }
 
       // Verifier que le tenant existe et est actif
-      const tenant = await Tenant.findById(tenant_id);
+      const tenant = await Tenant.findById(targetTenant);
       if (!tenant || !tenant.isActive) {
         return res.status(404).json({ error: 'Ecole (tenant) introuvable ou inactive' });
       }
 
       // Verifier l'unicite email + tenant
-      const existingUser = await User.findOne({ email, tenant_id });
+      const existingUser = await User.findOne({ email, tenant_id: targetTenant });
       if (existingUser) {
         return res
           .status(409)
@@ -80,7 +94,7 @@ router.post(
         firstName,
         lastName,
         role,
-        tenant_id,
+        tenant_id: targetTenant,
       });
 
       const token = generateToken(user);
@@ -106,7 +120,36 @@ router.post(
 // ---------------------------------------------------------------------------
 // POST /api/auth/login
 // Authentifie un utilisateur et retourne un JWT.
+// Limite des ECHECS contre la force brute : 10 par compte (email + organisation) en
+// 15 min, 30 par adresse IP en 10 min. Les succes ne comptent pas (personnel d'un meme
+// etablissement derriere une seule connexion). Compteurs en memoire, par instance.
 // ---------------------------------------------------------------------------
+function failureCounter(limit, windowMs) {
+  const entries = new Map();
+  return {
+    blocked(key) {
+      const e = entries.get(key);
+      return Boolean(e && e.resetAt > Date.now() && e.count >= limit);
+    },
+    record(key) {
+      const now = Date.now();
+      const e = entries.get(key);
+      if (!e || e.resetAt <= now) {
+        entries.set(key, { count: 1, resetAt: now + windowMs });
+        if (entries.size > 10000) {
+          for (const [k, v] of entries) if (v.resetAt <= now) entries.delete(k);
+        }
+      } else {
+        e.count += 1;
+      }
+    },
+    clear(key) { entries.delete(key); },
+  };
+}
+
+const loginFailuresByAccount = failureCounter(10, 15 * 60 * 1000);
+const loginFailuresByIp = failureCounter(30, 10 * 60 * 1000);
+
 router.post(
   '/login',
   [
@@ -122,6 +165,15 @@ router.post(
       }
 
       const { email, password, tenant_id } = req.body;
+      const accountKey = `${String(email).toLowerCase()}|${tenant_id || ''}`;
+      if (loginFailuresByIp.blocked(req.ip) || loginFailuresByAccount.blocked(accountKey)) {
+        return res.status(429).json({ error: 'Trop de tentatives de connexion, reessayez dans quelques minutes' });
+      }
+      const fail = (status, error) => {
+        loginFailuresByIp.record(req.ip);
+        loginFailuresByAccount.record(accountKey);
+        return res.status(status).json({ error });
+      };
 
       let user;
       if (tenant_id) {
@@ -133,7 +185,7 @@ router.post(
       }
 
       if (!user) {
-        return res.status(401).json({ error: 'Identifiants invalides' });
+        return fail(401, 'Identifiants invalides');
       }
 
       if (!user.isActive) {
@@ -142,8 +194,9 @@ router.post(
 
       const isMatch = await user.comparePassword(password);
       if (!isMatch) {
-        return res.status(401).json({ error: 'Identifiants invalides' });
+        return fail(401, 'Identifiants invalides');
       }
+      loginFailuresByAccount.clear(accountKey);
 
       const token = generateToken(user);
 

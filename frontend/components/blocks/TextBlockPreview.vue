@@ -23,7 +23,8 @@ const rendered = computed(() => {
   // Si c'est du HTML (genere par l'editeur WYSIWYG), l'afficher directement
   // en nettoyant les balises dangereuses et le balisage Word/MSO
   if (/<[a-z][\s\S]*>/i.test(text)) {
-    return text
+    // Nettoyage de mise en forme (Word, Google Docs), puis filtrage de securite DOMPurify.
+    return sanitizeHtml(text
       // Remove all HTML comments (Word conditionals, StartFragment, etc.)
       .replace(/<!--[\s\S]*?-->/g, '')
       // Remove XML declarations and namespace tags
@@ -43,7 +44,7 @@ const rendered = computed(() => {
         return safe ? ` style="${safe}"` : '';
       })
       // Clean up empty spans (no attributes left)
-      .replace(/<span\s*>\s*([\s\S]*?)\s*<\/span>/gi, '$1');
+      .replace(/<span\s*>\s*([\s\S]*?)\s*<\/span>/gi, '$1'));
   }
 
   // Fallback : ancien contenu markdown
