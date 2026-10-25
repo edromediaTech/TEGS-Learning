@@ -4,7 +4,7 @@
     "simulation_id": "phys_solaire_charge_v1",
     "title": "Charge d'une Batterie par Panneau Solaire",
     "subject": "Physique",
-    "grade_level": "Secondaire IV (Seconde)",
+    "grade_level": "Secondaire II",
     "language": "fr",
     "duration_minutes": 15,
     "pedagogical_objective": "Comprendre l'influence de l'inclinaison d'un panneau solaire et de l'intensité lumineuse sur l'efficacité de charge d'une batterie et le risque de surchauffe.",

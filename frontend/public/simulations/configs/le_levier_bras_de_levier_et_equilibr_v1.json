@@ -1,0 +1,243 @@
+{
+  "schema_version": "1.0",
+  "metadata": {
+    "simulation_id": "le_levier_bras_de_levier_et_equilibr_v1",
+    "title": "Le Levier et l'Équilibre : La Balance Romaine",
+    "subject": "Physique",
+    "grade_level": "Secondaire I",
+    "language": "fr",
+    "duration_minutes": 10,
+    "pedagogical_objective": "Comprendre le principe du levier et la condition d'équilibre (Moment de force) en utilisant une balance romaine. L'élève doit pouvoir déterminer le poids d'un objet inconnu en ajustant la position d'une masse connue.",
+    "author": "CRNS - DDENE Haiti",
+    "created_at": "2026-05-10"
+  },
+  "assets": [
+    {
+      "id": "beam",
+      "material": "metal",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Fléau de la balance",
+      "position": [
+        0.8,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        0.04,
+        0.04
+      ],
+      "color": [
+        0.7,
+        0.7,
+        0.72
+      ],
+      "interactive": false
+    },
+    {
+      "id": "pivot_hook",
+      "material": "metal",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Point d'appui (Pivot)",
+      "position": [
+        0.0,
+        0.0,
+        0.2
+      ],
+      "scale": [
+        0.03,
+        0.03,
+        0.2
+      ],
+      "color": [
+        0.85,
+        0.7,
+        0.35
+      ],
+      "interactive": false
+    },
+    {
+      "id": "sack",
+      "material": "fabric",
+      "type": "primitive",
+      "primitive": "cube",
+      "label": "Sac de haricots (Charge)",
+      "position": [
+        -0.2,
+        0.0,
+        -0.4
+      ],
+      "scale": [
+        0.2,
+        0.3,
+        0.3
+      ],
+      "color": [
+        0.8,
+        0.6,
+        0.4
+      ],
+      "interactive": false,
+      "properties": {
+        "weight_kg": 12.0
+      }
+    },
+    {
+      "id": "load_hook",
+      "material": "metal",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Crochet de charge",
+      "position": [
+        -0.2,
+        0.0,
+        -0.1
+      ],
+      "scale": [
+        0.02,
+        0.02,
+        0.1
+      ],
+      "color": [
+        0.7,
+        0.7,
+        0.72
+      ],
+      "interactive": false
+    },
+    {
+      "id": "counterweight",
+      "material": "metal",
+      "type": "primitive",
+      "primitive": "cylinder",
+      "label": "Masse (Force motrice)",
+      "position": [
+        0.1,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        0.1,
+        0.1,
+        0.1
+      ],
+      "color": [
+        0.85,
+        0.7,
+        0.35
+      ],
+      "interactive": true,
+      "properties": {
+        "weight_kg": 2.0,
+        "adjustable_position_x": true,
+        "min_x": 0.05,
+        "max_x": 1.8
+      }
+    }
+  ],
+  "physics": {
+    "engine": "custom_torque",
+    "variables": {
+      "load_weight": "sack.weight_kg",
+      "load_arm": 0.2,
+      "counterweight_weight": "counterweight.weight_kg",
+      "counterweight_arm": "counterweight.position.x",
+      "torque_load": "load_weight * load_arm",
+      "torque_counterweight": "counterweight_weight * counterweight_arm",
+      "net_torque_formula": "torque_counterweight - torque_load"
+    },
+    "gravity": [
+      0.0,
+      0.0,
+      -9.81
+    ]
+  },
+  "events": [
+    {
+      "id": "evt_tilt_load",
+      "trigger": "net_torque_formula < -0.05",
+      "action": "set_rotation",
+      "target": "beam",
+      "params": {
+        "z_angle_rad": 0.087,
+        "interpolation_speed": 2.0
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "La balance penche du côté de la charge (sac)."
+    },
+    {
+      "id": "evt_tilt_counterweight",
+      "trigger": "net_torque_formula > 0.05",
+      "action": "set_rotation",
+      "target": "beam",
+      "params": {
+        "z_angle_rad": -0.087,
+        "interpolation_speed": 2.0
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "La balance penche du côté de la masse."
+    },
+    {
+      "id": "evt_equilibrium",
+      "trigger": "abs(net_torque_formula) <= 0.05",
+      "action": "set_rotation",
+      "target": "beam",
+      "params": {
+        "z_angle_rad": 0.0,
+        "interpolation_speed": 2.0
+      },
+      "xapi_verb": "passed",
+      "xapi_description": "L'élève a trouvé la position d'équilibre de la balance."
+    },
+    {
+      "id": "evt_display_reading",
+      "trigger": "counterweight.position.x > 0",
+      "action": "set_display_text",
+      "target": "beam",
+      "params": {
+        "value_formula": "(counterweight.weight_kg * counterweight.position.x) / load_arm",
+        "unit": "kg",
+        "label": "Lecture :",
+        "precision": 2,
+        "color": "#FFFFFF",
+        "background": "#0b0f14"
+      },
+      "xapi_verb": "experienced",
+      "xapi_description": "Affiche la lecture de poids calculée en temps réel."
+    },
+    {
+      "id": "evt_success_message",
+      "trigger": "abs(net_torque_formula) <= 0.05",
+      "action": "set_display_text",
+      "target": "beam",
+      "params": {
+        "value_formula": "(counterweight.weight_kg * counterweight.position.x) / load_arm",
+        "unit": "kg",
+        "label": "Équilibre ! Poids mesuré :",
+        "precision": 2,
+        "color": "#7CFC00",
+        "background": "#0b0f14"
+      },
+      "xapi_verb": "completed",
+      "xapi_description": "L'élève a réussi à mesurer le poids du sac."
+    }
+  ],
+  "scoring": {
+    "success_criteria": "evt_equilibrium triggered",
+    "max_score": 100,
+    "penalty_per_attempt": 0
+  },
+  "export": {
+    "format": "glb",
+    "filename": "le_levier_bras_de_levier_et_equilibr_v1.glb",
+    "compression": true,
+    "target_size_mb": 2
+  },
+  "rendering_hints": {
+    "future_engine": "babylonjs",
+    "max_polycount": 20000,
+    "texture_resolution": 512
+  }
+}

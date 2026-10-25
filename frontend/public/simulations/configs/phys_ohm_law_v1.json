@@ -4,7 +4,7 @@
     "simulation_id": "phys_ohm_law_v1",
     "title": "La Loi d'Ohm - Circuit avec Ampoule",
     "subject": "Physique",
-    "grade_level": "Secondaire III (3e)",
+    "grade_level": "Secondaire I",
     "language": "fr",
     "duration_minutes": 15,
     "pedagogical_objective": "Comprendre la relation U = R x I et identifier le seuil de rupture d'une ampoule lorsque la tension dépasse sa tolerance.",

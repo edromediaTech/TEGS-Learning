@@ -4,7 +4,7 @@
     "simulation_id": "loi_ohm_resistance_v1",
     "title": "La Loi d'Ohm : Résistance et Potentiomètre",
     "subject": "Physique",
-    "grade_level": "Secondaire III (3e)",
+    "grade_level": "Secondaire I",
     "language": "fr",
     "duration_minutes": 10,
     "pedagogical_objective": "Illustrer la loi d'Ohm (U=RxI) en permettant à l'élève de faire varier la résistance d'un potentiomètre pour contrôler l'intensité du courant dans un circuit et protéger une LED contre la surintensité.",

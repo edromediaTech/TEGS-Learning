@@ -1,13 +1,30 @@
 {
   "schema_version": 2,
-  "generated_at": "2026-10-24T12:39:00.582461+00:00",
-  "count": 14,
+  "generated_at": "2026-10-24T22:21:41.766399+00:00",
+  "count": 16,
   "simulations": [
+    {
+      "simulation_id": "balance_romaine_v1",
+      "title": "Le Levier : Équilibre d'une Balance Romaine",
+      "subject": "Physique",
+      "grade_level": "Secondaire I",
+      "language": "fr",
+      "duration_minutes": 10,
+      "objective": "Comprendre le principe du levier et la condition d'équilibre des moments (Force × dF = Résistance × dR) en manipulant une balance romaine virtuelle pour déterminer la masse d'un sac de haricots.",
+      "asset_url": "/simulations/balance_romaine_v1.glb",
+      "config_url": "/simulations/configs/balance_romaine_v1.json",
+      "n_events": 5,
+      "n_assets": 6,
+      "version": "1.0.0",
+      "sha256": "af5a9ad908bb6e57c6c98031b695debe9fe152c07231e1e91b94f39df025dd4c",
+      "size_bytes": 18356,
+      "config_sha256": "dfaec24946569edd7189f4f6ef2ec755b132bf9704edc28c93be62299324a531"
+    },
     {
       "simulation_id": "chim_neutralisation_vinaigre_bicarbonate_v1",
       "title": "Réaction de Neutralisation : Vinaigre et Bicarbonate",
       "subject": "Chimie",
-      "grade_level": "Secondaire I (7e)",
+      "grade_level": "7e AF",
       "language": "fr",
       "duration_minutes": 10,
       "objective": "Observer la production de dioxyde de carbone (CO2) lors d'une réaction acido-basique et visualiser le concept de production de gaz.",
@@ -18,13 +35,13 @@
       "version": "1.0.0",
       "sha256": "c5067f8fe28868a3591816f492066ffd7f4f0b73ffb1eb924ed823a76f337b85",
       "size_bytes": 21428,
-      "config_sha256": "2a9ddc4e5731a13230afdf009b14c07a385b03e61a573314ab22b9b781b1b229"
+      "config_sha256": "77a349a72dff2623de5c044fd6b2d8b509bd3691a58704cfc594f3084642e2af"
     },
     {
       "simulation_id": "ecrou_hexagonal_v1",
       "title": "Atelier Mécanique : L'Écrou et la Vis",
       "subject": "Technologie",
-      "grade_level": "Secondaire I (7e AF)",
+      "grade_level": "7e AF",
       "language": "fr",
       "duration_minutes": 10,
       "objective": "Identifier les composants d'un assemblage vis-écrou (filetage, forme hexagonale) et simuler l'action de serrage avec une clé plate.",
@@ -35,13 +52,13 @@
       "version": "1.0.0",
       "sha256": "e864d844a0fb394f2dcd015be199d57f179f4420f233fef266d42f6614e26c54",
       "size_bytes": 13584,
-      "config_sha256": "a67d10a8aa3b77094b1c1a07dbc6728ada346209b09291f78f464bd0f224d5f5"
+      "config_sha256": "d68d971114cac387b885dfe8707acf926a44a8d0a7392e87f110a2723f97eb53"
     },
     {
       "simulation_id": "eolienne_vitesse_v1",
       "title": "Éolienne et Vitesse du Vent",
       "subject": "Physique",
-      "grade_level": "Secondaire IV (Seconde)",
+      "grade_level": "Secondaire II",
       "language": "fr",
       "duration_minutes": 10,
       "objective": "Comprendre l'impact de la vitesse du vent sur la rotation d'une éolienne et identifier le seuil de rupture mécanique de ses pales.",
@@ -52,13 +69,13 @@
       "version": "1.0.0",
       "sha256": "b4f78167aac3f321cfeae51fc6a16d97cf61f14489672ca1eb3d293dbe47ac9c",
       "size_bytes": 68188,
-      "config_sha256": "4c5fec087ac81cdc3e782928921847659c3bc3617cbca4a42f544b8ad6b1aaf9"
+      "config_sha256": "6a996b8746a7d2b0e7c08fc812707db7e3cf39ae60da9d3aca7d70090a28a5e7"
     },
     {
       "simulation_id": "intensite_courant_v1",
       "title": "L'Intensité du Courant et la Loi des Nœuds",
       "subject": "Physique",
-      "grade_level": "Secondaire IV (2nde)",
+      "grade_level": "Secondaire II",
       "language": "fr",
       "duration_minutes": 20,
       "objective": "Comprendre le branchement en série de l'ampèremètre, le choix du calibre, et vérifier expérimentalement la loi des nœuds dans un circuit en dérivation.",
@@ -69,13 +86,30 @@
       "version": "1.0.0",
       "sha256": "7e3b34c1f1fdc5efc0a07f0afe29a4d20968b03c3b108a3a1c6b33dc28a4898e",
       "size_bytes": 26468,
-      "config_sha256": "c6aaa7ccc639f65edd8cca3bda5fa1069d92e481b8afd106e07b740640f8dd55"
+      "config_sha256": "ddc56539ab1c018c1385f89804867b11fe05a3bb67d4b826237360b2542983d6"
+    },
+    {
+      "simulation_id": "le_levier_bras_de_levier_et_equilibr_v1",
+      "title": "Le Levier et l'Équilibre : La Balance Romaine",
+      "subject": "Physique",
+      "grade_level": "Secondaire I",
+      "language": "fr",
+      "duration_minutes": 10,
+      "objective": "Comprendre le principe du levier et la condition d'équilibre (Moment de force) en utilisant une balance romaine. L'élève doit pouvoir déterminer le poids d'un objet inconnu en ajustant la position d'une masse connue.",
+      "asset_url": "/simulations/le_levier_bras_de_levier_et_equilibr_v1.glb",
+      "config_url": "/simulations/configs/le_levier_bras_de_levier_et_equilibr_v1.json",
+      "n_events": 5,
+      "n_assets": 5,
+      "version": "1.0.0",
+      "sha256": "b5a8cde0eedbf169b337d620faf46a326cc65eca65cd942eea74e01bec7913fc",
+      "size_bytes": 16464,
+      "config_sha256": "ab9d919b3c8f6fa364808fdfa2bbe7fdfc15628cb0aafdeea5a8e6abfcd146a7"
     },
     {
       "simulation_id": "loi_ohm_resistance_v1",
       "title": "La Loi d'Ohm : Résistance et Potentiomètre",
       "subject": "Physique",
-      "grade_level": "Secondaire III (3e)",
+      "grade_level": "Secondaire I",
       "language": "fr",
       "duration_minutes": 10,
       "objective": "Illustrer la loi d'Ohm (U=RxI) en permettant à l'élève de faire varier la résistance d'un potentiomètre pour contrôler l'intensité du courant dans un circuit et protéger une LED contre la surintensité.",
@@ -86,13 +120,13 @@
       "version": "1.0.0",
       "sha256": "76d5d733e6ae8b9b57fe14d1ac999f239116e5e6e9ad11c03f40bddaf85f2f2d",
       "size_bytes": 18876,
-      "config_sha256": "d2df7cb9fc0029e85e6adfb428f381e812b0ad0bb983385b032e4314a7a3aa78"
+      "config_sha256": "27efea538742a89fda4ba910a29e57a5f37b04a81338d1ba866123ac4a4f8919"
     },
     {
       "simulation_id": "montage_panneau_solaire_v1",
       "title": "Montage d'un Système Solaire : Série et Parallèle",
       "subject": "Physique",
-      "grade_level": "Secondaire IV (2nde)",
+      "grade_level": "Secondaire II",
       "language": "fr",
       "duration_minutes": 15,
       "objective": "Démontrer l'effet des montages série et parallèle sur la tension et le courant d'un système photovoltaïque, et comprendre le rôle du régulateur de charge et l'importance du respect des polarités.",
@@ -103,13 +137,13 @@
       "version": "1.0.0",
       "sha256": "8fba1b734b2b728e85627a1aa6ed9014aaeda0469cb98ed3557936733b8e4111",
       "size_bytes": 41348,
-      "config_sha256": "1b0949b0a6bedce87bc4b5ed198550ebf98deb97876883d86e0f17199530ce37"
+      "config_sha256": "647cced2b72598218782b2bb50808e9f7ba9d2c19de850efa8d8a850b458d485"
     },
     {
       "simulation_id": "phys_ohm_law_v1",
       "title": "La Loi d'Ohm - Circuit avec Ampoule",
       "subject": "Physique",
-      "grade_level": "Secondaire III (3e)",
+      "grade_level": "Secondaire I",
       "language": "fr",
       "duration_minutes": 15,
       "objective": "Comprendre la relation U = R x I et identifier le seuil de rupture d'une ampoule lorsque la tension dépasse sa tolerance.",
@@ -120,13 +154,13 @@
       "version": "1.0.0",
       "sha256": "ce96cb324331830eafe00eda287afe325f1309f4bec2560d92da016f94594e92",
       "size_bytes": 36656,
-      "config_sha256": "8e581fbb984e5f1b28e5e030ce50ddb7e98968171b7f9a47fad70c6c748ba3c5"
+      "config_sha256": "56257f2dfdd2bda8a9860ecb9e9987ee205326f370f043ac6f11ec60b7c5da94"
     },
     {
       "simulation_id": "phys_dilatation_liquides_v1",
       "title": "Dilatation Thermique des Liquides - Le Thermomètre à Alcool",
       "subject": "Physique",
-      "grade_level": "Secondaire II (Seconde)",
+      "grade_level": "Secondaire II",
       "language": "fr",
       "duration_minutes": 10,
       "objective": "Observer et comprendre le phénomène de dilatation thermique d'un liquide (alcool) en fonction de la température de l'eau, et visualiser le point d'ébullition.",
@@ -137,13 +171,13 @@
       "version": "1.0.0",
       "sha256": "01aed472afea2c9585feb87652e9fffad9952de8696977c136a197ef77aca123",
       "size_bytes": 19224,
-      "config_sha256": "9d53461b1758434a0ba062c04e269999a5c8237b3bb2848fb23b9eefb903e457"
+      "config_sha256": "07a76bc879fa89365a0f42dad47eeffe88aaf1f5fabcef997c2f0e3d839aa926"
     },
     {
       "simulation_id": "phys_solaire_charge_v1",
       "title": "Charge d'une Batterie par Panneau Solaire",
       "subject": "Physique",
-      "grade_level": "Secondaire IV (Seconde)",
+      "grade_level": "Secondaire II",
       "language": "fr",
       "duration_minutes": 15,
       "objective": "Comprendre l'influence de l'inclinaison d'un panneau solaire et de l'intensité lumineuse sur l'efficacité de charge d'une batterie et le risque de surchauffe.",
@@ -154,13 +188,13 @@
       "version": "1.0.0",
       "sha256": "39e49a8545404514697dbc93b865803a34cd1a5082f5076d28d902d4eb657844",
       "size_bytes": 18128,
-      "config_sha256": "561404c76ad916207f56393068e2574f536a593b278211b04e6ae1993e0a95fe"
+      "config_sha256": "2dbb2d38bd68f929339885e39d18d2431a828a6bc73c38af407d10a67c6af24e"
     },
     {
       "simulation_id": "pompe_solaire_v1",
       "title": "Simulation d'une Pompe à Eau Solaire",
       "subject": "Physique",
-      "grade_level": "Secondaire II (4e)",
+      "grade_level": "Secondaire II",
       "language": "fr",
       "duration_minutes": 10,
       "objective": "Comprendre le fonctionnement d'un système photovoltaïque simple et la dépendance de la pompe à eau à l'ensoleillement.",
@@ -171,7 +205,7 @@
       "version": "1.0.0",
       "sha256": "c0865ee3c5094d642d195de12fdd96f2059201e6c40df8eb38fa9c971e5839bb",
       "size_bytes": 17456,
-      "config_sha256": "e1307a23d50566327cf2f94058fe2e6193897c9ca1ab642706a25f811f2a9ecf"
+      "config_sha256": "dc9083060f06e075ab809f5f8606022b06e2649b3ac3a47695d40bd6bcdc4614"
     },
     {
       "simulation_id": "tech_smartphone_anatomie_hd_v1",
@@ -228,7 +262,7 @@
       "simulation_id": "tension_electrique_v1",
       "title": "La Tension Électrique : Association en Série et en Parallèle",
       "subject": "Physique",
-      "grade_level": "Secondaire II (8e)",
+      "grade_level": "8e AF",
       "language": "fr",
       "duration_minutes": 10,
       "objective": "Comprendre et mesurer la tension résultante de l'association de piles en série et en parallèle à l'aide d'un voltmètre virtuel.",
@@ -239,7 +273,7 @@
       "version": "1.0.0",
       "sha256": "2ca44d6daf5be9f8096cc7a1f65dbdae91b7cd44d3930121ff9ccb18d55dcbd1",
       "size_bytes": 11632,
-      "config_sha256": "b1755723d912a48c605439e2b0ee4d6fbe7893cf6ac11a01377a93ecc884e6bf"
+      "config_sha256": "d0f6429062412eab88e77aefbd9b140b457513dfbac07e426da403b09101c346"
     }
   ]
 }
