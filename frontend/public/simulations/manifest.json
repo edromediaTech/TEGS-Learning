@@ -1,7 +1,7 @@
 {
   "schema_version": 2,
   "generated_at": "2026-10-24T22:21:41.766399+00:00",
-  "count": 16,
+  "count": 15,
   "simulations": [
     {
       "simulation_id": "balance_romaine_v1",
@@ -87,23 +87,6 @@
       "sha256": "7e3b34c1f1fdc5efc0a07f0afe29a4d20968b03c3b108a3a1c6b33dc28a4898e",
       "size_bytes": 26468,
       "config_sha256": "ddc56539ab1c018c1385f89804867b11fe05a3bb67d4b826237360b2542983d6"
-    },
-    {
-      "simulation_id": "le_levier_bras_de_levier_et_equilibr_v1",
-      "title": "Le Levier et l'Équilibre : La Balance Romaine",
-      "subject": "Physique",
-      "grade_level": "Secondaire I",
-      "language": "fr",
-      "duration_minutes": 10,
-      "objective": "Comprendre le principe du levier et la condition d'équilibre (Moment de force) en utilisant une balance romaine. L'élève doit pouvoir déterminer le poids d'un objet inconnu en ajustant la position d'une masse connue.",
-      "asset_url": "/simulations/le_levier_bras_de_levier_et_equilibr_v1.glb",
-      "config_url": "/simulations/configs/le_levier_bras_de_levier_et_equilibr_v1.json",
-      "n_events": 5,
-      "n_assets": 5,
-      "version": "1.0.0",
-      "sha256": "b5a8cde0eedbf169b337d620faf46a326cc65eca65cd942eea74e01bec7913fc",
-      "size_bytes": 16464,
-      "config_sha256": "ab9d919b3c8f6fa364808fdfa2bbe7fdfc15628cb0aafdeea5a8e6abfcd146a7"
     },
     {
       "simulation_id": "loi_ohm_resistance_v1",
