@@ -64,7 +64,7 @@ fi
 
 echo "--- Verification ---"
 for i in $(seq 1 20); do curl -fsS -o /dev/null "http://localhost:${PORT}/demo-3d" && break; sleep 1; done
-for path in /demo-3d /demo-3d/disjoncteur.glb /vendor/three/0.184.0/three.module.min.js /vendor/three/0.184.0/GLTFLoader.js /vendor/draco/draco_decoder.wasm; do
+for path in /demo-3d /components/disjoncteur_c16_1pn/component.json /components/disjoncteur_c16_1pn/component.glb /vendor/three/0.184.0/three.module.min.js /vendor/three/0.184.0/GLTFLoader.js /vendor/draco/draco_decoder.wasm; do
   code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:${PORT}${path}")
   [ "$code" = 200 ] && ok "$path" || fail "$path -> HTTP $code"
 done

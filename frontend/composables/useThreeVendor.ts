@@ -23,9 +23,9 @@ export interface CrnsViewerApi {
   /** Opacite des materiaux des noeuds (1 = opaque) ; l'interieur reste visible en dessous de 1. */
   setOpacity: (names: string[], value: number) => void;
   animateOpacity: (names: string[], to: number, ms?: number) => Promise<void>;
-  /** Vue eclatee : position = origine + decalage x t (decalages en metres, repere glTF : y haut, z vers l'observateur). */
-  setOffsets: (offsets: Record<string, [number, number, number]>, t: number) => void;
-  animateOffsets: (offsets: Record<string, [number, number, number]>, from: number, to: number, ms?: number) => Promise<void>;
+  /** Position = origine + somme des couches (decalage x t) ; metres, repere glTF : y haut, z vers l'observateur. */
+  setOffsets: (offsets: Record<string, [number, number, number]>, t: number, layer?: string) => void;
+  animateOffsets: (offsets: Record<string, [number, number, number]>, from: number, to: number, ms?: number, layer?: string) => Promise<void>;
   /** Cadre la camera sur des noeuds (meme direction de vue), anime. */
   focus: (names: string[], ms?: number) => Promise<void>;
   resetView: (ms?: number) => Promise<void>;

@@ -43,6 +43,8 @@ jobs:
           nohup node src/server.js > /tmp/backend.log 2>&1 &
           npx --yes wait-on -t 60000 http://localhost:3000/api/health
       - run: npm test
+      - name: Calculs electriques des TP 3D (frontend, sans dependance)
+        run: cd ../frontend && node --test tests/unit/*.test.ts
       - name: Linter 3D des composants livres (verrou QA n°1)
         run: for d in ../frontend/public/components/*/; do node ../scripts/qa/validate-component.js "$d" || exit 1; done
       # Base encore vierge : le test cree le premier superadmin (cf. tests/integration/_superadmin.js).

@@ -72,7 +72,9 @@ let home: { position: any; target: any } | null = null;
 const labelLines: SVGGElement[] = [];
 const labelBoxes: HTMLDivElement[] = [];
 const labelNodes: any[] = []; // noeud de chaque etiquette (centre recalcule : les pieces bougent)
-const basePositions = new Map<any, any>(); // position d'origine des noeuds deplaces (vue eclatee)
+const basePositions = new Map<any, any>(); // position d'origine des noeuds deplaces
+// Decalages par couche (vue eclatee, panne de serrage...) : ils s'additionnent sur un meme noeud.
+const layers = new Map<string, Map<any, number[]>>();
 const box3 = { b: null as any, c: null as any };
 
 // Deplacement de camera (position + cible), anime si ms > 0.
@@ -261,22 +263,26 @@ const api: CrnsViewerApi = {
       requestRender();
     });
   },
-  setOffsets(offsets, t) {
+  setOffsets(offsets, t, layer = 'default') {
+    if (!layers.has(layer)) layers.set(layer, new Map());
+    const own = layers.get(layer)!;
     for (const [name, [dx, dy, dz]] of Object.entries(offsets)) {
       const node = root?.getObjectByName(name);
       if (!node) continue;
       if (!basePositions.has(node)) basePositions.set(node, node.position.clone());
-      const base = basePositions.get(node);
-      node.position.set(base.x + dx * t, base.y + dy * t, base.z + dz * t);
+      own.set(node, [dx * t, dy * t, dz * t]);
+      const p = basePositions.get(node).clone();
+      for (const l of layers.values()) { const d = l.get(node); if (d) { p.x += d[0]; p.y += d[1]; p.z += d[2]; } }
+      node.position.copy(p);
     }
     requestRender();
   },
-  animateOffsets(offsets, from, to, ms = 900) {
+  animateOffsets(offsets, from, to, ms = 900, layer = 'default') {
     const start = performance.now();
     return new Promise((resolve) => {
       animations.add((now) => {
         const k = Math.min(1, (now - start) / ms);
-        api.setOffsets(offsets, from + (to - from) * (k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2));
+        api.setOffsets(offsets, from + (to - from) * (k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2), layer);
         if (k >= 1) resolve();
         return k < 1;
       });
