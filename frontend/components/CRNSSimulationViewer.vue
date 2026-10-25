@@ -70,16 +70,18 @@ const highlight = new Map<any, { color: any; intensity: number }>();
 let home: { position: any; target: any } | null = null;
 const labelLines: SVGGElement[] = [];
 const labelBoxes: HTMLDivElement[] = [];
-let anchors: any[] = []; // centre (repere monde) du noeud de chaque etiquette
+const labelNodes: any[] = []; // noeud de chaque etiquette (centre recalcule : les pieces bougent)
+const basePositions = new Map<any, any>(); // position d'origine des noeuds deplaces (vue eclatee)
+const box3 = { b: null as any, c: null as any };
 
 function placeLabels() {
-  if (!props.labelsVisible || !anchors.length) return;
+  if (!props.labelsVisible || !labelNodes.length) return;
   const w = canvas.value!.clientWidth, h = canvas.value!.clientHeight;
-  const v = new T.Vector3();
-  anchors.forEach((a, i) => {
+  const v = box3.c;
+  labelNodes.forEach((node, i) => {
     const l = props.labels[i]; const g = labelLines[i]; const box = labelBoxes[i];
-    if (!a || !g || !box) return;
-    v.copy(a).project(camera);
+    if (!node || !g || !box) return;
+    box3.b.setFromObject(node).getCenter(v).project(camera);
     const hidden = v.z > 1;
     const x = (v.x + 1) / 2 * w, y = (1 - v.y) / 2 * h, lx = x + l.dx, ly = y + l.dy;
     g.style.display = box.style.display = hidden ? 'none' : '';
@@ -236,6 +238,28 @@ const api: CrnsViewerApi = {
       requestRender();
     });
   },
+  setOffsets(offsets, t) {
+    for (const [name, [dx, dy, dz]] of Object.entries(offsets)) {
+      const node = root?.getObjectByName(name);
+      if (!node) continue;
+      if (!basePositions.has(node)) basePositions.set(node, node.position.clone());
+      const base = basePositions.get(node);
+      node.position.set(base.x + dx * t, base.y + dy * t, base.z + dz * t);
+    }
+    requestRender();
+  },
+  animateOffsets(offsets, from, to, ms = 900) {
+    const start = performance.now();
+    return new Promise((resolve) => {
+      animations.add((now) => {
+        const k = Math.min(1, (now - start) / ms);
+        api.setOffsets(offsets, from + (to - from) * (k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2));
+        if (k >= 1) resolve();
+        return k < 1;
+      });
+      requestRender();
+    });
+  },
   resetView() {
     if (!home) return;
     camera.position.copy(home.position);
@@ -302,10 +326,9 @@ async function init() {
   controls.minDistance = dist * 0.45;
   controls.maxDistance = dist * (framed.length ? 3 : 1.6);
   home = { position: camera.position.clone(), target: center.clone() };
-  anchors = props.labels.map((l) => {
-    const node = root.getObjectByName(l.node);
-    return node ? new T.Box3().setFromObject(node).getCenter(new T.Vector3()) : null;
-  });
+  box3.b = new T.Box3();
+  box3.c = new T.Vector3();
+  labelNodes.push(...props.labels.map((l) => root.getObjectByName(l.node) ?? null));
 
   const c = canvas.value!;
   c.addEventListener('pointerdown', onPointerDown);

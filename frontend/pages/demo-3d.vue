@@ -4,9 +4,9 @@
       <CRNSSimulationViewer
         src="/demo-3d/disjoncteur.glb"
         :pickable="['Levier']"
-        :frame="['Corps', 'Ampoule']"
+        :frame="['Coque_gauche', 'Coque_droite', 'Ampoule']"
         :labels="LABELS"
-        :labels-visible="capot < 0.6"
+        :labels-visible="capot < 0.6 || eclate > 0.5"
         background="#dfe4ea"
         @ready="onReady"
         @pick="onPick"
@@ -60,7 +60,18 @@
                  :value="Math.round((1 - capot) / (1 - CAPOT_MIN) * 100)" data-testid="transparence"
                  @input="setTransparence(+($event.target as HTMLInputElement).value)">
         </label>
-        <p v-if="capot < 0.6" class="text-sm text-slate-300 mt-2">
+        <button class="w-full mt-4 rounded-lg px-4 py-3 font-semibold disabled:opacity-40"
+                :class="eclate > 0.5 ? 'bg-amber-400 text-slate-900 hover:bg-amber-300' : 'bg-slate-700 hover:bg-slate-600'"
+                :disabled="!ready" data-testid="eclate" @click="toggleEclate">
+          {{ eclate > 0.5 ? 'Rassembler le disjoncteur' : 'Vue éclatée' }}
+        </button>
+        <label class="block text-sm text-slate-300 mt-3">
+          Écartement des pièces : {{ Math.round(eclate * 100) }} %
+          <input type="range" min="0" max="100" class="w-full mt-1 accent-amber-400" :disabled="!ready"
+                 :value="Math.round(eclate * 100)" data-testid="ecartement"
+                 @input="setEclate(+($event.target as HTMLInputElement).value / 100)">
+        </label>
+        <p v-if="capot < 0.6 || eclate > 0.5" class="text-sm text-slate-300 mt-2">
           À chaque borne, le fil de cuivre dénudé entre dans la cage de serrage ; la vis, serrée depuis la
           face avant, plaque la cage contre le fil. Un serrage insuffisant fait chauffer la connexion.
         </p>
@@ -99,11 +110,27 @@ const ready = ref(false);
 const on = ref(false);
 const busy = ref(false);
 const count = ref(0);
-// Vue interieure (« rayons X ») : opacite du capot (corps, nez et sa fente), 1 = opaque.
-const CAPOT = ['Corps', 'Nez', 'Fente'];
+// Vue interieure (« rayons X ») : opacite du boitier (demi-coquilles, nez, fente), 1 = opaque.
+const CAPOT = ['Coque_gauche', 'Coque_droite', 'Nez_gauche', 'Nez_droite', 'Fente'];
 const CAPOT_MIN = 0.12;
 const capot = ref(1);
 const interieur = computed(() => capot.value < 0.6);
+// Vue eclatee : demi-coquilles ecartees, pieces internes reparties entre elles, vis et manette
+// sorties vers l'avant ; cages et fils restent en place (le cablage reste lisible).
+// Decalages en metres, repere glTF : x vers la droite, y vers le haut, z vers l'observateur.
+const ECLATE: Record<string, [number, number, number]> = {
+  Coque_gauche: [-0.045, 0, 0.015], Nez_gauche: [-0.045, 0, 0.015],
+  Voyant: [-0.054, 0, 0.015], Marquage_C16: [-0.054, 0, 0.015], Marquage_230V: [-0.054, 0, 0.015],
+  // Demi-coquille droite aussi avancee : sinon elle traverse le cable de phase qui longe la platine.
+  Coque_droite: [0.080, 0, 0.035], Nez_droite: [0.080, 0, 0.035], Marquage_I: [0.080, 0, 0.035], Marquage_O: [0.080, 0, 0.035],
+  // Pieces internes reparties dans l'espace libre entre les coquilles (visibles de face).
+  Bobine: [0.010, 0, 0.006], Liaisons_mecanisme: [0.014, 0, 0.006], Contacts: [0.020, 0, 0.010],
+  Chambre_coupure: [0.028, 0, 0.014], Bilame: [0.034, 0, 0.022],
+  Vis_haut: [0, 0, 0.035], Vis_bas: [0, 0, 0.035], Levier: [0, 0, 0.03],
+};
+const eclate = ref(0);
+// La fente du nez n'est qu'une ouverture du boitier : elle s'efface en vue eclatee.
+const fenteOpacity = () => Math.min(capot.value, 1 - eclate.value);
 // Etiquettes : decalages (px) choisis pour la vue de face, a droite du disjoncteur sauf exceptions.
 const LABELS = [
   { node: 'Fil_cuivre_haut', text: 'Fil de cuivre dénudé', dx: -150, dy: -120 },
@@ -165,11 +192,38 @@ async function toggleInterieur() {
   requestAnimationFrame(step);
   await a.animateOpacity(CAPOT, target, 700);
   capot.value = target;
+  a.setOpacity(['Fente'], fenteOpacity()); // reste effacee si la vue est eclatee
+}
+
+async function toggleEclate() {
+  const a = api.value;
+  if (!a) return;
+  const open = eclate.value <= 0.5;
+  log(open ? 'Vue éclatée : demi-coquilles écartées, pièces internes séparées' : 'Disjoncteur rassemblé',
+    { id: 'disjoncteur.eclate', etat: open ? 'eclate' : 'assemble' });
+  const from = eclate.value, target = open ? 1 : 0;
+  const start = performance.now();
+  const step = (now: number) => {
+    const k = Math.min(1, (now - start) / 900);
+    eclate.value = from + (target - from) * k;
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+  a.animateOpacity(['Fente'], open ? 0 : capot.value, 900);
+  await a.animateOffsets(ECLATE, from, target, 900);
+  eclate.value = target;
+}
+
+function setEclate(t: number) {
+  eclate.value = t;
+  api.value?.setOffsets(ECLATE, t);
+  api.value?.setOpacity(['Fente'], fenteOpacity());
 }
 
 function setTransparence(percent: number) {
   capot.value = 1 - (percent / 100) * (1 - CAPOT_MIN);
   api.value?.setOpacity(CAPOT, capot.value);
+  api.value?.setOpacity(['Fente'], fenteOpacity());
 }
 
 function onPick(name: string) {
@@ -184,6 +238,7 @@ function onReady(viewerApi: CrnsViewerApi) {
 
 async function reset() {
   setTransparence(0);
+  setEclate(0);
   await apply(false);
   count.value = 0;
   events.value = [];
